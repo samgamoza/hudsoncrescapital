@@ -1,0 +1,215 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Hudson Crest Capital — Institutional dark theme.
+ * Deep navy backgrounds, electric blue accents matching the logo.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --font-display: "Inter", "SF Pro Display", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+:root {
+  --radius: 0.75rem;
+
+  /* Deep institutional navy palette */
+  --background: oklch(0.16 0.025 260);
+  --foreground: oklch(0.97 0.005 240);
+
+  --surface: oklch(0.20 0.028 260);
+  --surface-elevated: oklch(0.235 0.030 260);
+
+  --card: oklch(0.20 0.028 260);
+  --card-foreground: oklch(0.97 0.005 240);
+  --popover: oklch(0.20 0.028 260);
+  --popover-foreground: oklch(0.97 0.005 240);
+
+  /* Electric brand blue (matches logo) */
+  --brand: oklch(0.65 0.22 255);
+  --brand-foreground: oklch(0.99 0 0);
+
+  --primary: oklch(0.65 0.22 255);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --secondary: oklch(0.27 0.03 260);
+  --secondary-foreground: oklch(0.97 0.005 240);
+
+  --muted: oklch(0.235 0.028 260);
+  --muted-foreground: oklch(0.68 0.02 250);
+
+  --accent: oklch(0.30 0.05 255);
+  --accent-foreground: oklch(0.97 0.005 240);
+
+  --destructive: oklch(0.62 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  --success: oklch(0.72 0.18 150);
+  --danger: oklch(0.65 0.22 25);
+
+  --border: oklch(0.30 0.025 260 / 0.6);
+  --input: oklch(0.30 0.025 260 / 0.6);
+  --ring: oklch(0.65 0.22 255);
+
+  /* Gradients & glow */
+  --gradient-brand: linear-gradient(135deg, oklch(0.55 0.22 255), oklch(0.70 0.18 220));
+  --gradient-hero: linear-gradient(180deg, oklch(0.16 0.025 260 / 0) 0%, oklch(0.16 0.025 260 / 0.6) 60%, oklch(0.16 0.025 260) 100%);
+  --gradient-surface: linear-gradient(180deg, oklch(0.22 0.030 260), oklch(0.18 0.025 260));
+  --gradient-text-brand: linear-gradient(135deg, oklch(0.78 0.18 250), oklch(0.62 0.20 260));
+  --shadow-glow: 0 0 60px -10px oklch(0.65 0.22 255 / 0.45);
+  --shadow-elevated: 0 20px 50px -20px oklch(0.05 0.02 260 / 0.8);
+}
+
+.dark {
+  /* Same dark theme; site is dark-only */
+  --background: oklch(0.16 0.025 260);
+  --foreground: oklch(0.97 0.005 240);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  html {
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .text-gradient-brand {
+    background: var(--gradient-text-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .bg-gradient-brand {
+    background: var(--gradient-brand);
+  }
+
+  .bg-gradient-surface {
+    background: var(--gradient-surface);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .surface-card {
+    background: var(--gradient-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+  }
+
+  .eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-brand);
+  }
+
+  .grid-bg {
+    background-image:
+      linear-gradient(oklch(0.65 0.22 255 / 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.65 0.22 255 / 0.06) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .form-input {
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-background);
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: var(--color-foreground);
+    transition: border-color 0.15s;
+  }
+  .form-input::placeholder {
+    color: var(--color-muted-foreground);
+  }
+  .form-input:focus {
+    outline: none;
+    border-color: var(--color-brand);
+  }
+
+  /* Continuous horizontal marquee for the live ticker tape */
+  @keyframes ticker-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  .animate-ticker {
+    animation: ticker-scroll 80s linear infinite;
+    will-change: transform;
+  }
+  .animate-ticker:hover {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-ticker {
+      animation: none;
+      transform: none;
+    }
+  }
+}

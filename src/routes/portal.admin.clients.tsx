@@ -1,0 +1,671 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
+import { PageHeader, SectionCard } from "@/lib/portalShared";
+import { CountrySelect, IntlPhoneInput } from "@/components/portal/IntlPhoneInput";
+import { ClientSubPortfolios } from "@/components/portal/ClientSubPortfolios";
+import { usePersistedState } from "@/hooks/usePersistedState";
+
+export const Route = createFileRoute("/portal/admin/clients")({
+  component: ClientsPage,
+});
+
+type ClientRow = any;
+type ClientDetail = any;
+
+const field = "bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground w-full";
+const btn = "text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-surface-elevated";
+const btnPrimary =
+  "text-xs px-2.5 py-1.5 rounded-md bg-gradient-brand text-brand-foreground hover:opacity-90";
+const btnDanger =
+  "text-xs px-2.5 py-1.5 rounded-md border border-destructive/40 text-destructive hover:bg-destructive/10";
+
+async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
+  const res = await fetch(input, init);
+  const text = await res.text();
+  if (!res.ok) throw new Error(text || `Request failed (${res.status})`);
+  return (text ? JSON.parse(text) : {}) as T;
+}
+
+function statusTone(status: string) {
+  switch (status) {
+    case "active":
+      return "border-success/40 text-success bg-success/10";
+    case "pending":
+      return "border-yellow-500/40 text-yellow-500 bg-yellow-500/10";
+    case "suspended":
+      return "border-orange-500/40 text-orange-500 bg-orange-500/10";
+    case "rejected":
+    case "closed":
+      return "border-destructive/40 text-destructive bg-destructive/10";
+    default:
+      return "border-border text-muted-foreground";
+  }
+}
+
+function ClientsPage() {
+  const [rows, setRows] = useState<ClientRow[] | null>(null);
+  const [filter, setFilter] = usePersistedState<string>("admin:clients:filter", "");
+  const [statusFilter, setStatusFilter] = usePersistedState<string>("admin:clients:status", "all");
+  const [selectedId, setSelectedId] = usePersistedState<string | null>(
+    "admin:clients:selected",
+    null,
+  );
+  const [myRoles, setMyRoles] = useState<string[]>([]);
+  const isSuper = myRoles.includes("super_admin");
+  const [resetting, setResetting] = useState(false);
+
+  const refresh = async () => {
+    try {
+      const r = await apiJson<ClientRow[]>("/api/portal/clients-admin?action=list");
+      setRows(Array.isArray(r) ? r : []);
+    } catch (e: any) {
+      setRows([]);
+      toast.error(e?.message ?? "Failed to load clients");
+    }
+  };
+
+  useEffect(() => {
+    void refresh();
+    void apiJson<string[]>("/api/portal/clients-admin?action=roles")
+      .then((r) => setMyRoles(r as any[]))
+      .catch(() => {});
+  }, []);
+
+  const doReset = async () => {
+    const c = window.prompt(
+      'This will permanently delete EVERY client user and all their data. Type "RESET ALL CLIENTS" to confirm.',
+    );
+    if (c !== "RESET ALL CLIENTS") return;
+    setResetting(true);
+    try {
+      const res = await apiJson<{ deleted: number }>("/api/portal/clients-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "resetAllClients",
+          payload: { confirm: "RESET ALL CLIENTS" },
+        }),
+      });
+      toast.success(
+        `Reset complete. ${res.deleted} client${res.deleted === 1 ? "" : "s"} removed.`,
+      );
+      await refresh();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Reset failed");
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  const filtered = (rows ?? []).filter((r) => {
+    if (statusFilter !== "all") {
+      const hasStatus = r.accounts.some((a: any) => a.status === statusFilter);
+      const isPendingProfile = statusFilter === "pending" && r.accounts.length === 0;
+      if (!hasStatus && !isPendingProfile) return false;
+    }
+    if (!filter) return true;
+    const f = filter.toLowerCase();
+    const name =
+      `${r.profile?.legal_first_name ?? ""} ${r.profile?.legal_last_name ?? ""}`.toLowerCase();
+    return r.email.toLowerCase().includes(f) || name.includes(f);
+  });
+
+  return (
+    <>
+      <PageHeader
+        title="Clients"
+        subtitle="Manage existing clients — KYC, account lifecycle, profile, notes."
+      />
+
+      <div className="flex flex-wrap gap-3 items-center">
+        <input
+          className={`${field} max-w-sm`}
+          placeholder="Search email or name…"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        />
+        <select
+          className={field + " max-w-[180px]"}
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="all">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="active">Active</option>
+          <option value="suspended">Suspended</option>
+          <option value="rejected">Rejected</option>
+          <option value="closed">Closed</option>
+        </select>
+        <div className="ml-auto flex gap-2">
+          <button className={btn} onClick={() => void refresh()}>
+            Refresh
+          </button>
+          <Link to="/portal/admin/onboarding" className={btnPrimary}>
+            + Open New Account
+          </Link>
+          {isSuper && (
+            <button disabled={resetting} className={btnDanger} onClick={() => void doReset()}>
+              {resetting ? "Resetting…" : "⚠ Reset all clients"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <SectionCard title={`${filtered.length} client${filtered.length === 1 ? "" : "s"}`}>
+        {!rows ? (
+          <div className="text-sm text-muted-foreground">Loading…</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b border-border">
+                  <th className="py-2 pr-4 font-medium">Name</th>
+                  <th className="py-2 pr-4 font-medium">Email</th>
+                  <th className="py-2 pr-4 font-medium">Accounts</th>
+                  <th className="py-2 pr-4 font-medium">KYC</th>
+                  <th className="py-2 pr-4 font-medium">Login</th>
+                  <th className="py-2 pr-4 font-medium">Joined</th>
+                  <th className="py-2 pr-4 font-medium" />
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((r) => {
+                  const banned = r.banned_until && new Date(r.banned_until) > new Date();
+                  return (
+                    <tr
+                      key={r.id}
+                      className="border-b border-border/50 hover:bg-surface-elevated/40"
+                    >
+                      <td className="py-3 pr-4">
+                        {r.profile?.legal_first_name ?? r.profile?.display_name ?? "—"}{" "}
+                        {r.profile?.legal_last_name ?? ""}
+                      </td>
+                      <td className="py-3 pr-4 text-muted-foreground">{r.email}</td>
+                      <td className="py-3 pr-4">
+                        <div className="flex flex-wrap gap-1">
+                          {r.accounts.length === 0 && (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                          {r.accounts.map((a: any) => (
+                            <span
+                              key={a.id}
+                              className={`text-xs px-2 py-0.5 rounded-full border ${statusTone(a.status)}`}
+                            >
+                              {a.account_number} · {a.status}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-3 pr-4">
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full border ${statusTone(r.profile?.status === "approved" ? "active" : r.profile?.status === "rejected" ? "rejected" : "pending")}`}
+                        >
+                          {r.profile?.status ?? "incomplete"}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4">
+                        <span className={`text-xs ${banned ? "text-destructive" : "text-success"}`}>
+                          {banned ? "Disabled" : "Enabled"}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 text-muted-foreground text-xs">
+                        {new Date(r.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <button className={btn} onClick={() => setSelectedId(r.id)}>
+                          Manage
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </SectionCard>
+
+      {selectedId && (
+        <ClientDrawer
+          userId={selectedId}
+          isSuper={isSuper}
+          onClose={() => setSelectedId(null)}
+          onChanged={() => void refresh()}
+          onDeleted={() => {
+            setSelectedId(null);
+            void refresh();
+          }}
+        />
+      )}
+
+      <Toaster />
+    </>
+  );
+}
+
+function ClientDrawer({
+  userId,
+  isSuper,
+  onClose,
+  onChanged,
+  onDeleted,
+}: {
+  userId: string;
+  isSuper: boolean;
+  onClose: () => void;
+  onChanged: () => void;
+  onDeleted: () => void;
+}) {
+  const [data, setData] = useState<ClientDetail | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+  const [profile, setProfile] = useState<any>({});
+
+  const load = async () => {
+    try {
+      const d = await apiJson<ClientDetail>(
+        `/api/portal/clients-admin?action=detail&userId=${encodeURIComponent(userId)}`,
+      );
+      setData(d);
+      setProfile(d.profile ?? {});
+    } catch (e: any) {
+      toast.error(e?.message ?? "Load failed");
+    }
+  };
+
+  useEffect(() => {
+    void load();
+  }, [userId]);
+
+  const wrap = async (label: string, fn: () => Promise<any>) => {
+    setBusy(true);
+    try {
+      await fn();
+      toast.success(label);
+      await load();
+      onChanged();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Action failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const acctAction = (accountId: string, action: any) => {
+    let reason: string | undefined;
+    if (action === "suspend" || action === "reject" || action === "close") {
+      reason = window.prompt(`Reason for ${action}?`) ?? undefined;
+      if (action === "suspend" && !reason) return;
+    }
+    void wrap(`Account ${action}d`, () =>
+      apiJson("/api/portal/clients-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "updateAccountStatus",
+          payload: { accountId, action, reason },
+        }),
+      }),
+    );
+  };
+
+  const banned = data?.banned_until && new Date(data.banned_until) > new Date();
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex justify-end" onClick={onClose}>
+      <div
+        className="bg-background border-l border-border w-full max-w-2xl h-full overflow-y-auto p-6 flex flex-col gap-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {!data ? (
+          <div className="text-muted-foreground text-sm">Loading…</div>
+        ) : (
+          <>
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="text-xl font-semibold">
+                  {data.profile?.legal_first_name ?? ""} {data.profile?.legal_last_name ?? ""}
+                </h2>
+                <div className="text-sm text-muted-foreground">{data.email}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Joined {new Date(data.created_at).toLocaleDateString()} · Last sign-in{" "}
+                  {data.last_sign_in_at ? new Date(data.last_sign_in_at).toLocaleString() : "never"}
+                </div>
+              </div>
+              <button className={btn} onClick={onClose}>
+                Close
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                disabled={busy}
+                className={btn}
+                onClick={() =>
+                  void wrap("Reset email sent", () =>
+                    apiJson("/api/portal/clients-admin", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        action: "sendPasswordReset",
+                        payload: { email: data.email },
+                      }),
+                    }),
+                  )
+                }
+              >
+                Send password reset
+              </button>
+              <button
+                disabled={busy}
+                className={btn}
+                onClick={() =>
+                  void wrap(banned ? "Login enabled" : "Login disabled", () =>
+                    apiJson("/api/portal/clients-admin", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        action: "setClientLoginEnabled",
+                        payload: { userId, enabled: !!banned },
+                      }),
+                    }),
+                  )
+                }
+              >
+                {banned ? "Enable login" : "Disable login"}
+              </button>
+              <button
+                disabled={busy}
+                className={btnDanger}
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      "Deactivate client? This closes all accounts and disables login.",
+                    )
+                  )
+                    return;
+                  void wrap("Client deactivated", () =>
+                    apiJson("/api/portal/clients-admin", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ action: "deactivateClient", payload: { userId } }),
+                    }),
+                  );
+                }}
+              >
+                Deactivate client
+              </button>
+              {isSuper && (
+                <button
+                  disabled={busy}
+                  className={btnDanger}
+                  onClick={async () => {
+                    const c = window.prompt(
+                      'PERMANENTLY delete this client and ALL their data? Type "DELETE" to confirm.',
+                    );
+                    if (c !== "DELETE") return;
+                    setBusy(true);
+                    try {
+                      await apiJson("/api/portal/clients-admin", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          action: "deleteClient",
+                          payload: { userId, confirm: "DELETE" },
+                        }),
+                      });
+                      toast.success("Client permanently deleted");
+                      onDeleted();
+                    } catch (e: any) {
+                      toast.error(e?.message ?? "Delete failed");
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  ⚠ Delete permanently
+                </button>
+              )}
+            </div>
+
+            <SectionCard title="Profile">
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  className={field}
+                  placeholder="First name"
+                  value={profile.legal_first_name ?? ""}
+                  onChange={(e) => setProfile({ ...profile, legal_first_name: e.target.value })}
+                />
+                <input
+                  className={field}
+                  placeholder="Last name"
+                  value={profile.legal_last_name ?? ""}
+                  onChange={(e) => setProfile({ ...profile, legal_last_name: e.target.value })}
+                />
+                <div className="col-span-2">
+                  <IntlPhoneInput
+                    value={profile.phone ?? ""}
+                    onChange={(v) => setProfile({ ...profile, phone: v })}
+                    defaultCountry={profile.country_of_residence ?? "US"}
+                  />
+                </div>
+                <input
+                  className={field}
+                  type="date"
+                  value={profile.date_of_birth ?? ""}
+                  onChange={(e) => setProfile({ ...profile, date_of_birth: e.target.value })}
+                />
+                <input
+                  className={field}
+                  maxLength={4}
+                  placeholder="Tax ID last 4"
+                  value={profile.tax_id_last4 ?? ""}
+                  onChange={(e) => setProfile({ ...profile, tax_id_last4: e.target.value })}
+                />
+                <CountrySelect
+                  value={profile.country_of_residence}
+                  onChange={(c) => setProfile({ ...profile, country_of_residence: c })}
+                  includeBlank
+                />
+                <CountrySelect
+                  value={profile.nationality}
+                  onChange={(c) => setProfile({ ...profile, nationality: c })}
+                  includeBlank
+                />
+                <select
+                  className={field}
+                  value={profile.status ?? "incomplete"}
+                  onChange={(e) => setProfile({ ...profile, status: e.target.value })}
+                >
+                  <option value="incomplete">Incomplete</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+              <div className="mt-3 flex justify-end">
+                <button
+                  disabled={busy}
+                  className={btnPrimary}
+                  onClick={() =>
+                    void wrap("Profile saved", () =>
+                      apiJson("/api/portal/clients-admin", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          action: "updateProfile",
+                          payload: { userId, patch: profile },
+                        }),
+                      }),
+                    )
+                  }
+                >
+                  Save profile
+                </button>
+              </div>
+            </SectionCard>
+
+            <ClientSubPortfolios
+              userId={userId}
+              accounts={data.accounts as any[]}
+              onChanged={() => void load()}
+            />
+
+            <SectionCard
+              title="Accounts"
+              description="Approve onboarding, suspend, reactivate, or close."
+            >
+              {data.accounts.length === 0 && (
+                <div className="text-sm text-muted-foreground">No accounts.</div>
+              )}
+              <div className="flex flex-col gap-3">
+                {data.accounts.map((a: any) => (
+                  <div key={a.id} className="border border-border rounded-md p-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-medium text-sm">
+                          {a.account_number}{" "}
+                          <span className="text-muted-foreground">
+                            · {a.account_type} · {a.base_currency}
+                          </span>
+                        </div>
+                        <span
+                          className={`mt-1 inline-block text-xs px-2 py-0.5 rounded-full border ${statusTone(a.status)}`}
+                        >
+                          {a.status}
+                        </span>
+                        {a.suspension_reason && (
+                          <div className="text-xs text-orange-400 mt-1">
+                            Suspension: {a.suspension_reason}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 justify-end">
+                        {a.status === "pending" && (
+                          <>
+                            <button
+                              disabled={busy}
+                              className={btnPrimary}
+                              onClick={() => acctAction(a.id, "approve")}
+                            >
+                              Approve
+                            </button>
+                            <button
+                              disabled={busy}
+                              className={btnDanger}
+                              onClick={() => acctAction(a.id, "reject")}
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                        {a.status === "active" && (
+                          <button
+                            disabled={busy}
+                            className={btn}
+                            onClick={() => acctAction(a.id, "suspend")}
+                          >
+                            Suspend
+                          </button>
+                        )}
+                        {a.status === "suspended" && (
+                          <button
+                            disabled={busy}
+                            className={btnPrimary}
+                            onClick={() => acctAction(a.id, "reactivate")}
+                          >
+                            Reactivate
+                          </button>
+                        )}
+                        {a.status !== "closed" && (
+                          <button
+                            disabled={busy}
+                            className={btnDanger}
+                            onClick={() => acctAction(a.id, "close")}
+                          >
+                            Close
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+
+            <SectionCard title="KYC documents">
+              {data.kyc_documents.length === 0 && (
+                <div className="text-sm text-muted-foreground">No documents submitted.</div>
+              )}
+              <div className="flex flex-col gap-2">
+                {data.kyc_documents.map((d: any) => (
+                  <div
+                    key={d.id}
+                    className="flex justify-between items-center border-b border-border/50 py-2 text-sm"
+                  >
+                    <div>
+                      <div>{d.doc_type}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(d.submitted_at).toLocaleString()}
+                      </div>
+                    </div>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full border ${statusTone(d.status === "approved" ? "active" : d.status === "rejected" ? "rejected" : "pending")}`}
+                    >
+                      {d.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Internal notes">
+              <div className="flex gap-2 mb-3">
+                <input
+                  className={field}
+                  placeholder="Add note (admin-only)…"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                />
+                <button
+                  disabled={busy || !note.trim()}
+                  className={btnPrimary}
+                  onClick={() =>
+                    void wrap("Note added", async () => {
+                      await apiJson("/api/portal/clients-admin", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          action: "addClientNote",
+                          payload: { userId, note },
+                        }),
+                      });
+                      setNote("");
+                    })
+                  }
+                >
+                  Add
+                </button>
+              </div>
+              <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+                {data.notes.length === 0 && (
+                  <div className="text-xs text-muted-foreground">No notes yet.</div>
+                )}
+                {data.notes.map((n: any) => (
+                  <div key={n.id} className="text-sm border border-border rounded-md p-2">
+                    <div>{n.note}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {new Date(n.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

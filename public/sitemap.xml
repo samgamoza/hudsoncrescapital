@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://hudsoncrest.example/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://hudsoncrest.example/about</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://hudsoncrest.example/approach</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://hudsoncrest.example/strategies</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://hudsoncrest.example/technology</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://hudsoncrest.example/global-desks</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://hudsoncrest.example/performance</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://hudsoncrest.example/insights</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://hudsoncrest.example/careers</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://hudsoncrest.example/contact</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://hudsoncrest.example/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://hudsoncrest.example/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://hudsoncrest.example/disclosures</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+</urlset>

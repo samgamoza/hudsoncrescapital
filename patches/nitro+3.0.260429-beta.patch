@@ -1,0 +1,13 @@
+diff --git a/node_modules/nitro/dist/runtime/internal/vite/dev-worker.mjs b/node_modules/nitro/dist/runtime/internal/vite/dev-worker.mjs
+index 0cf82a1..a701bc6 100644
+--- a/node_modules/nitro/dist/runtime/internal/vite/dev-worker.mjs
++++ b/node_modules/nitro/dist/runtime/internal/vite/dev-worker.mjs
+@@ -67,7 +67,7 @@ class ViteEnvRunner {
+     if (this.entryError) {
+       return renderError(req, this.entryError);
+     }
+-    for (let i = 0; i < 5 && !(this.entry || this.entryError); i++) {
++    for (let i = 0; i < 10 && !(this.entry || this.entryError); i++) {
+       await new Promise((r) => setTimeout(r, 100 * Math.pow(2, i)));
+     }
+     if (this.entryError) {

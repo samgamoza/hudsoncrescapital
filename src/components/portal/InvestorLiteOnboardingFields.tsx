@@ -1,0 +1,273 @@
+import type { FormEvent, ReactNode } from "react";
+import { CountrySelect, IntlPhoneInput } from "@/components/portal/IntlPhoneInput";
+
+export type InvestorLitePayload = {
+  legal_first_name: string;
+  legal_last_name: string;
+  phone: string;
+  country_of_residence: string;
+  nationality: string;
+  employment_status:
+    | "employed"
+    | "self_employed"
+    | "retired"
+    | "student"
+    | "unemployed"
+    | "other";
+  investment_experience: "none" | "limited" | "moderate" | "extensive";
+  investor_background: string;
+  investment_goals: string;
+  investment_goal_tags: string[];
+  base_currency: "USD" | "EUR" | "GBP";
+};
+
+const GOAL_OPTIONS = [
+  { id: "growth" as const, label: "Growth" },
+  { id: "income" as const, label: "Income" },
+  { id: "capital_preservation" as const, label: "Capital preservation" },
+  { id: "speculation" as const, label: "Speculation" },
+  { id: "hedging" as const, label: "Hedging" },
+  { id: "diversification" as const, label: "Diversification" },
+];
+
+const inputClass =
+  "w-full bg-surface border border-border rounded-md px-3 py-2 text-foreground placeholder:text-muted-foreground";
+
+type Props = {
+  values: InvestorLitePayload;
+  onChange: (next: InvestorLitePayload) => void;
+  disabled?: boolean;
+  showCurrency?: boolean;
+  formId?: string;
+  onSubmit?: (e: FormEvent) => void;
+  submitLabel: string;
+  busy?: boolean;
+  /** Extra controls associated with the same form (use `form` attribute matching `formId`). */
+  top?: ReactNode;
+};
+
+export function InvestorLiteOnboardingFields({
+  values,
+  onChange,
+  disabled,
+  showCurrency = true,
+  formId,
+  onSubmit,
+  submitLabel,
+  busy,
+  top,
+}: Props) {
+  const set = <K extends keyof InvestorLitePayload>(key: K, v: InvestorLitePayload[K]) =>
+    onChange({ ...values, [key]: v });
+
+  const toggleTag = (tag: string) => {
+    const setTags = new Set(values.investment_goal_tags);
+    if (setTags.has(tag)) setTags.delete(tag);
+    else setTags.add(tag);
+    set("investment_goal_tags", [...setTags]);
+  };
+
+  return (
+    <form id={formId} className="flex flex-col gap-4" onSubmit={onSubmit}>
+      {top ? <div className="flex flex-col gap-4">{top}</div> : null}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs uppercase tracking-wider text-muted-foreground">First name</label>
+          <input
+            required
+            disabled={disabled}
+            value={values.legal_first_name}
+            onChange={(e) => set("legal_first_name", e.target.value)}
+            className={`mt-1 ${inputClass}`}
+            placeholder="Jane"
+          />
+        </div>
+        <div>
+          <label className="text-xs uppercase tracking-wider text-muted-foreground">Last name</label>
+          <input
+            required
+            disabled={disabled}
+            value={values.legal_last_name}
+            onChange={(e) => set("legal_last_name", e.target.value)}
+            className={`mt-1 ${inputClass}`}
+            placeholder="Doe"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="text-xs uppercase tracking-wider text-muted-foreground">
+          Country of residence
+        </label>
+        <div className="mt-1">
+          <CountrySelect
+            value={values.country_of_residence}
+            onChange={(c) => set("country_of_residence", c)}
+            disabled={disabled}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="text-xs uppercase tracking-wider text-muted-foreground">Nationality</label>
+        <div className="mt-1">
+          <CountrySelect
+            value={values.nationality}
+            onChange={(c) => set("nationality", c)}
+            disabled={disabled}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="text-xs uppercase tracking-wider text-muted-foreground">Phone</label>
+        <IntlPhoneInput
+          className="mt-1"
+          value={values.phone}
+          onChange={(p) => set("phone", p)}
+          country={values.country_of_residence || undefined}
+          disabled={disabled}
+        />
+      </div>
+
+      {showCurrency && (
+        <div>
+          <label className="text-xs uppercase tracking-wider text-muted-foreground">
+            Primary account currency
+          </label>
+          <select
+            disabled={disabled}
+            value={values.base_currency}
+            onChange={(e) => set("base_currency", e.target.value as InvestorLitePayload["base_currency"])}
+            className={`mt-1 ${inputClass}`}
+          >
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+          </select>
+        </div>
+      )}
+
+      <div>
+        <label className="text-xs uppercase tracking-wider text-muted-foreground">Employment status</label>
+        <select
+          required
+          disabled={disabled}
+          value={values.employment_status}
+          onChange={(e) =>
+            set("employment_status", e.target.value as InvestorLitePayload["employment_status"])
+          }
+          className={`mt-1 ${inputClass}`}
+        >
+          <option value="employed">Employed</option>
+          <option value="self_employed">Self-employed</option>
+          <option value="retired">Retired</option>
+          <option value="student">Student</option>
+          <option value="unemployed">Unemployed</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="text-xs uppercase tracking-wider text-muted-foreground">
+          Investment experience
+        </label>
+        <select
+          required
+          disabled={disabled}
+          value={values.investment_experience}
+          onChange={(e) =>
+            set(
+              "investment_experience",
+              e.target.value as InvestorLitePayload["investment_experience"],
+            )
+          }
+          className={`mt-1 ${inputClass}`}
+        >
+          <option value="none">None</option>
+          <option value="limited">Limited</option>
+          <option value="moderate">Moderate</option>
+          <option value="extensive">Extensive</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="text-xs uppercase tracking-wider text-muted-foreground">
+          Investor background <span className="normal-case font-normal">(optional)</span>
+        </label>
+        <textarea
+          disabled={disabled}
+          value={values.investor_background}
+          onChange={(e) => set("investor_background", e.target.value)}
+          rows={4}
+          className={`mt-1 resize-y min-h-[96px] ${inputClass}`}
+          placeholder="Brief context on your professional background or investing history."
+        />
+      </div>
+
+      <div>
+        <label className="text-xs uppercase tracking-wider text-muted-foreground">
+          Investment goals
+        </label>
+        <textarea
+          required
+          disabled={disabled}
+          value={values.investment_goals}
+          onChange={(e) => set("investment_goals", e.target.value)}
+          rows={5}
+          minLength={20}
+          className={`mt-1 resize-y min-h-[120px] ${inputClass}`}
+          placeholder="Describe what you want to achieve with your investments (at least a few sentences)."
+        />
+        <p className="text-[11px] text-muted-foreground mt-1">Minimum 20 characters.</p>
+      </div>
+
+      <div>
+        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+          Goal focus <span className="normal-case font-normal">(optional)</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {GOAL_OPTIONS.map((g) => (
+            <label
+              key={g.id}
+              className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                disabled={disabled}
+                checked={values.investment_goal_tags.includes(g.id)}
+                onChange={() => toggleTag(g.id)}
+                className="rounded border-border"
+              />
+              {g.label}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {onSubmit && (
+        <button
+          type="submit"
+          disabled={busy || disabled}
+          className="mt-2 bg-gradient-brand text-brand-foreground font-medium rounded-md px-4 py-2.5 shadow-glow hover:opacity-90 disabled:opacity-50"
+        >
+          {busy ? "Please wait…" : submitLabel}
+        </button>
+      )}
+    </form>
+  );
+}
+
+export const defaultInvestorLiteValues = (): InvestorLitePayload => ({
+  legal_first_name: "",
+  legal_last_name: "",
+  phone: "",
+  country_of_residence: "",
+  nationality: "",
+  employment_status: "employed",
+  investment_experience: "moderate",
+  investor_background: "",
+  investment_goals: "",
+  investment_goal_tags: [],
+  base_currency: "USD",
+});
