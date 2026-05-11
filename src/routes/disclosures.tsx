@@ -62,8 +62,8 @@ function DisclosuresPage() {
             <h2 className="mt-8 text-xl font-semibold text-foreground">Form ADV & Brochure</h2>
             <p className="mt-2">
               Our Form ADV Part 2A brochure is available on request. Contact{" "}
-              <a className="text-brand" href="mailto:compliance@hudsoncrest.example">
-                compliance@hudsoncrest.example
+              <a className="text-brand" href="mailto:compliance@hudsoncrestcapital.com">
+                compliance@hudsoncrestcapital.com
               </a>{" "}
               for a copy.
             </p>

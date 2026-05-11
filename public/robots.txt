@@ -3,4 +3,4 @@ Allow: /
 Disallow: /portal/
 Disallow: /api/
 
-Sitemap: https://hudsoncrest.example/sitemap.xml
+Sitemap: https://hudsoncrestcapital.com/sitemap.xml

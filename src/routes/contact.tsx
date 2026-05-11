@@ -42,21 +42,21 @@ const OFFICES = [
     role: "Global Headquarters",
     addr: ["200 Hudson Street, 22nd Floor", "New York, NY 10013, USA"],
     phone: "+1 (212) 555-0142",
-    email: "newyork@hudsoncrest.example",
+    email: "newyork@hudsoncrestcapital.com",
   },
   {
     city: "London",
     role: "EMEA Hub",
     addr: ["10 Bishopsgate, Level 18", "London EC2N 4AY, United Kingdom"],
     phone: "+44 20 7946 0188",
-    email: "london@hudsoncrest.example",
+    email: "london@hudsoncrestcapital.com",
   },
   {
     city: "Singapore",
     role: "Asia-Pacific Hub",
     addr: ["1 Raffles Place, Tower 2 #28-01", "Singapore 048616"],
     phone: "+65 6812 5400",
-    email: "singapore@hudsoncrest.example",
+    email: "singapore@hudsoncrestcapital.com",
   },
 ];
 
@@ -65,25 +65,25 @@ const DEPARTMENTS = [
     icon: Building2,
     title: "Investor Relations",
     desc: "Allocations, fund documentation, and performance reporting.",
-    email: "investors@hudsoncrest.example",
+    email: "investors@hudsoncrestcapital.com",
   },
   {
     icon: Globe,
     title: "Institutional Partnerships",
     desc: "Strategic partnerships and bespoke mandates.",
-    email: "partnerships@hudsoncrest.example",
+    email: "partnerships@hudsoncrestcapital.com",
   },
   {
     icon: Mail,
     title: "Media & Press",
     desc: "Press inquiries, interviews, and speaking requests.",
-    email: "press@hudsoncrest.example",
+    email: "press@hudsoncrestcapital.com",
   },
   {
     icon: CheckCircle2,
     title: "Careers",
     desc: "General talent inquiries and recruiting questions.",
-    email: "careers@hudsoncrest.example",
+    email: "careers@hudsoncrestcapital.com",
   },
 ];
 

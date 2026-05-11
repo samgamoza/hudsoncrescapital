@@ -23,6 +23,8 @@ function createSupabaseClient() {
       storage: typeof window !== 'undefined' ? localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
+      // Parse #access_token (and PKCE ?code when used) after email redirects
+      detectSessionInUrl: true,
     }
   });
 }

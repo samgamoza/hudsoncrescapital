@@ -83,7 +83,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="mailto:investors@hudsoncrest.example" className="hover:text-foreground">
+                <a href="mailto:investors@hudsoncrestcapital.com" className="hover:text-foreground">
                   Investor Relations
                 </a>
               </li>
@@ -136,7 +136,7 @@ export function Footer() {
                 <Youtube className="h-4 w-4" />
               </a>
               <a
-                href="mailto:investors@hudsoncrest.example"
+                href="mailto:investors@hudsoncrestcapital.com"
                 aria-label="Email investor relations"
                 className="hover:text-foreground"
               >

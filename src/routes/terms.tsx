@@ -75,8 +75,8 @@ function TermsPage() {
             <h2 className="mt-8 text-xl font-semibold text-foreground">7. Contact</h2>
             <p className="mt-2">
               Questions about these Terms? Email{" "}
-              <a className="text-brand" href="mailto:legal@hudsoncrest.example">
-                legal@hudsoncrest.example
+              <a className="text-brand" href="mailto:legal@hudsoncrestcapital.com">
+                legal@hudsoncrestcapital.com
               </a>
               .
             </p>

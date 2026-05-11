@@ -16,8 +16,8 @@ export const Route = createFileRoute("/api/public/resolve-login-email")({
           }
 
           const body = await readJsonBody<{ identifier?: string }>(request);
-          const { resolveLoginEmail } = await import("@/server/clients.functions");
-          const data = await resolveLoginEmail({ data: { identifier: body.identifier ?? "" } });
+          const { resolveLoginEmailForApi } = await import("@/server/clients.functions");
+          const data = await resolveLoginEmailForApi({ identifier: body.identifier ?? "" });
           return Response.json(data);
         } catch (error) {
           return apiErrorResponse(error);

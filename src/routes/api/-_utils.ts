@@ -49,24 +49,33 @@ export function apiErrorResponse(error: unknown): Response {
   }
 
   const message = error instanceof Error ? error.message : String(error);
-  if (message.toLowerCase().includes("forbidden")) {
+  const lower = message.toLowerCase();
+
+  // TanStack server-fn manifest mismatch — do not treat as generic "not found" (400).
+  if (lower.includes("server function info not found")) {
+    console.error("[api]", message);
+    return Response.json(
+      {
+        error: "Internal server error",
+        hint: "Server function wiring mismatch. Use plain *ForApi handlers for /api routes instead of createServerFn().",
+      },
+      { status: 500 },
+    );
+  }
+
+  if (lower.includes("forbidden")) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
-  if (
-    message.toLowerCase().includes("unauthorized") ||
-    message.toLowerCase().includes("invalid token")
-  ) {
+  if (lower.includes("unauthorized") || lower.includes("invalid token")) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (
-    message.toLowerCase().includes("not found") ||
-    message.toLowerCase().includes("already reviewed") ||
-    message.toLowerCase().includes("insufficient")
+    lower.includes("not found") ||
+    lower.includes("already reviewed") ||
+    lower.includes("insufficient")
   ) {
     return Response.json({ error: message }, { status: 400 });
   }
-
-  const lower = message.toLowerCase();
 
   if (lower.includes("missing supabase environment variable")) {
     console.error("[api]", message);

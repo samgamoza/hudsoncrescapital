@@ -158,7 +158,7 @@ export function PortalLoginForm({ audience, fromRouteId }: Props) {
           email: loginEmail,
           password,
           options: {
-            emailRedirectTo: `${appOrigin}${redirectPath}`,
+            emailRedirectTo: `${appOrigin}/auth/confirm?next=${encodeURIComponent(redirectPath)}`,
             data: {
               legal_first_name: firstName.trim(),
               legal_last_name: lastName.trim(),

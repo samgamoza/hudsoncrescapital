@@ -29,6 +29,7 @@ import { Route as PortalResetPasswordRouteImport } from './routes/portal.reset-p
 import { Route as PortalLoginRouteImport } from './routes/portal.login'
 import { Route as PortalInvestorRouteImport } from './routes/portal.investor'
 import { Route as PortalAdminRouteImport } from './routes/portal.admin'
+import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as PortalInvestorIndexRouteImport } from './routes/portal.investor.index'
 import { Route as PortalAdminIndexRouteImport } from './routes/portal.admin.index'
 import { Route as PortalSignupInvestorRouteImport } from './routes/portal.signup_.investor'
@@ -184,6 +185,11 @@ const PortalInvestorRoute = PortalInvestorRouteImport.update({
 const PortalAdminRoute = PortalAdminRouteImport.update({
   id: '/portal/admin',
   path: '/portal/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/auth/confirm',
+  path: '/auth/confirm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalInvestorIndexRoute = PortalInvestorIndexRouteImport.update({
@@ -496,6 +502,7 @@ export interface FileRoutesByFullPath {
   '/strategies': typeof StrategiesRoute
   '/technology': typeof TechnologyRoute
   '/terms': typeof TermsRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/portal/admin': typeof PortalAdminRouteWithChildren
   '/portal/investor': typeof PortalInvestorRouteWithChildren
   '/portal/login': typeof PortalLoginRouteWithChildren
@@ -574,6 +581,7 @@ export interface FileRoutesByTo {
   '/strategies': typeof StrategiesRoute
   '/technology': typeof TechnologyRoute
   '/terms': typeof TermsRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/portal/login': typeof PortalLoginRouteWithChildren
   '/portal/reset-password': typeof PortalResetPasswordRoute
   '/portal/trade-workspace': typeof PortalTradeWorkspaceRoute
@@ -651,6 +659,7 @@ export interface FileRoutesById {
   '/strategies': typeof StrategiesRoute
   '/technology': typeof TechnologyRoute
   '/terms': typeof TermsRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/portal/admin': typeof PortalAdminRouteWithChildren
   '/portal/investor': typeof PortalInvestorRouteWithChildren
   '/portal/login': typeof PortalLoginRouteWithChildren
@@ -731,6 +740,7 @@ export interface FileRouteTypes {
     | '/strategies'
     | '/technology'
     | '/terms'
+    | '/auth/confirm'
     | '/portal/admin'
     | '/portal/investor'
     | '/portal/login'
@@ -809,6 +819,7 @@ export interface FileRouteTypes {
     | '/strategies'
     | '/technology'
     | '/terms'
+    | '/auth/confirm'
     | '/portal/login'
     | '/portal/reset-password'
     | '/portal/trade-workspace'
@@ -885,6 +896,7 @@ export interface FileRouteTypes {
     | '/strategies'
     | '/technology'
     | '/terms'
+    | '/auth/confirm'
     | '/portal/admin'
     | '/portal/investor'
     | '/portal/login'
@@ -964,6 +976,7 @@ export interface RootRouteChildren {
   StrategiesRoute: typeof StrategiesRoute
   TechnologyRoute: typeof TechnologyRoute
   TermsRoute: typeof TermsRoute
+  AuthConfirmRoute: typeof AuthConfirmRoute
   PortalAdminRoute: typeof PortalAdminRouteWithChildren
   PortalInvestorRoute: typeof PortalInvestorRouteWithChildren
   PortalLoginRoute: typeof PortalLoginRouteWithChildren
@@ -1144,6 +1157,13 @@ declare module '@tanstack/react-router' {
       path: '/portal/admin'
       fullPath: '/portal/admin'
       preLoaderRoute: typeof PortalAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/confirm': {
+      id: '/auth/confirm'
+      path: '/auth/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portal/investor/': {
@@ -1634,6 +1654,7 @@ const rootRouteChildren: RootRouteChildren = {
   StrategiesRoute: StrategiesRoute,
   TechnologyRoute: TechnologyRoute,
   TermsRoute: TermsRoute,
+  AuthConfirmRoute: AuthConfirmRoute,
   PortalAdminRoute: PortalAdminRouteWithChildren,
   PortalInvestorRoute: PortalInvestorRouteWithChildren,
   PortalLoginRoute: PortalLoginRouteWithChildren,

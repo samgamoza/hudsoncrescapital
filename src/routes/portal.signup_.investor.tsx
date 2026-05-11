@@ -167,7 +167,7 @@ function InvestorSignupPage() {
         email: loginEmail,
         password,
         options: {
-          emailRedirectTo: `${appOrigin}/portal/login/investor`,
+          emailRedirectTo: `${appOrigin}/auth/confirm?next=${encodeURIComponent("/portal/login/investor")}`,
           data: {
             legal_first_name: lite.legal_first_name.trim(),
             legal_last_name: lite.legal_last_name.trim(),
@@ -273,7 +273,7 @@ function InvestorSignupPage() {
         <div className="flex flex-1 flex-col bg-card p-6 sm:p-8 lg:p-10">
           <div className="mb-6">
             <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
-              Open Investor Account
+              OPEN INVESTOR ACCOUNT
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Step {step + 1} of {STEPS.length}

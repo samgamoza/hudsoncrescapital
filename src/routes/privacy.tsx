@@ -69,8 +69,8 @@ function PrivacyPage() {
             <p className="mt-2">
               Depending on jurisdiction (GDPR, UK GDPR, CCPA), you may request access, correction,
               deletion, or portability of your personal data. Contact{" "}
-              <a className="text-brand" href="mailto:privacy@hudsoncrest.example">
-                privacy@hudsoncrest.example
+              <a className="text-brand" href="mailto:privacy@hudsoncrestcapital.com">
+                privacy@hudsoncrestcapital.com
               </a>
               .
             </p>
