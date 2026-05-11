@@ -4,12 +4,26 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const financialProfileSchema = z.object({
-  employment_status: z.enum(["employed", "self_employed", "retired", "student", "unemployed", "other"]),
+  employment_status: z.enum([
+    "employed",
+    "self_employed",
+    "retired",
+    "student",
+    "unemployed",
+    "other",
+  ]),
   employer: z.string().trim().max(200).optional(),
   occupation: z.string().trim().max(200).optional(),
   annual_income: z.enum(["under_50k", "50k_100k", "100k_250k", "250k_500k", "500k_1m", "over_1m"]),
   net_worth: z.enum(["under_50k", "50k_250k", "250k_1m", "1m_5m", "over_5m"]),
-  source_of_funds: z.enum(["employment", "savings", "investments", "inheritance", "business", "other"]),
+  source_of_funds: z.enum([
+    "employment",
+    "savings",
+    "investments",
+    "inheritance",
+    "business",
+    "other",
+  ]),
   investment_experience: z.enum(["none", "limited", "moderate", "extensive"]),
   risk_tolerance: z.enum(["conservative", "moderate", "aggressive"]),
   investment_objectives: z.array(z.string().max(50)).max(10).default([]),
@@ -41,21 +55,19 @@ export const submitAccountApplication = createServerFn({ method: "POST" })
     const { userId } = context;
 
     // 1. Upsert profile fields
-    const { error: profErr } = await supabaseAdmin
-      .from("profiles")
-      .upsert(
-        {
-          user_id: userId,
-          legal_first_name: data.legal_first_name,
-          legal_last_name: data.legal_last_name,
-          date_of_birth: data.date_of_birth,
-          phone: data.phone,
-          country_of_residence: data.country_of_residence.toUpperCase(),
-          nationality: data.nationality.toUpperCase(),
-          status: "submitted",
-        },
-        { onConflict: "user_id" },
-      );
+    const { error: profErr } = await supabaseAdmin.from("profiles").upsert(
+      {
+        user_id: userId,
+        legal_first_name: data.legal_first_name,
+        legal_last_name: data.legal_last_name,
+        date_of_birth: data.date_of_birth,
+        phone: data.phone,
+        country_of_residence: data.country_of_residence.toUpperCase(),
+        nationality: data.nationality.toUpperCase(),
+        status: "submitted",
+      },
+      { onConflict: "user_id" },
+    );
     if (profErr) throw new Error(`Profile save failed: ${profErr.message}`);
 
     // 2. Generate a human-readable account number
@@ -104,14 +116,13 @@ export const getMyApplicationStatus = createServerFn({ method: "GET" })
     const [accountsQ, profileQ, kycQ] = await Promise.all([
       supabaseAdmin
         .from("accounts")
-        .select("id, account_number, status, account_type, base_currency, created_at, opened_at, suspension_reason")
+        .select(
+          "id, account_number, status, account_type, base_currency, created_at, opened_at, suspension_reason",
+        )
         .eq("user_id", userId)
         .order("created_at", { ascending: false }),
       supabaseAdmin.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
-      supabaseAdmin
-        .from("kyc_documents")
-        .select("doc_type, status")
-        .eq("user_id", userId),
+      supabaseAdmin.from("kyc_documents").select("doc_type, status").eq("user_id", userId),
     ]);
     return {
       accounts: accountsQ.data ?? [],
@@ -135,17 +146,12 @@ export const investorOnboardingLiteSchema = z.object({
   phone: z.string().trim().min(5).max(40),
   country_of_residence: z.string().trim().length(2),
   nationality: z.string().trim().length(2),
-  employment_status: z.enum([
-    "employed",
-    "self_employed",
-    "retired",
-    "student",
-    "unemployed",
-    "other",
-  ]),
-  investment_experience: z.enum(["none", "limited", "moderate", "extensive"]),
+  employment_status: z
+    .enum(["employed", "self_employed", "retired", "student", "unemployed", "other"])
+    .optional(),
+  investment_experience: z.enum(["none", "limited", "moderate", "extensive"]).optional(),
   investor_background: z.string().trim().max(2000).optional(),
-  investment_goals: z.string().trim().min(20).max(4000),
+  investment_goals: z.string().trim().max(4000).optional(),
   investment_goal_tags: z.array(goalTagSchema).max(8).optional(),
   base_currency: z.enum(["USD", "EUR", "GBP"]).default("USD"),
 });
@@ -174,10 +180,12 @@ export const submitInvestorOnboardingLite = createServerFn({ method: "POST" })
     if (profErr) throw new Error(`Profile save failed: ${profErr.message}`);
 
     const onboardingLite = {
-      employment_status: data.employment_status,
-      investment_experience: data.investment_experience,
-      investor_background: data.investor_background ?? null,
-      investment_goals: data.investment_goals,
+      employment_status: data.employment_status ?? null,
+      investment_experience: data.investment_experience ?? null,
+      investor_background: data.investor_background?.trim()
+        ? data.investor_background.trim()
+        : null,
+      investment_goals: data.investment_goals?.trim() ? data.investment_goals.trim() : null,
       investment_goal_tags: data.investment_goal_tags ?? [],
       completed_at: new Date().toISOString(),
     };

@@ -11,6 +11,7 @@ import {
 import logo from "@/assets/logo.png";
 import { CountrySelect, IntlPhoneInput } from "@/components/portal/IntlPhoneInput";
 import { isValidE164 } from "@/lib/countries";
+import { getPublicAppOrigin } from "@/lib/site-origin";
 
 export type PortalAudience = "investor" | "admin";
 
@@ -18,13 +19,6 @@ interface Props {
   audience: PortalAudience;
   /** route id used for typed useSearch — e.g. "/portal/investor/login" */
   fromRouteId: "/portal/login_/investor" | "/portal/login_/admin" | "/portal/login";
-}
-
-function getPublicAppOrigin() {
-  const configured = import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined;
-  if (configured) return configured.replace(/\/+$/, "");
-  if (typeof window !== "undefined") return window.location.origin;
-  return "";
 }
 
 function getEmailDomain(email: string): string {

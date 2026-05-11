@@ -59,11 +59,10 @@ function InvestorOnboardingPage() {
           phone: p?.phone ?? "",
           country_of_residence: p?.country_of_residence ?? "",
           nationality: p?.nationality ?? "",
-          employment_status:
-            (ol?.employment_status as InvestorLitePayload["employment_status"]) ?? "employed",
-          investment_experience:
-            (ol?.investment_experience as InvestorLitePayload["investment_experience"]) ??
-            "moderate",
+          employment_status: (ol?.employment_status ??
+            "") as InvestorLitePayload["employment_status"],
+          investment_experience: (ol?.investment_experience ??
+            "") as InvestorLitePayload["investment_experience"],
           investor_background: ol?.investor_background ?? "",
           investment_goals: ol?.investment_goals ?? "",
           investment_goal_tags: Array.isArray(ol?.investment_goal_tags)
@@ -87,19 +86,16 @@ function InvestorOnboardingPage() {
       if (!lite.nationality) throw new Error("Nationality is required.");
       if (!lite.phone || !isValidE164(lite.phone))
         throw new Error("A valid international phone number is required.");
-      if (lite.investment_goals.trim().length < 20)
-        throw new Error("Investment goals must be at least 20 characters.");
-
       const payload = {
         legal_first_name: lite.legal_first_name.trim(),
         legal_last_name: lite.legal_last_name.trim(),
         phone: lite.phone.trim(),
         country_of_residence: lite.country_of_residence,
         nationality: lite.nationality,
-        employment_status: lite.employment_status,
-        investment_experience: lite.investment_experience,
+        employment_status: lite.employment_status || undefined,
+        investment_experience: lite.investment_experience || undefined,
         investor_background: lite.investor_background.trim() || undefined,
-        investment_goals: lite.investment_goals.trim(),
+        investment_goals: lite.investment_goals.trim() || undefined,
         investment_goal_tags:
           lite.investment_goal_tags.length > 0 ? lite.investment_goal_tags : undefined,
         base_currency: lite.base_currency,

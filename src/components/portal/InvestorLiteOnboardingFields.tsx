@@ -8,8 +8,15 @@ export type InvestorLitePayload = {
   phone: string;
   country_of_residence: string;
   nationality: string;
-  employment_status: "employed" | "self_employed" | "retired" | "student" | "unemployed" | "other";
-  investment_experience: "none" | "limited" | "moderate" | "extensive";
+  employment_status:
+    | ""
+    | "employed"
+    | "self_employed"
+    | "retired"
+    | "student"
+    | "unemployed"
+    | "other";
+  investment_experience: "" | "none" | "limited" | "moderate" | "extensive";
   investor_background: string;
   investment_goals: string;
   investment_goal_tags: string[];
@@ -167,10 +174,9 @@ export function InvestorLiteOnboardingFields({
         <>
           <div>
             <label className="text-xs uppercase tracking-wider text-muted-foreground">
-              Employment status
+              Employment status <span className="normal-case font-normal">(optional)</span>
             </label>
             <select
-              required
               disabled={disabled}
               value={values.employment_status}
               onChange={(e) =>
@@ -178,6 +184,7 @@ export function InvestorLiteOnboardingFields({
               }
               className={`mt-1 ${inputClass}`}
             >
+              <option value="">Prefer not to say</option>
               <option value="employed">Employed</option>
               <option value="self_employed">Self employed</option>
               <option value="retired">Retired</option>
@@ -189,10 +196,9 @@ export function InvestorLiteOnboardingFields({
 
           <div>
             <label className="text-xs uppercase tracking-wider text-muted-foreground">
-              Investment experience
+              Investment experience <span className="normal-case font-normal">(optional)</span>
             </label>
             <select
-              required
               disabled={disabled}
               value={values.investment_experience}
               onChange={(e) =>
@@ -203,6 +209,7 @@ export function InvestorLiteOnboardingFields({
               }
               className={`mt-1 ${inputClass}`}
             >
+              <option value="">Prefer not to say</option>
               <option value="none">None</option>
               <option value="limited">Limited</option>
               <option value="moderate">Moderate</option>
@@ -226,19 +233,16 @@ export function InvestorLiteOnboardingFields({
 
           <div>
             <label className="text-xs uppercase tracking-wider text-muted-foreground">
-              Investment goals
+              Investment goals <span className="normal-case font-normal">(optional)</span>
             </label>
             <textarea
-              required
               disabled={disabled}
               value={values.investment_goals}
               onChange={(e) => set("investment_goals", e.target.value)}
               rows={5}
-              minLength={20}
               className={`mt-1 resize-y min-h-[120px] ${inputClass}`}
-              placeholder="Describe what you want to achieve with your investments (at least a few sentences)."
+              placeholder="Optional: describe what you want to achieve with your investments."
             />
-            <p className="text-[11px] text-muted-foreground mt-1">Minimum 20 characters.</p>
           </div>
 
           <div>
@@ -296,8 +300,8 @@ export const defaultInvestorLiteValues = (): InvestorLitePayload => ({
   phone: "",
   country_of_residence: "",
   nationality: "",
-  employment_status: "employed",
-  investment_experience: "moderate",
+  employment_status: "",
+  investment_experience: "",
   investor_background: "",
   investment_goals: "",
   investment_goal_tags: [],

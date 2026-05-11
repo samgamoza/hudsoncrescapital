@@ -116,6 +116,9 @@ export function formatPortalAuthError(message?: string | null): string {
   if (normalized.includes("user already registered") || normalized.includes("already registered")) {
     return "This email is already registered. Please sign in instead, or use Forgot password.";
   }
+  if (normalized.includes("rate limit") && normalized.includes("email")) {
+    return "Too many emails were sent to this address in a short time (provider rate limit). Wait about an hour, then use “Forgot password” or try signing up again. Avoid double-clicking submit.";
+  }
   if (normalized.includes("permission denied for function has_role")) {
     return "Portal access is being updated. Please try signing in again.";
   }

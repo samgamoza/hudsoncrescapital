@@ -3,6 +3,7 @@ import { type FormEvent, useState } from "react";
 import { Check, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensurePortalRole, formatPortalAuthError, resolvePortalRedirect } from "@/lib/portal-auth";
+import { getPublicAppOrigin } from "@/lib/site-origin";
 import { isValidE164 } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
@@ -39,6 +40,7 @@ const STEPS = [
 ] as const;
 
 const EMPLOYMENT_LABELS: Record<InvestorLitePayload["employment_status"], string> = {
+  "": "Not specified",
   employed: "Employed",
   self_employed: "Self employed",
   retired: "Retired",
@@ -48,6 +50,7 @@ const EMPLOYMENT_LABELS: Record<InvestorLitePayload["employment_status"], string
 };
 
 const EXPERIENCE_LABELS: Record<InvestorLitePayload["investment_experience"], string> = {
+  "": "Not specified",
   none: "None",
   limited: "Limited",
   moderate: "Moderate",
@@ -56,13 +59,6 @@ const EXPERIENCE_LABELS: Record<InvestorLitePayload["investment_experience"], st
 
 const inputClass =
   "w-full bg-surface border border-border rounded-md px-3 py-2 text-foreground placeholder:text-muted-foreground";
-
-function getPublicAppOrigin() {
-  const configured = import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined;
-  if (configured) return configured.replace(/\/+$/, "");
-  if (typeof window !== "undefined") return window.location.origin;
-  return "";
-}
 
 function getEmailDomain(email: string): string {
   const idx = email.lastIndexOf("@");
@@ -122,11 +118,6 @@ function InvestorSignupPage() {
       if (!lite.nationality) return "Nationality is required.";
       if (!lite.phone || !isValidE164(lite.phone))
         return "A valid international phone number is required.";
-      return null;
-    }
-    if (s === 2) {
-      if (lite.investment_goals.trim().length < 20)
-        return "Investment goals must be at least 20 characters.";
       return null;
     }
     return null;
@@ -202,10 +193,10 @@ function InvestorSignupPage() {
         phone: lite.phone.trim(),
         country_of_residence: lite.country_of_residence,
         nationality: lite.nationality,
-        employment_status: lite.employment_status,
-        investment_experience: lite.investment_experience,
+        employment_status: lite.employment_status || undefined,
+        investment_experience: lite.investment_experience || undefined,
         investor_background: lite.investor_background.trim() || undefined,
-        investment_goals: lite.investment_goals.trim(),
+        investment_goals: lite.investment_goals.trim() || undefined,
         investment_goal_tags:
           lite.investment_goal_tags.length > 0 ? lite.investment_goal_tags : undefined,
         base_currency: lite.base_currency,
@@ -444,9 +435,13 @@ function InvestorSignupPage() {
                       {lite.investor_background.trim()}
                     </p>
                   ) : null}
-                  <p className="mt-2 whitespace-pre-wrap text-foreground">
-                    {lite.investment_goals}
-                  </p>
+                  {lite.investment_goals.trim() ? (
+                    <p className="mt-2 whitespace-pre-wrap text-foreground">
+                      {lite.investment_goals}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-muted-foreground">Goals not specified</p>
+                  )}
                   {goalLabels.length > 0 ? (
                     <p className="mt-2 text-xs text-muted-foreground">
                       Focus: {goalLabels.join(", ")}

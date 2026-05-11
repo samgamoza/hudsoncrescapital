@@ -139,6 +139,10 @@ describe("formatPortalAuthError", () => {
     );
   });
 
+  it("explains Supabase email rate limit errors", () => {
+    expect(formatPortalAuthError("Email rate limit exceeded")).toMatch(/Too many emails/);
+  });
+
   it("keeps unknown errors visible", () => {
     expect(formatPortalAuthError("Something unexpected happened")).toBe(
       "Something unexpected happened",
