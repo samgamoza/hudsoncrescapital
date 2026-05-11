@@ -42,14 +42,20 @@ export async function readJsonBody<T>(request: Request): Promise<T> {
 export function apiErrorResponse(error: unknown): Response {
   if (error instanceof Response) return error;
   if (error instanceof ZodError) {
-    return Response.json({ error: "Invalid request payload", details: error.flatten() }, { status: 400 });
+    return Response.json(
+      { error: "Invalid request payload", details: error.flatten() },
+      { status: 400 },
+    );
   }
 
   const message = error instanceof Error ? error.message : String(error);
   if (message.toLowerCase().includes("forbidden")) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
-  if (message.toLowerCase().includes("unauthorized") || message.toLowerCase().includes("invalid token")) {
+  if (
+    message.toLowerCase().includes("unauthorized") ||
+    message.toLowerCase().includes("invalid token")
+  ) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (
@@ -60,6 +66,49 @@ export function apiErrorResponse(error: unknown): Response {
     return Response.json({ error: message }, { status: 400 });
   }
 
+  const lower = message.toLowerCase();
+
+  if (lower.includes("missing supabase environment variable")) {
+    console.error("[api]", message);
+    return Response.json(
+      {
+        error: "Server configuration",
+        hint: "Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY for server API routes (Dashboard → API → service_role secret). Anon/publishable keys are not sufficient for admin queries.",
+      },
+      { status: 503 },
+    );
+  }
+
+  if (
+    lower.includes("does not exist") &&
+    (lower.includes("relation") || lower.includes("table") || lower.includes("asset_listings"))
+  ) {
+    console.error("[api]", message);
+    return Response.json(
+      {
+        error: "Database schema",
+        hint: "The asset_listings table (or a referenced object) is missing or not exposed. Apply migrations from supabase/migrations to your Supabase project, then refresh the schema cache if needed.",
+      },
+      { status: 503 },
+    );
+  }
+
+  if (lower.includes("schema cache") && lower.includes("reload")) {
+    console.error("[api]", message);
+    return Response.json(
+      {
+        error: "Database schema",
+        hint: "PostgREST schema cache may be stale. In Supabase Dashboard try Database → API → Reload schema, or wait a minute and retry.",
+      },
+      { status: 503 },
+    );
+  }
+
   console.error("[api]", message);
-  return Response.json({ error: "Internal server error" }, { status: 500 });
+  const isDev =
+    process.env.NODE_ENV === "development" ||
+    (typeof import.meta !== "undefined" && Boolean(import.meta.env?.DEV));
+  const body: { error: string; details?: string } = { error: "Internal server error" };
+  if (isDev) body.details = message;
+  return Response.json(body, { status: 500 });
 }

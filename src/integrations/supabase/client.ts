@@ -13,7 +13,7 @@ function createSupabaseClient() {
       ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
       ...(!SUPABASE_PUBLISHABLE_KEY ? ['SUPABASE_PUBLISHABLE_KEY'] : []),
     ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Connect Supabase in Lovable Cloud.`;
+    const message = `Missing Supabase environment variable(s): ${missing.join(", ")}. Set them in your host (e.g. Vercel → Settings → Environment Variables) and locally in .env — use Project URL + anon (public) key from Supabase → Project Settings → API. For browser builds also set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to the same values.`;
     console.error(`[Supabase] ${message}`);
     throw new Error(message);
   }

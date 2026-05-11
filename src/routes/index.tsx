@@ -10,12 +10,19 @@ import deskNewYork from "@/assets/desk-newyork.jpg";
 import deskLondon from "@/assets/desk-london.jpg";
 import deskSingapore from "@/assets/desk-singapore.jpg";
 
-const HERO_SLIDES = [
+type HeroSlide = {
+  src: string;
+  alt: string;
+  /** Globe art has office labels at edges — cover crops them on common laptop widths; contain keeps them visible. */
+  objectFit?: "cover" | "contain";
+};
+
+const HERO_SLIDES: HeroSlide[] = [
   {
     src: heroCityscape,
     alt: "Global financial city skyline at night with connected trading desks",
   },
-  { src: heroGlobe, alt: "Interactive global trading network" },
+  { src: heroGlobe, alt: "Interactive global trading network", objectFit: "contain" },
   { src: heroTradingFloor, alt: "Institutional trading floor with live market data" },
   { src: heroCommodities, alt: "Commodities investment — gold, silver, copper and energy markets" },
 ];
@@ -53,19 +60,22 @@ function HomePage() {
     <SiteLayout>
       {/* HERO — full viewport */}
       <section className="relative overflow-hidden border-b border-border min-h-[calc(100vh-6rem)] flex items-center">
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-background pointer-events-none">
           {/* Carousel background — cross-fade */}
-          {HERO_SLIDES.map((s, i) => (
-            <img
-              key={s.src}
-              src={s.src}
-              alt={i === slide ? s.alt : ""}
-              className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-[1500ms] ease-in-out ${
-                i === slide ? "opacity-60" : "opacity-0"
-              }`}
-              loading={i === 0 ? "eager" : "lazy"}
-            />
-          ))}
+          {HERO_SLIDES.map((s, i) => {
+            const fit = s.objectFit === "contain" ? "object-contain" : "object-cover";
+            return (
+              <img
+                key={s.src}
+                src={s.src}
+                alt={i === slide ? s.alt : ""}
+                className={`absolute inset-0 m-auto h-full w-full ${fit} object-center transition-opacity duration-[1500ms] ease-in-out ${
+                  i === slide ? "opacity-60" : "opacity-0"
+                }`}
+                loading={i === 0 ? "eager" : "lazy"}
+              />
+            );
+          })}
           {/* Left edge fade so text stays legible */}
           <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/60 to-background/10" />
           {/* Top + bottom vignette into background */}

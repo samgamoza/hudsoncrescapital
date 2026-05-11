@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { listAssetListingsDirect } from "@/server/asset-listings.functions";
 import { apiErrorResponse } from "../-_utils";
 
 export const Route = createFileRoute("/api/portal/asset-listings")({
@@ -6,7 +7,6 @@ export const Route = createFileRoute("/api/portal/asset-listings")({
     handlers: {
       GET: async () => {
         try {
-          const { listAssetListingsDirect } = await import("@/server/asset-listings.functions");
           const data = await listAssetListingsDirect({
             query: "",
             assetClass: "all",
@@ -22,7 +22,6 @@ export const Route = createFileRoute("/api/portal/asset-listings")({
       POST: async ({ request }) => {
         try {
           const body = await request.json();
-          const { listAssetListingsDirect } = await import("@/server/asset-listings.functions");
           const data = await listAssetListingsDirect({
             query: String(body?.query ?? ""),
             assetClass: String(body?.assetClass ?? "all"),
