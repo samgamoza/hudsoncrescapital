@@ -93,7 +93,10 @@ export async function fetchQuoteUniversal(
   type: "stock" | "fx" | "crypto",
 ): Promise<{ c: number; d: number; dp: number } | null> {
   const fh = resolveFinnhubApiKey();
-  if (fh) return fetchQuoteFinnhub(finnhubSymbol, fh);
+  if (fh) {
+    const fromHub = await fetchQuoteFinnhub(finnhubSymbol, fh);
+    if (fromHub) return fromHub;
+  }
   const av = resolveAlphaVantageApiKey();
   if (av) return fetchAlphaVantageQuote(finnhubSymbol, type, av);
   return null;
@@ -279,7 +282,7 @@ export async function fetchTickerTapeQuotes(): Promise<{ quotes: Quote[]; error:
     quotes,
     error:
       quotes.length === 0
-        ? "No quotes returned (check ALPHA_VANTAGE_API_KEY rate limits / FINNHUB_API_KEY and symbol limits)"
+        ? "No quotes returned. Check FINNHUB_API_KEY is valid with quota left, ALPHA_VANTAGE_API_KEY rate limits at alphavantage.co, and deployed env vars. When both keys are set, Alpha Vantage is used as fallback if Finnhub returns nothing for a symbol."
         : null,
   };
 }
