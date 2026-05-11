@@ -17,8 +17,8 @@ const nitroOptions = process.env.VERCEL ? { preset: "vercel" as const } : {};
 export default defineConfig({
   cloudflare: false,
   build: {
-    // Keep logs quieter on Vercel; warning-only, no behavior change.
-    chunkSizeWarningLimit: 900,
+    // Default 500kb is tight for chart/Radix-heavy client chunks; warning-only.
+    chunkSizeWarningLimit: 2000,
   },
   plugins: [nitro(nitroOptions)],
 });

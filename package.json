@@ -77,7 +77,8 @@
     "node": "22.x"
   },
   "overrides": {
-    "@tanstack/react-router": "1.169.2"
+    "@tanstack/react-router": "1.169.2",
+    "encoding-sniffer": "1.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
