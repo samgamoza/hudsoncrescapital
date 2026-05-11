@@ -179,7 +179,7 @@ export function InvestorLiteOnboardingFields({
               className={`mt-1 ${inputClass}`}
             >
               <option value="employed">Employed</option>
-              <option value="self_employed">Self-employed</option>
+              <option value="self_employed">Self employed</option>
               <option value="retired">Retired</option>
               <option value="student">Student</option>
               <option value="unemployed">Unemployed</option>

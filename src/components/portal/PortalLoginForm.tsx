@@ -238,7 +238,7 @@ export function PortalLoginForm({ audience, fromRouteId }: Props) {
       if (err) throw err;
       setInfo(
         audience === "admin"
-          ? "Password reset email sent. Check your inbox — open the link to set a new admin password."
+          ? "Password reset email sent. Check your inbox and open the link to set a new admin password."
           : "Password reset email sent. Check your inbox.",
       );
     } catch (err: any) {

@@ -97,7 +97,7 @@ export const ASSET_CLASSES: Record<AssetClass, AssetClassMeta> = {
   equities: {
     key: "equities",
     label: "Equities & ETFs",
-    description: "Stocks and exchange-traded funds.",
+    description: "Stocks and exchange traded funds.",
     defaultUnit: "shares",
     symbolHint: "AAPL, MSFT, SPY…",
     columns: [
@@ -145,7 +145,7 @@ export const ASSET_CLASSES: Record<AssetClass, AssetClassMeta> = {
   crypto: {
     key: "crypto",
     label: "Crypto",
-    description: "Digital assets held in custody or on-chain.",
+    description: "Digital assets held in custody or on chain.",
     defaultUnit: "coins",
     symbolHint: "BTC, ETH, SOL…",
     columns: [
@@ -203,7 +203,7 @@ export const ASSET_CLASSES: Record<AssetClass, AssetClassMeta> = {
         type: "select",
         options: [
           { value: "", label: "Select custody…" },
-          { value: "self", label: "Self-custody (hot)" },
+          { value: "self", label: "Self custody (hot)" },
           { value: "cold", label: "Cold storage / hardware" },
           { value: "exchange", label: "Exchange / custodian" },
           { value: "qualified", label: "Qualified custodian" },
@@ -223,7 +223,7 @@ export const ASSET_CLASSES: Record<AssetClass, AssetClassMeta> = {
     key: "commodities",
     label: "Commodities (Options & Futures)",
     description:
-      "Commodity options and futures contracts (Gold, Silver, Crude, etc.) — modeled after Barchart-style contract listings.",
+      "Commodity options and futures contracts (Gold, Silver, Crude, etc.), modeled after Barchart style contract listings.",
     defaultUnit: "contracts",
     symbolHint: "GCZ25, SIH26, CLG26…",
     columns: [
@@ -396,10 +396,10 @@ export const ASSET_CLASSES: Record<AssetClass, AssetClassMeta> = {
         type: "select",
         options: [
           { value: "", label: "Select mandate…" },
-          { value: "Long-only growth", label: "Long-only growth" },
+          { value: "Long-only growth", label: "Long only growth" },
           { value: "Long/short equity", label: "Long/short equity" },
           { value: "Income / yield", label: "Income / yield" },
-          { value: "Multi-asset", label: "Multi-asset" },
+          { value: "Multi-asset", label: "Multi asset" },
           { value: "Macro", label: "Macro" },
           { value: "Market neutral", label: "Market neutral" },
         ],

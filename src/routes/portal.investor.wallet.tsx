@@ -42,7 +42,7 @@ function WalletPage() {
   }, []);
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get("deposit");
-    if (p === "success") toast.success("Payment received — your deposit will be credited shortly.");
+    if (p === "success") toast.success("Payment received. Your deposit will be credited shortly.");
     if (p === "cancel") toast.message("Payment cancelled.");
     if (p) window.history.replaceState({}, "", window.location.pathname);
   }, []);

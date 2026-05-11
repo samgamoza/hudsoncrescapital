@@ -30,13 +30,13 @@ import citySG from "@/assets/city-singapore.jpg";
 export const Route = createFileRoute("/global-desks")({
   head: () => ({
     meta: [
-      { title: "Global Desks — Hudson Crest Capital" },
+      { title: "Global Desks | Hudson Crest Capital" },
       {
         name: "description",
         content:
           "Three strategic hubs. One unified platform. A 24-hour follow-the-sun trading operation across New York, London, and Singapore.",
       },
-      { property: "og:title", content: "Global Desks — Hudson Crest Capital" },
+      { property: "og:title", content: "Global Desks | Hudson Crest Capital" },
       {
         property: "og:description",
         content: "Global presence. Local expertise. Unified execution.",
@@ -53,7 +53,7 @@ const DESKS = [
     city: "NEW YORK",
     role: "Execution Hub",
     tz: "EST | UTC -5",
-    desc: "Our New York desk leads equity, options and cross-asset execution for the Americas, leveraging deep liquidity and market microstructure expertise.",
+    desc: "Our New York desk leads equity, options and cross asset execution for the Americas, leveraging deep liquidity and market microstructure expertise.",
     focus: ["Equities & Options", "Fixed Income", "Derivatives", "Algorithmic Execution"],
     pros: "50+",
     aum: "$6.2B",
@@ -146,7 +146,7 @@ function GlobalDesksPage() {
             { icon: Globe, v: "3", l: "Global Trading Desks" },
             { icon: Clock, v: "24/5", l: "Market Coverage Follow-the-Sun" },
             { icon: Users, v: "150+", l: "Investment Professionals" },
-            { icon: Activity, v: "Real-Time", l: "Global Collaboration & Execution" },
+            { icon: Activity, v: "Real time", l: "Global Collaboration & Execution" },
           ].map((m) => (
             <div key={m.l} className="surface-card p-5">
               <m.icon className="h-6 w-6 text-brand" />
@@ -223,7 +223,7 @@ function GlobalDesksPage() {
 
       <Section className="!pt-0">
         <div className="surface-card p-8 lg:p-10">
-          <div className="eyebrow">Follow-the-Sun Model</div>
+          <div className="eyebrow">Follow the Sun Model</div>
           <p className="mt-2 text-sm text-muted-foreground">
             A seamless 24-hour investment cycle that enables continuous market coverage and
             opportunity capture.
@@ -253,7 +253,7 @@ function GlobalDesksPage() {
           <div className="surface-card p-6">
             <div className="eyebrow">Unified by Technology</div>
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              All desks operate on our proprietary, AI-powered platform, enabling real-time data
+              All desks operate on our proprietary, AI powered platform, enabling real time data
               sharing, risk monitoring and execution across the globe.
             </p>
             <ul className="mt-5 space-y-3 text-sm">
@@ -261,17 +261,17 @@ function GlobalDesksPage() {
                 {
                   icon: Database,
                   t: "Unified Data Layer",
-                  d: "Real-time market data and alternative signals accessible to all desks.",
+                  d: "Real time market data and alternative signals accessible to all desks.",
                 },
                 {
                   icon: ShieldCheck,
                   t: "Centralized Risk Engine",
-                  d: "Firm-wide risk monitoring with real-time limits and stress testing.",
+                  d: "Firm-wide risk monitoring with real time limits and stress testing.",
                 },
                 {
                   icon: RouteIcon,
                   t: "Smart Order Routing",
-                  d: "AI-driven execution across global venues for best price and minimal market impact.",
+                  d: "AI driven execution across global venues for best price and minimal market impact.",
                 },
                 {
                   icon: MessageSquare,
@@ -291,9 +291,9 @@ function GlobalDesksPage() {
           </div>
 
           <div className="surface-card p-6">
-            <div className="eyebrow">Real-Time Global Collaboration</div>
+            <div className="eyebrow">Real time Global Collaboration</div>
             <p className="mt-3 text-xs text-muted-foreground">
-              Ideas, insights and execution — shared instantly.
+              Ideas, insights and execution, shared instantly.
             </p>
             <div className="mt-4 overflow-hidden rounded-xl border border-border">
               <img

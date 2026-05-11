@@ -205,7 +205,7 @@ function MfaCard({
       ) : recovery ? (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-foreground">
-            Save these recovery codes — each can be used once if you lose your device.
+            Save these recovery codes. Each can be used once if you lose your device.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-xs">
             {recovery.map((c) => (

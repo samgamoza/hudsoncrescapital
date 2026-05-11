@@ -25,13 +25,13 @@ import heroWave from "@/assets/hero-wave.jpg";
 export const Route = createFileRoute("/approach")({
   head: () => ({
     meta: [
-      { title: "Our Approach — Hudson Crest Capital" },
+      { title: "Our Approach | Hudson Crest Capital" },
       {
         name: "description",
         content:
-          "A disciplined fusion of human expertise, quantitative models, and artificial intelligence — engineered for superior outcomes.",
+          "A disciplined fusion of human expertise, quantitative models, and artificial intelligence, engineered for superior outcomes.",
       },
-      { property: "og:title", content: "Our Approach — Hudson Crest Capital" },
+      { property: "og:title", content: "Our Approach | Hudson Crest Capital" },
       { property: "og:description", content: "Intelligence. Discipline. Superior Outcomes." },
       { property: "og:image", content: heroWave },
     ],
@@ -43,7 +43,7 @@ const STRATEGIES = [
   {
     icon: TrendingUp,
     t: "Macro Strategies",
-    d: "Global macroeconomic analysis to identify long-term trends and market dislocations.",
+    d: "Global macroeconomic analysis to identify long term trends and market dislocations.",
   },
   {
     icon: BarChart3,
@@ -81,7 +81,7 @@ const STEPS = [
   },
   {
     t: "Execution",
-    d: "Trades are executed through smart order routing and AI-driven execution algorithms.",
+    d: "Trades are executed through smart order routing and AI driven execution algorithms.",
   },
   {
     t: "Monitoring & Learning",
@@ -93,7 +93,7 @@ const RISK_ITEMS = [
   {
     icon: ShieldCheck,
     t: "Pre-Trade Risk",
-    d: "Real-time risk checks, exposure limits, and scenario analysis before execution.",
+    d: "Real time risk checks, exposure limits, and scenario analysis before execution.",
   },
   {
     icon: BarChart3,
@@ -113,7 +113,7 @@ const RISK_ITEMS = [
   {
     icon: Beaker,
     t: "Stress Testing",
-    d: "AI-driven stress tests across historical and hypothetical events.",
+    d: "AI driven stress tests across historical and hypothetical events.",
   },
   {
     icon: Building,
@@ -129,9 +129,9 @@ function ApproachPage() {
         eyebrow="Our Approach"
         title="Intelligence. Discipline."
         highlight="Superior Outcomes."
-        description="At Hudson Crest Capital, we combine the power of artificial intelligence with institutional expertise and rigorous risk management to navigate global markets and generate risk-adjusted returns."
+        description="At Hudson Crest Capital, we combine the power of artificial intelligence with institutional expertise and rigorous risk management to navigate global markets and generate risk adjusted returns."
         image={heroWave}
-        imageAlt="AI-driven decision intelligence"
+        imageAlt="AI driven decision intelligence"
         cta={
           <Link
             to="/strategies"
@@ -163,7 +163,7 @@ function ApproachPage() {
             <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
               Markets are constantly evolving. Our approach integrates advanced AI capabilities with
               the experience and judgment of seasoned professionals to identify opportunities,
-              manage risk, and deliver consistent, long-term value.
+              manage risk, and deliver consistent, long term value.
             </p>
             <div className="mt-7 grid gap-5 sm:grid-cols-3">
               {[
@@ -180,7 +180,7 @@ function ApproachPage() {
                 {
                   icon: Shield,
                   t: "Risk Discipline",
-                  d: "Robust risk management ensures capital preservation and consistent, risk-adjusted performance.",
+                  d: "Robust risk management ensures capital preservation and consistent, risk adjusted performance.",
                 },
               ].map((c) => (
                 <div key={c.t}>
@@ -231,7 +231,7 @@ function ApproachPage() {
         <div className="surface-card p-8 lg:p-10">
           <div className="grid gap-10 lg:grid-cols-[0.9fr_2fr]">
             <div>
-              <div className="eyebrow">Our Multi-Strategy Framework</div>
+              <div className="eyebrow">Our Multi Strategy Framework</div>
               <h2 className="mt-4 text-2xl font-bold text-foreground">
                 Diversified Strategies. Aligned Objective.
               </h2>
@@ -316,7 +316,7 @@ function ApproachPage() {
       <CtaBanner
         icon={Layers}
         title="Our approach is simple: combine AI with the discipline of institutional investing."
-        description="Deliver consistent, risk-adjusted returns for our clients."
+        description="Deliver consistent, risk adjusted returns for our clients."
         actionLabel="Partner With Us →"
         to="/contact"
       />

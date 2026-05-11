@@ -24,16 +24,16 @@ import worldMap from "@/assets/world-map-desks.jpg";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About — Hudson Crest Capital" },
+      { title: "About | Hudson Crest Capital" },
       {
         name: "description",
         content:
-          "Institutional expertise. AI-driven intelligence. Global perspective. Hudson Crest Capital is a multi-strategy investment firm built for the long term.",
+          "Institutional expertise. AI driven intelligence. Global perspective. Hudson Crest Capital is a multi strategy investment firm built for the long term.",
       },
       { property: "og:title", content: "About Hudson Crest Capital" },
       {
         property: "og:description",
-        content: "Institutional expertise. AI-driven intelligence. Global perspective.",
+        content: "Institutional expertise. AI driven intelligence. Global perspective.",
       },
       { property: "og:image", content: officeView },
     ],
@@ -93,7 +93,7 @@ function AboutPage() {
         eyebrow="About Us"
         title="About"
         highlight="Hudson Crest Capital."
-        description="Institutional expertise. AI-driven intelligence. Global perspective. Hudson Crest Capital is a multi-strategy investment firm that combines the power of artificial intelligence with deep market expertise to identify opportunities, manage risk, and deliver consistent, risk-adjusted returns across global markets."
+        description="Institutional expertise. AI driven intelligence. Global perspective. Hudson Crest Capital is a multi strategy investment firm that combines the power of artificial intelligence with deep market expertise to identify opportunities, manage risk, and deliver consistent, risk adjusted returns across global markets."
         side={
           <StatRow
             items={[
@@ -117,7 +117,7 @@ function AboutPage() {
             </h2>
             <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
               We leverage cutting-edge AI, advanced analytics, and human expertise to navigate
-              complex markets and generate long-term value for our institutional partners.
+              complex markets and generate long term value for our institutional partners.
             </p>
           </div>
           <div>
@@ -241,7 +241,7 @@ function AboutPage() {
               {
                 icon: Shield,
                 t: "Security",
-                d: "We employ institutional-grade security protocols, infrastructure, and compliance frameworks to protect our clients and their data.",
+                d: "We employ institutional grade security protocols, infrastructure, and compliance frameworks to protect our clients and their data.",
               },
               {
                 icon: Lock,

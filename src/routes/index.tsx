@@ -24,22 +24,22 @@ const HERO_SLIDES: HeroSlide[] = [
   },
   { src: heroGlobe, alt: "Interactive global trading network", objectFit: "contain" },
   { src: heroTradingFloor, alt: "Institutional trading floor with live market data" },
-  { src: heroCommodities, alt: "Commodities investment — gold, silver, copper and energy markets" },
+  { src: heroCommodities, alt: "Commodities investment: gold, silver, copper and energy markets" },
 ];
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Hudson Crest Capital — Capital, Enhanced by Intelligence" },
+      { title: "Hudson Crest Capital | Capital, Enhanced by Intelligence" },
       {
         name: "description",
         content:
-          "AI-driven institutional trading across global markets. Disciplined execution, engineered intelligence, and consistent risk-adjusted returns.",
+          "AI driven institutional trading across global markets. Disciplined execution, engineered intelligence, and consistent risk adjusted returns.",
       },
-      { property: "og:title", content: "Hudson Crest Capital — Capital, Enhanced by Intelligence" },
+      { property: "og:title", content: "Hudson Crest Capital | Capital, Enhanced by Intelligence" },
       {
         property: "og:description",
-        content: "AI-driven institutional trading across global markets.",
+        content: "AI driven institutional trading across global markets.",
       },
     ],
   }),
@@ -113,7 +113,7 @@ function HomePage() {
             </h1>
             <p className="mt-6 max-w-xl text-lg text-muted-foreground">
               Hudson Crest Capital integrates artificial intelligence with institutional trading
-              strategies across global markets, engineered for disciplined, risk-adjusted
+              strategies across global markets, engineered for disciplined, risk adjusted
               performance.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -159,7 +159,7 @@ function HomePage() {
       <Section>
         <div className="grid gap-12 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <div className="eyebrow">AI-Powered. Human-Led.</div>
+            <div className="eyebrow">AI powered. Human led.</div>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               Engineered intelligence at every layer of the trade lifecycle.
             </h2>
@@ -218,7 +218,7 @@ function HomePage() {
             {
               city: "New York",
               role: "Core Execution Hub",
-              desc: "Equities, options and cross-asset execution for the Americas.",
+              desc: "Equities, options and cross asset execution for the Americas.",
               img: deskNewYork,
             },
             {

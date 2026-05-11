@@ -24,7 +24,7 @@ const STEPS = [
   {
     key: "personal",
     title: "Personal details",
-    subtitle: "Tell us who you are — as you would on an official application.",
+    subtitle: "Tell us who you are, as you would on an official application.",
   },
   {
     key: "investment",
@@ -40,7 +40,7 @@ const STEPS = [
 
 const EMPLOYMENT_LABELS: Record<InvestorLitePayload["employment_status"], string> = {
   employed: "Employed",
-  self_employed: "Self-employed",
+  self_employed: "Self employed",
   retired: "Retired",
   student: "Student",
   unemployed: "Unemployed",
@@ -91,7 +91,7 @@ function isStrictAccountSeparationEnabled(): boolean {
 export const Route = createFileRoute("/portal/signup_/investor")({
   head: () => ({
     meta: [
-      { title: "Sign up — Hudson Crest Capital" },
+      { title: "Sign up | Hudson Crest Capital" },
       { name: "description", content: "Create an investor account and complete onboarding." },
       { name: "robots", content: "noindex" },
     ],
@@ -252,7 +252,7 @@ function InvestorSignupPage() {
               Investor signup
             </p>
             <h2 className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Access institutional-grade execution
+              Access institutional grade execution
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               One guided flow: create your secure login and complete onboarding so we can review
@@ -260,9 +260,9 @@ function InvestorSignupPage() {
             </p>
             <ul className="mt-8 space-y-3 text-sm text-foreground/90">
               {[
-                "AI-assisted portfolio analytics and risk-aware workflows",
-                "Multi-currency accounts with disciplined onboarding",
-                "Encrypted connection — your credentials stay protected",
+                "AI assisted portfolio analytics and risk aware workflows",
+                "Multi currency accounts with disciplined onboarding",
+                "Encrypted connection. Your credentials stay protected.",
               ].map((line) => (
                 <li key={line} className="flex gap-3">
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand/20 text-brand">
@@ -274,7 +274,7 @@ function InvestorSignupPage() {
             </ul>
           </div>
           <p className="mt-10 hidden text-xs text-muted-foreground lg:block">
-            Hudson Crest Capital LLC — for qualified investors. Not an offer where prohibited.
+            Hudson Crest Capital LLC. For qualified investors. Not an offer where prohibited.
           </p>
         </aside>
 
@@ -282,7 +282,7 @@ function InvestorSignupPage() {
         <div className="flex flex-1 flex-col bg-card p-6 sm:p-8 lg:p-10">
           <div className="mb-6">
             <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
-              Open investor account
+              Open Investor Account
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Step {step + 1} of {STEPS.length}

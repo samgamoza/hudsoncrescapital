@@ -6,7 +6,7 @@ import logo from "@/assets/logo.png";
 export const Route = createFileRoute("/portal/reset-password")({
   head: () => ({
     meta: [
-      { title: "Reset Password — Hudson Crest Capital" },
+      { title: "Reset Password | Hudson Crest Capital" },
       { name: "description", content: "Set a new password for your portal account." },
       { name: "robots", content: "noindex" },
     ],

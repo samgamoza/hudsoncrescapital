@@ -26,13 +26,13 @@ import officeView from "@/assets/office-view.jpg";
 export const Route = createFileRoute("/careers")({
   head: () => ({
     meta: [
-      { title: "Careers — Hudson Crest Capital" },
+      { title: "Careers | Hudson Crest Capital" },
       {
         name: "description",
         content:
           "Build the future of global markets, together. Join a team at the intersection of finance, technology, and AI.",
       },
-      { property: "og:title", content: "Careers — Hudson Crest Capital" },
+      { property: "og:title", content: "Careers | Hudson Crest Capital" },
       { property: "og:description", content: "Build the future of global markets. Together." },
       { property: "og:image", content: tradingFloor },
     ],
@@ -43,8 +43,8 @@ export const Route = createFileRoute("/careers")({
 const VALUES_TOP = [
   {
     icon: Brain,
-    t: "AI-Driven Edge",
-    d: "Proprietary models and real-time intelligence power our decisions.",
+    t: "AI Driven Edge",
+    d: "Proprietary models and real time intelligence power our decisions.",
   },
   {
     icon: Globe,
@@ -72,7 +72,7 @@ const CULTURE = [
   {
     icon: Code2,
     t: "Innovation",
-    d: "We build, test, and refine — leveraging AI and data to create unique advantages.",
+    d: "We build, test, and refine, leveraging AI and data to create unique advantages.",
   },
   {
     icon: Users,
@@ -150,7 +150,7 @@ const PEOPLE = [
     role: "Quantitative Researcher",
     tenure: "2 years at Hudson Crest",
     quote:
-      "The culture here is unmatched — smart, humble, and incredibly driven people solving meaningful problems together.",
+      "The culture here is unmatched: smart, humble, and incredibly driven people solving meaningful problems together.",
   },
   {
     name: "Sophie M.",
@@ -164,7 +164,7 @@ const PEOPLE = [
     role: "ML Engineer",
     tenure: "1 year at Hudson Crest",
     quote:
-      "The combination of cutting-edge technology and world-class talent is what sets Hudson Crest apart.",
+      "The combination of cutting edge technology and world class talent is what sets Hudson Crest apart.",
   },
 ];
 

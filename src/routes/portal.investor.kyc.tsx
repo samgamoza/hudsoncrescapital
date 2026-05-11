@@ -20,7 +20,7 @@ import { Upload, FileText, CheckCircle2, Clock, XCircle, Trash2 } from "lucide-r
 export const Route = createFileRoute("/portal/investor/kyc")({
   head: () => ({
     meta: [
-      { title: "KYC Verification — Hudson Crest Capital" },
+      { title: "KYC Verification | Hudson Crest Capital" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -257,7 +257,7 @@ function KycPage() {
       <Card>
         <CardHeader>
           <CardTitle>Upload a document</CardTitle>
-          <CardDescription>PDF, JPEG, PNG, WebP, or HEIC — up to 10 MB.</CardDescription>
+          <CardDescription>PDF, JPEG, PNG, WebP, or HEIC, up to 10 MB.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="grid gap-4 md:grid-cols-2">

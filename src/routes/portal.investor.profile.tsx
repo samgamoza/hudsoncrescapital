@@ -438,7 +438,7 @@ function ProfilePage() {
           <input
             className={field}
             maxLength={4}
-            placeholder="Tax ID — last 4"
+            placeholder="Tax ID, last 4"
             value={form.tax_id_last4 ?? ""}
             onChange={set("tax_id_last4")}
           />
@@ -542,7 +542,7 @@ function ProfilePage() {
       {fin && (
         <SectionCard
           title="Suitability Profile"
-          description="Read-only. Contact your account manager to update."
+          description="Read only. Contact your account manager to update."
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
             <KV label="Employment" value={fmt(fin.employment_status)} />

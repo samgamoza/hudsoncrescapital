@@ -5,7 +5,7 @@ import { PageHeader, SectionCard } from "@/lib/portalShared";
 export const Route = createFileRoute("/portal/investor/apply")({
   head: () => ({
     meta: [
-      { title: "Open Account — Hudson Crest Capital" },
+      { title: "Open Account | Hudson Crest Capital" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -38,7 +38,7 @@ function ApplyInfo() {
               className="surface-card p-4 hover:border-brand/40 transition-colors"
             >
               <UserPlus className="h-5 w-5 text-brand" />
-              <div className="mt-2 text-sm text-foreground font-medium">Self-serve signup</div>
+              <div className="mt-2 text-sm text-foreground font-medium">Self serve signup</div>
               <div className="text-xs text-muted-foreground mt-1">
                 Create an account and submit a short profile online.
               </div>

@@ -11,7 +11,7 @@ export function Footer() {
           <div className="md:col-span-5">
             <img src={logo} alt="Hudson Crest Capital" className="h-14 w-auto" />
             <p className="mt-4 max-w-sm text-sm text-muted-foreground">
-              AI-driven institutional trading across global markets. Disciplined execution.
+              AI driven institutional trading across global markets. Disciplined execution.
               Engineered intelligence.
             </p>
           </div>

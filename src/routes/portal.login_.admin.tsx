@@ -10,7 +10,7 @@ export const Route = createFileRoute("/portal/login_/admin")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Admin Login — Hudson Crest Capital" },
+      { title: "Admin Login | Hudson Crest Capital" },
       { name: "description", content: "Restricted admin console access." },
       { name: "robots", content: "noindex" },
     ],

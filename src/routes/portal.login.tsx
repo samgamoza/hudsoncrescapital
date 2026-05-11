@@ -14,7 +14,7 @@ export const Route = createFileRoute("/portal/login")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Portal Login — Hudson Crest Capital" },
+      { title: "Portal Login | Hudson Crest Capital" },
       { name: "description", content: "Choose your portal: investor account or admin console." },
       { name: "robots", content: "noindex" },
     ],

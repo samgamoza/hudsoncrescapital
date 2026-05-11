@@ -7,7 +7,7 @@ import type { InvestorTradingWorkspace, TradableInstrument } from "@/lib/trading
 
 export const Route = createFileRoute("/portal/investor/trade")({
   head: () => ({
-    meta: [{ title: "Trade — Investor Portal" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Trade | Investor Portal" }, { name: "robots", content: "noindex" }],
   }),
   component: InvestorTradePage,
 });
@@ -245,7 +245,7 @@ function InvestorTradePage() {
                 >
                   {filteredInstruments.map((i: TradableInstrument) => (
                     <option key={i.id} value={i.id}>
-                      {i.symbol} — {i.name} ({i.currency})
+                      {i.symbol} · {i.name} ({i.currency})
                     </option>
                   ))}
                 </select>

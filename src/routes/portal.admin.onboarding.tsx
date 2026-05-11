@@ -11,7 +11,7 @@ import { usePersistedState } from "@/hooks/usePersistedState";
 
 export const Route = createFileRoute("/portal/admin/onboarding")({
   head: () => ({
-    meta: [{ title: "Open Account — Admin" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Open Account | Admin" }, { name: "robots", content: "noindex" }],
   }),
   component: OnboardingWizard,
 });
@@ -21,7 +21,7 @@ const STEPS: { n: Step; label: string }[] = [
   { n: 1, label: "Identity" },
   { n: 2, label: "Address" },
   { n: 3, label: "Account" },
-  { n: 4, label: "Sub-Portfolio" },
+  { n: 4, label: "Sub portfolio" },
   { n: 5, label: "Suitability" },
   { n: 6, label: "Compliance" },
 ];
@@ -121,7 +121,7 @@ function OnboardingWizard() {
       }
     }
     if (s === 4 && f.create_sub_portfolio) {
-      if (!f.sub_name.trim()) return "Sub-portfolio name is required";
+      if (!f.sub_name.trim()) return "Sub portfolio name is required";
       if (f.sub_allocation < 0 || f.sub_allocation > 100) return "Allocation must be 0–100%";
     }
     if (s === 6) {
@@ -259,7 +259,7 @@ function OnboardingWizard() {
               : step === 3
                 ? "Account configuration and provisioning."
                 : step === 4
-                  ? "First sub-portfolio. Add more after onboarding from the client page."
+                  ? "First sub portfolio. Add more after onboarding from the client page."
                   : step === 5
                     ? "Suitability assessment required by regulation."
                     : "Sanctions / PEP review and reviewer notes."
@@ -321,7 +321,7 @@ function OnboardingWizard() {
             <Field label="Nationality">
               <CountrySelect value={f.nationality} onChange={(c) => set("nationality", c)} />
             </Field>
-            <Field label="Tax ID — last 4 (optional)">
+            <Field label="Tax ID, last 4 (optional)">
               <input
                 className={inputCls}
                 maxLength={4}
@@ -339,7 +339,7 @@ function OnboardingWizard() {
             </Field>
             <Field
               label={
-                f.send_invite ? "Initial Password (ignored — invite sent)" : "Initial Password"
+                f.send_invite ? "Initial Password (ignored: invite sent)" : "Initial Password"
               }
             >
               <input
@@ -537,7 +537,7 @@ function OnboardingWizard() {
                 onChange={(e) => set("employment_status", e.target.value as any)}
               >
                 <option value="employed">Employed</option>
-                <option value="self_employed">Self-employed</option>
+                <option value="self_employed">Self employed</option>
                 <option value="retired">Retired</option>
                 <option value="student">Student</option>
                 <option value="unemployed">Unemployed</option>
@@ -678,7 +678,7 @@ function OnboardingWizard() {
                 checked={f.pep_flag}
                 onChange={(e) => set("pep_flag", e.target.checked)}
               />
-              Politically Exposed Person (PEP) — requires enhanced due diligence
+              Politically Exposed Person (PEP): requires enhanced due diligence
             </label>
             <Field label="Internal notes (optional)">
               <textarea

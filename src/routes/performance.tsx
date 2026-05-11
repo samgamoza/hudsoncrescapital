@@ -19,13 +19,13 @@ import { SiteLayout, SplitHero, Section } from "@/components/site/SiteLayout";
 export const Route = createFileRoute("/performance")({
   head: () => ({
     meta: [
-      { title: "Performance — Hudson Crest Capital" },
+      { title: "Performance | Hudson Crest Capital" },
       {
         name: "description",
         content:
-          "Consistent returns. Disciplined risk. Built for the long term. Hudson Crest Capital's data-driven, AI-enhanced approach across market cycles.",
+          "Consistent returns. Disciplined risk. Built for the long term. Hudson Crest Capital's data-driven, AI enhanced approach across market cycles.",
       },
-      { property: "og:title", content: "Performance — Hudson Crest Capital" },
+      { property: "og:title", content: "Performance | Hudson Crest Capital" },
       {
         property: "og:description",
         content: "Consistent returns. Disciplined risk. Built for the long term.",
@@ -119,7 +119,7 @@ function PerformancePage() {
         eyebrow="Performance"
         title="Consistent Returns. Disciplined Risk."
         highlight="Built for the Long Term."
-        description="Our data-driven, AI-enhanced approach is designed to deliver consistent, risk-adjusted returns across market cycles. We focus on what we can control: our process, our risk, and our discipline."
+        description="Our data-driven, AI enhanced approach is designed to deliver consistent, risk adjusted returns across market cycles. We focus on what we can control: our process, our risk, and our discipline."
         side={
           <div className="surface-card p-5">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -240,7 +240,7 @@ function PerformancePage() {
               <ul className="mt-5 space-y-4 text-sm">
                 {[
                   { icon: TrendingUp, t: "Outperformed benchmark in 8 of the last 9 years" },
-                  { icon: ShieldCheck, t: "Lower risk with higher risk-adjusted returns" },
+                  { icon: ShieldCheck, t: "Lower risk with higher risk adjusted returns" },
                   { icon: Activity, t: "Positive returns in 74% of all months" },
                   { icon: BarChart3, t: "Consistent execution across market cycles" },
                 ].map((h) => (
@@ -458,7 +458,7 @@ function PerformancePage() {
             <div className="eyebrow">Our Performance Philosophy</div>
             <ul className="mt-4 space-y-2.5 text-sm">
               {[
-                "Focus on risk-adjusted returns, not just returns",
+                "Focus on risk adjusted returns, not just returns",
                 "Diversify across uncorrelated strategies",
                 "Leverage AI and data to find durable edges",
                 "Maintain disciplined risk management",

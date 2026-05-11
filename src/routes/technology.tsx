@@ -24,13 +24,13 @@ import worldMap from "@/assets/world-map-desks.jpg";
 export const Route = createFileRoute("/technology")({
   head: () => ({
     meta: [
-      { title: "Technology — Hudson Crest Capital" },
+      { title: "Technology | Hudson Crest Capital" },
       {
         name: "description",
         content:
           "Intelligence at scale. Built for an unfair advantage. Proprietary AI, advanced analytics, and high-performance infrastructure powering institutional alpha.",
       },
-      { property: "og:title", content: "Technology — Hudson Crest Capital" },
+      { property: "og:title", content: "Technology | Hudson Crest Capital" },
       {
         property: "og:description",
         content: "Intelligence at scale. Built for an unfair advantage.",
@@ -55,12 +55,12 @@ const EDGE = [
   {
     icon: Zap,
     t: "High Performance",
-    d: "Ultra-low latency infrastructure built for speed, scale and reliability.",
+    d: "Ultra low latency infrastructure built for speed, scale and reliability.",
   },
   {
     icon: Shield,
     t: "Risk Intelligence",
-    d: "AI-powered risk systems identify and mitigate risk before it impacts performance.",
+    d: "AI powered risk systems identify and mitigate risk before it impacts performance.",
   },
   {
     icon: Lightbulb,
@@ -72,7 +72,7 @@ const EDGE = [
 const STACK = [
   {
     t: "Data Ingestion",
-    d: "Real-time and batch data from diverse global sources.",
+    d: "Real time and batch data from diverse global sources.",
     icon: Database,
   },
   {
@@ -91,7 +91,7 @@ const STACK = [
     icon: Activity,
   },
   { t: "Execution", d: "Smart order routing and institutional grade execution.", icon: Zap },
-  { t: "Monitoring & Feedback", d: "Real-time monitoring and model feedback loop.", icon: Eye },
+  { t: "Monitoring & Feedback", d: "Real time monitoring and model feedback loop.", icon: Eye },
 ];
 
 const CAPS = [
@@ -115,7 +115,7 @@ const CAPS = [
   },
   {
     t: "Reinforcement Learning",
-    d: "Continuously optimize trading strategies through self-learning systems.",
+    d: "Continuously optimize trading strategies through self learning systems.",
     score: "+18.6%",
     scoreLabel: "Reward (YTD)",
   },
@@ -175,7 +175,7 @@ function TechnologyPage() {
         <div className="surface-card p-8 lg:p-10">
           <div className="eyebrow">Our Technology Stack</div>
           <p className="mt-2 text-sm text-muted-foreground">
-            Enterprise-grade infrastructure purpose-built for systematic investing.
+            Enterprise grade infrastructure purpose built for systematic investing.
           </p>
           <div className="mt-8 grid gap-6 lg:grid-cols-[280px_1fr]">
             <div className="space-y-2">
@@ -251,7 +251,7 @@ function TechnologyPage() {
                     "Algo Execution",
                     "TCA & Analytics",
                     "Compliance Checks",
-                    "Post-Trade Analysis",
+                    "Post Trade Analysis",
                   ],
                 },
                 {
@@ -316,24 +316,24 @@ function TechnologyPage() {
           <div>
             <div className="eyebrow">Security, Scalability & Reliability</div>
             <p className="mt-3 text-sm text-muted-foreground">
-              Built with institutional-grade security and designed to scale without limits.
+              Built with institutional grade security and designed to scale without limits.
             </p>
             <div className="mt-7 grid gap-6 sm:grid-cols-2">
               {[
                 {
                   icon: Shield,
-                  t: "Bank-Grade Security",
-                  d: "Multi-layer encryption, zero-trust architecture and rigorous access controls.",
+                  t: "Bank grade security",
+                  d: "Multi layer encryption, zero trust architecture and rigorous access controls.",
                 },
                 {
                   icon: Cloud,
-                  t: "Scalable Cloud-Native",
-                  d: "Elastic infrastructure across multi-cloud environments for maximum scalability.",
+                  t: "Scalable cloud native",
+                  d: "Elastic infrastructure across multi cloud environments for maximum scalability.",
                 },
                 {
                   icon: RefreshCw,
                   t: "Disaster Recovery",
-                  d: "Active-active architecture with real-time replication and automated failover.",
+                  d: "Active-active architecture with real time replication and automated failover.",
                 },
                 {
                   icon: AlertTriangle,

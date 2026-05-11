@@ -116,7 +116,7 @@ function ClientsPage() {
     <>
       <PageHeader
         title="Clients"
-        subtitle="Manage existing clients — KYC, account lifecycle, profile, notes."
+        subtitle="Manage existing clients: KYC, account lifecycle, profile, notes."
       />
 
       <div className="flex flex-wrap gap-3 items-center">

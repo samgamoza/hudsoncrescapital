@@ -6,7 +6,7 @@ import { PortalShell, NAV_INVESTOR } from "@/lib/portalShared";
 export const Route = createFileRoute("/portal/investor")({
   head: () => ({
     meta: [
-      { title: "Investor Portal — Hudson Crest Capital" },
+      { title: "Investor Portal | Hudson Crest Capital" },
       { name: "robots", content: "noindex" },
     ],
   }),

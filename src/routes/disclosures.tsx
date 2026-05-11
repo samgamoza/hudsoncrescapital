@@ -4,13 +4,13 @@ import { SiteLayout, Section } from "@/components/site/SiteLayout";
 export const Route = createFileRoute("/disclosures")({
   head: () => ({
     meta: [
-      { title: "Disclosures — Hudson Crest Capital" },
+      { title: "Disclosures | Hudson Crest Capital" },
       {
         name: "description",
         content:
           "Regulatory disclosures, risk warnings, and performance disclaimers for Hudson Crest Capital.",
       },
-      { property: "og:title", content: "Disclosures — Hudson Crest Capital" },
+      { property: "og:title", content: "Disclosures | Hudson Crest Capital" },
       { property: "og:description", content: "Regulatory disclosures and risk disclaimers." },
     ],
   }),

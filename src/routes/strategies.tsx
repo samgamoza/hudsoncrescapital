@@ -27,13 +27,13 @@ import worldMap from "@/assets/world-map-desks.jpg";
 export const Route = createFileRoute("/strategies")({
   head: () => ({
     meta: [
-      { title: "Investment Strategies — Hudson Crest Capital" },
+      { title: "Investment Strategies | Hudson Crest Capital" },
       {
         name: "description",
         content:
-          "A diversified, multi-strategy platform designed to capture opportunities across global markets — powered by AI, guided by deep market expertise.",
+          "A diversified, multi strategy platform designed to capture opportunities across global markets, powered by AI, guided by deep market expertise.",
       },
-      { property: "og:title", content: "Investment Strategies — Hudson Crest Capital" },
+      { property: "og:title", content: "Investment Strategies | Hudson Crest Capital" },
       { property: "og:description", content: "Diverse strategies. Unified by intelligence." },
       { property: "og:image", content: worldMap },
     ],
@@ -59,7 +59,7 @@ const STRATEGIES = [
     f: [
       "Global economic research",
       "Interest rate & currency positioning",
-      "Cross-asset allocation",
+      "Cross asset allocation",
       "Risk-on / Risk-off rotation",
     ],
     perf: { ytd: "6.21%", y1: "11.34%", si: "8.72%" },
@@ -118,7 +118,7 @@ const AI_PIPELINE = [
   {
     icon: Database,
     t: "Data Ingestion",
-    d: "Real-time market data, alternative data, news, sentiment & on-chain information.",
+    d: "Real time market data, alternative data, news, sentiment and on chain information.",
   },
   {
     icon: Brain,
@@ -138,7 +138,7 @@ const AI_PIPELINE = [
   {
     icon: ShieldCheck,
     t: "Risk Management",
-    d: "AI-driven risk monitoring, stress testing & scenario analysis in real time.",
+    d: "AI driven risk monitoring, stress testing & scenario analysis in real time.",
   },
   {
     icon: TrendingUp,
@@ -166,7 +166,7 @@ function StrategiesPage() {
         eyebrow="Our Strategies"
         title="Diverse Strategies. Unified by"
         highlight="Intelligence."
-        description="Hudson Crest Capital deploys a disciplined, multi-strategy approach powered by artificial intelligence and guided by deep market expertise. Our strategies are designed to generate consistent, risk-adjusted returns across market cycles and asset classes."
+        description="Hudson Crest Capital deploys a disciplined, multi strategy approach powered by artificial intelligence and guided by deep market expertise. Our strategies are designed to generate consistent, risk adjusted returns across market cycles and asset classes."
         image={worldMap}
         imageAlt="Global trading network"
         side={
@@ -281,7 +281,7 @@ function StrategiesPage() {
             <div>
               <div className="eyebrow">AI Advantage Across the Strategy Stack</div>
               <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                Our proprietary AI platform enhances every stage of the investment process — from
+                Our proprietary AI platform enhances every stage of the investment process, from
                 research and signal generation to execution and risk management.
               </p>
               <Link
@@ -315,7 +315,7 @@ function StrategiesPage() {
             <div className="eyebrow">Our Performance Philosophy</div>
             <ul className="mt-4 space-y-2.5 text-sm">
               {[
-                "Focus on long-term, risk-adjusted returns",
+                "Focus on long term, risk adjusted returns",
                 "Protect capital in down markets",
                 "Leverage technology and human expertise",
                 "Stay disciplined. Remove emotion. Follow process.",
@@ -330,7 +330,7 @@ function StrategiesPage() {
           <div className="surface-card flex flex-col items-center justify-center p-6 text-center">
             <Target className="h-12 w-12 text-brand" />
             <div className="mt-4 text-sm font-bold uppercase tracking-widest text-brand">
-              Risk-Adjusted Returns Are Our North Star
+              Risk adjusted Returns Are Our North Star
             </div>
           </div>
 

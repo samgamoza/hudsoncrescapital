@@ -4,13 +4,13 @@ import { SiteLayout, Section } from "@/components/site/SiteLayout";
 export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
-      { title: "Terms of Use — Hudson Crest Capital" },
+      { title: "Terms of Use | Hudson Crest Capital" },
       {
         name: "description",
         content:
           "Terms governing use of the Hudson Crest Capital website, investor portal, and related services.",
       },
-      { property: "og:title", content: "Terms of Use — Hudson Crest Capital" },
+      { property: "og:title", content: "Terms of Use | Hudson Crest Capital" },
       {
         property: "og:description",
         content: "Terms governing use of Hudson Crest Capital services.",

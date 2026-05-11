@@ -19,13 +19,13 @@ import { SiteLayout, PageHero, Section } from "@/components/site/SiteLayout";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact Us — Hudson Crest Capital" },
+      { title: "Contact Us | Hudson Crest Capital" },
       {
         name: "description",
         content:
           "Get in touch with Hudson Crest Capital. Speak with our investor relations, careers, media, or trading desk teams across New York, London, and Singapore.",
       },
-      { property: "og:title", content: "Contact Us — Hudson Crest Capital" },
+      { property: "og:title", content: "Contact Us | Hudson Crest Capital" },
       {
         property: "og:description",
         content:

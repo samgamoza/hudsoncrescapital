@@ -4,13 +4,13 @@ import { SiteLayout, Section } from "@/components/site/SiteLayout";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy — Hudson Crest Capital" },
+      { title: "Privacy Policy | Hudson Crest Capital" },
       {
         name: "description",
         content:
           "How Hudson Crest Capital collects, uses, and protects personal data across its global investment platform.",
       },
-      { property: "og:title", content: "Privacy Policy — Hudson Crest Capital" },
+      { property: "og:title", content: "Privacy Policy | Hudson Crest Capital" },
       {
         property: "og:description",
         content: "How Hudson Crest Capital collects, uses, and protects personal data.",
@@ -34,8 +34,8 @@ function PrivacyPage() {
               1. Information We Collect
             </h2>
             <p className="mt-2">
-              Hudson Crest Capital ("we", "our") collects information you provide directly —
-              including name, email, organization, and inquiry details — together with technical
+              Hudson Crest Capital ("we", "our") collects information you provide directly,
+              including name, email, organization, and inquiry details, together with technical
               data such as IP address, browser, and usage analytics when you visit our website or
               investor portal.
             </p>
@@ -78,7 +78,7 @@ function PrivacyPage() {
             <h2 className="mt-8 text-xl font-semibold text-foreground">6. Security</h2>
             <p className="mt-2">
               We employ encryption in transit and at rest, role-based access controls, and
-              continuous monitoring. No method is 100% secure, but we apply institutional-grade
+              continuous monitoring. No method is 100% secure, but we apply institutional grade
               controls.
             </p>
 

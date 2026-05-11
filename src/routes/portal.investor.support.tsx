@@ -7,7 +7,7 @@ import { Loader2, MessageSquarePlus, Send, ArrowLeft, CheckCircle2, Clock } from
 
 export const Route = createFileRoute("/portal/investor/support")({
   head: () => ({
-    meta: [{ title: "Support — Hudson Crest Capital" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Support | Hudson Crest Capital" }, { name: "robots", content: "noindex" }],
   }),
   component: SupportPage,
 });

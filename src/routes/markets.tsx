@@ -5,16 +5,16 @@ import { LiveMarket } from "@/components/site/LiveMarket";
 export const Route = createFileRoute("/markets")({
   head: () => ({
     meta: [
-      { title: "Live Markets & AI Sentiment — Hudson Crest Capital" },
+      { title: "Live Markets & AI Sentiment | Hudson Crest Capital" },
       {
         name: "description",
         content:
-          "Real-time market quotes and AI-driven news sentiment across global asset classes.",
+          "Real time market quotes and AI driven news sentiment across global asset classes.",
       },
-      { property: "og:title", content: "Live Markets & AI Sentiment — Hudson Crest Capital" },
+      { property: "og:title", content: "Live Markets & AI Sentiment | Hudson Crest Capital" },
       {
         property: "og:description",
-        content: "Real-time quotes and AI news sentiment across global markets.",
+        content: "Real time quotes and AI news sentiment across global markets.",
       },
     ],
   }),
@@ -31,7 +31,7 @@ function MarketsPage() {
             Live Markets & AI Sentiment
           </h1>
           <p className="mt-4 text-muted-foreground">
-            Real-time quotes across major instruments alongside AI-classified news sentiment,
+            Real time quotes across major instruments alongside AI-classified news sentiment,
             updated continuously throughout the trading day.
           </p>
         </div>

@@ -29,7 +29,7 @@ export const Route = createFileRoute("/symbol/$slug")({
   },
   head: ({ params }) => {
     const meta = getSymbolBySlug(params.slug);
-    const title = meta ? `${meta.sym} — Live Quote | Hudson Crest Capital` : "Symbol";
+    const title = meta ? `${meta.sym} | Live Quote | Hudson Crest Capital` : "Symbol";
     const description = meta
       ? `Live price, change, and market data for ${meta.name}.`
       : "Live market symbol detail.";
@@ -152,7 +152,7 @@ function SymbolPage() {
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             {meta.name} is tracked in the Hudson Crest Capital live market overview as part of our{" "}
             {meta.category.toLowerCase()} coverage. Quotes refresh every 10 seconds from our market
-            data provider and are intended for informational purposes only — not investment advice.
+            data provider and are intended for informational purposes only, not investment advice.
           </p>
         </div>
 

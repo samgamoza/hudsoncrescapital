@@ -115,17 +115,17 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Hudson Crest Capital — Capital, Enhanced by Intelligence" },
+      { title: "Hudson Crest Capital | Capital, Enhanced by Intelligence" },
       {
         name: "description",
         content:
-          "AI-driven institutional trading across global markets. Disciplined execution, engineered intelligence.",
+          "AI driven institutional trading across global markets. Disciplined execution, engineered intelligence.",
       },
-      { property: "og:title", content: "Hudson Crest Capital — Capital, Enhanced by Intelligence" },
+      { property: "og:title", content: "Hudson Crest Capital | Capital, Enhanced by Intelligence" },
       {
         property: "og:description",
         content:
-          "AI-driven institutional trading across global markets. Disciplined execution, engineered intelligence.",
+          "AI driven institutional trading across global markets. Disciplined execution, engineered intelligence.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -134,12 +134,12 @@ export const Route = createRootRoute({
       { name: "application-name", content: "Hudson Crest Capital" },
       {
         name: "twitter:title",
-        content: "Hudson Crest Capital — Capital, Enhanced by Intelligence",
+        content: "Hudson Crest Capital | Capital, Enhanced by Intelligence",
       },
       {
         name: "twitter:description",
         content:
-          "AI-driven institutional trading across global markets. Disciplined execution, engineered intelligence.",
+          "AI driven institutional trading across global markets. Disciplined execution, engineered intelligence.",
       },
       {
         property: "og:image",

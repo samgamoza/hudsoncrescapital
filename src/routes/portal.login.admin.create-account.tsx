@@ -7,7 +7,7 @@ import { isValidE164 } from "@/lib/countries";
 export const Route = createFileRoute("/portal/login/admin/create-account")({
   head: () => ({
     meta: [
-      { title: "Create Admin Account — Hudson Crest Capital" },
+      { title: "Create Admin Account | Hudson Crest Capital" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -65,7 +65,7 @@ function AdminCreateAccountPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         const parts = [data?.error, data?.detail].filter(Boolean);
-        throw new Error(parts.length ? parts.join(" — ") : `Failed (${res.status})`);
+        throw new Error(parts.length ? parts.join(" | ") : `Failed (${res.status})`);
       }
       setInfo(
         `${targetRole.replace("_", " ")} account created. You can now sign in from the admin login page.`,

@@ -103,7 +103,7 @@ function PortfolioPage() {
           description="Your account manager will set up your sleeves shortly."
         >
           <p className="text-sm text-muted-foreground">
-            Once your sleeves are created, holdings will appear here grouped by asset class —
+            Once your sleeves are created, holdings will appear here grouped by asset class:
             equities, crypto, commodities, and managed strategies all rendered with the columns that
             matter for that asset.
           </p>

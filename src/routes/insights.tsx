@@ -21,13 +21,13 @@ import citySG from "@/assets/city-singapore.jpg";
 export const Route = createFileRoute("/insights")({
   head: () => ({
     meta: [
-      { title: "Insights — Hudson Crest Capital" },
+      { title: "Insights | Hudson Crest Capital" },
       {
         name: "description",
         content:
           "Intelligence. Informed decisions. Better outcomes. Global macro perspective, AI analytics, and on-the-ground market expertise.",
       },
-      { property: "og:title", content: "Insights — Hudson Crest Capital" },
+      { property: "og:title", content: "Insights | Hudson Crest Capital" },
       { property: "og:description", content: "Intelligence. Informed decisions. Better outcomes." },
       { property: "og:image", content: neural },
     ],
@@ -51,7 +51,7 @@ const INSIGHTS = [
     tag: "Macro Outlook",
     img: neural,
     t: "Inflation Revisited: Divergence Across Developed Markets",
-    d: "Disinflation is not uniform. We explore why the inflation path is diverging between the U.S., Europe, and Asia — and what it means for portfolios.",
+    d: "Disinflation is not uniform. We explore why the inflation path is diverging between the U.S., Europe, and Asia, and what it means for portfolios.",
     date: "May 13, 2024",
     read: "6 min",
   },
@@ -110,13 +110,13 @@ const FEED = [
     time: "08:51 AM",
     tag: "EVENT-DRIVEN",
     icon: Calendar,
-    text: "Merger arbitrage opportunity identified in healthcare sector. Risk-adjusted return attractive.",
+    text: "Merger arbitrage opportunity identified in healthcare sector. Risk adjusted return attractive.",
   },
 ];
 
 const PUBS = [
   {
-    t: "Monthly Market Outlook — May 2024",
+    t: "Monthly Market Outlook, May 2024",
     d: "Our comprehensive take on global markets, key themes, and portfolio positioning.",
     img: neural,
   },
@@ -126,7 +126,7 @@ const PUBS = [
     img: neural,
   },
   {
-    t: "Quarterly Investment Review — Q1 2024",
+    t: "Quarterly Investment Review, Q1 2024",
     d: "Performance review, key trades, and lessons learned from the quarter.",
     img: cityNY,
   },
@@ -195,7 +195,7 @@ function InsightsPage() {
                 AI & Liquidity: The New Market Regime
               </h2>
               <p className="mt-3 text-sm text-muted-foreground">
-                How AI-driven market structure analysis is reshaping liquidity dynamics and creating
+                How AI driven market structure analysis is reshaping liquidity dynamics and creating
                 opportunities across asset classes.
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">

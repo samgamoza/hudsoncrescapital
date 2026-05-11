@@ -45,7 +45,7 @@ type AssetListingQuote = {
 export const Route = createFileRoute("/portal/trade-workspace")({
   head: () => ({
     meta: [
-      { title: "Trade Workspace — Hudson Crest Capital" },
+      { title: "Trade Workspace | Hudson Crest Capital" },
       { name: "robots", content: "noindex" },
     ],
   }),

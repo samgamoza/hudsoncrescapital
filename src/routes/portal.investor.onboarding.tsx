@@ -13,7 +13,7 @@ import { Toaster } from "@/components/ui/sonner";
 export const Route = createFileRoute("/portal/investor/onboarding")({
   head: () => ({
     meta: [
-      { title: "Complete onboarding — Hudson Crest Capital" },
+      { title: "Complete onboarding | Hudson Crest Capital" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -136,7 +136,7 @@ function InvestorOnboardingPage() {
       />
       <SectionCard title="Investor onboarding">
         <p className="text-sm text-muted-foreground mb-6">
-          This short form replaces the full paper-style application for self-serve signup. You will
+          This short form replaces the full paper style application for self serve signup. You will
           still complete identity verification (KYC) separately when prompted.
         </p>
         <InvestorLiteOnboardingFields

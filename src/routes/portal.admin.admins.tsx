@@ -73,7 +73,7 @@ function AdminsPage() {
       if (!res.ok) throw new Error(`Failed (${res.status})`);
       toast.success(
         password
-          ? `Created ${role} ${email} with password — they can sign in immediately.`
+          ? `Created ${role} ${email} with password. They can sign in immediately.`
           : `Invited ${email} as ${role}. They must accept the email invite.`,
       );
       setEmail("");
@@ -113,7 +113,7 @@ function AdminsPage() {
         subtitle={
           isSuper
             ? "Super admin: invite and manage admin and support staff."
-            : "Read-only — only super admins can grant roles."
+            : "Read only: only super admins can grant roles."
         }
       />
 
@@ -131,7 +131,7 @@ function AdminsPage() {
             <input
               className={field}
               type="text"
-              placeholder="Password (optional — sets immediately)"
+              placeholder="Password (optional: sets immediately)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               minLength={8}
