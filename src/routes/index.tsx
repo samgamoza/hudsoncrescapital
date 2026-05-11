@@ -15,12 +15,22 @@ type HeroSlide = {
   alt: string;
   /** Globe art has office labels at edges — cover crops them on common laptop widths; contain keeps them visible. */
   objectFit?: "cover" | "contain";
+  /**
+   * Cityscape imagery is cropped heavily with object-cover + center on tablet aspect ratios,
+   * hiding the skyline. Tune focal point per breakpoint (and portrait vs landscape).
+   */
+  objectPositionClasses?: string;
 };
+
+/** Focal bias: towers slightly right-of-center; skyline band a bit below center — keeps offices in frame across aspect ratios. */
+const CITYSCAPE_OBJECT_POSITION =
+  "object-[58%_46%] sm:object-[56%_44%] md:object-[57%_42%] max-lg:portrait:object-[64%_48%] lg:object-[55%_38%] xl:object-[53%_36%] 2xl:object-[52%_34%] min-[1536px]:object-center";
 
 const HERO_SLIDES: HeroSlide[] = [
   {
     src: heroCityscape,
     alt: "Global financial city skyline at night with connected trading desks",
+    objectPositionClasses: CITYSCAPE_OBJECT_POSITION,
   },
   { src: heroGlobe, alt: "Interactive global trading network", objectFit: "contain" },
   { src: heroTradingFloor, alt: "Institutional trading floor with live market data" },
@@ -64,15 +74,18 @@ function HomePage() {
           {/* Carousel background — cross-fade */}
           {HERO_SLIDES.map((s, i) => {
             const fit = s.objectFit === "contain" ? "object-contain" : "object-cover";
+            const position = s.objectPositionClasses ?? "object-center";
             return (
               <img
                 key={s.src}
                 src={s.src}
                 alt={i === slide ? s.alt : ""}
-                className={`absolute inset-0 m-auto h-full w-full ${fit} object-center transition-opacity duration-[1500ms] ease-in-out ${
+                sizes="100vw"
+                className={`absolute inset-0 m-auto min-h-full min-w-full ${fit} ${position} transition-opacity duration-[1500ms] ease-in-out ${
                   i === slide ? "opacity-60" : "opacity-0"
                 }`}
                 loading={i === 0 ? "eager" : "lazy"}
+                decoding="async"
               />
             );
           })}

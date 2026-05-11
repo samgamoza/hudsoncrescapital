@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ArrowDownRight, ArrowUpRight, RefreshCw } from "lucide-react";
 import { DataTable, PageHeader, SectionCard } from "@/lib/portalShared";
 import type { InvestorTradingWorkspace, TradableInstrument } from "@/lib/trading.types";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/portal/investor/trade")({
   head: () => ({
@@ -51,6 +52,40 @@ function InvestorTradePage() {
 
   useEffect(() => {
     void load();
+  }, []);
+
+  useEffect(() => {
+    const id = window.setInterval(() => void load(), 15000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        const uid = data.session?.user?.id;
+        if (!uid || disposed) return;
+        channel = supabase
+          .channel(`investor-orders-${uid}`)
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "orders", filter: `placed_by=eq.${uid}` },
+            () => void load(),
+          )
+          .on("postgres_changes", { event: "*", schema: "public", table: "trades" }, () =>
+            void load(),
+          )
+          .subscribe();
+      })
+      .catch(() => {
+        // fallback remains manual refresh
+      });
+    return () => {
+      disposed = true;
+      if (channel) void supabase.removeChannel(channel);
+    };
   }, []);
 
   const selectedInstrument = useMemo(

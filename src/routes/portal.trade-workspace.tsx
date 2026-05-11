@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import {
   BadgeInfo,
   BarChart3,
@@ -25,6 +25,113 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { usePortalAuth } from "@/hooks/usePortalAuth";
 import type { AssetListing, AssetListingsResponse } from "@/lib/asset-listings.types";
+
+type PlacePayload = {
+  accountId: string;
+  instrumentId: string;
+  side: "buy" | "sell";
+  orderType: "market" | "limit" | "stop" | "stop_limit";
+  timeInForce: "day" | "gtc" | "ioc" | "fok";
+  quantity: number;
+  limitPrice?: number | null;
+  stopPrice?: number | null;
+};
+
+function findTradableInstrumentForAsset(
+  instruments: TradableInstrument[],
+  asset: AssetListing | null,
+): TradableInstrument | null {
+  if (!asset) return null;
+  const candidates = [asset.display_symbol, asset.symbol, asset.cqs_symbol, asset.nasdaq_symbol]
+    .map((s) => String(s ?? "").trim().toUpperCase())
+    .filter(Boolean);
+  const bySym = new Map(instruments.map((i) => [i.symbol.trim().toUpperCase(), i]));
+  for (const c of candidates) {
+    const row = bySym.get(c);
+    if (row) return row;
+  }
+  return null;
+}
+
+async function postWorkspacePlaceOrder(payload: PlacePayload): Promise<{ ok: true } | { error: string }> {
+  const res = await fetch("/api/portal/investor-trading", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "place",
+      payload: {
+        accountId: payload.accountId,
+        instrumentId: payload.instrumentId,
+        side: payload.side,
+        orderType: payload.orderType,
+        timeInForce: payload.timeInForce,
+        quantity: payload.quantity,
+        limitPrice: payload.limitPrice ?? null,
+        stopPrice: payload.stopPrice ?? null,
+        clientOrderId: null as string | null,
+      },
+    }),
+  });
+  const body = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) return { error: body?.error ?? `Order failed (${res.status})` };
+  return { ok: true as const };
+}
+
+/** Map free-form deal-ticket fields to a validated place payload (minus routing ids). */
+function parseDealFieldsToSpec(
+  side: "buy" | "sell",
+  size: string,
+  price: string,
+  stop: string,
+  limit: string,
+): { ok: true; spec: Omit<PlacePayload, "accountId" | "instrumentId"> } | { ok: false; error: string } {
+  const quantity = Number(size);
+  if (!Number.isFinite(quantity) || quantity <= 0) return { ok: false, error: "Enter a valid size." };
+  const lim = Number(limit);
+  const stp = Number(stop);
+  const px = Number(price);
+  if (Number.isFinite(lim) && lim > 0 && Number.isFinite(stp) && stp > 0) {
+    return {
+      ok: true,
+      spec: {
+        side,
+        orderType: "stop_limit",
+        timeInForce: "day",
+        quantity,
+        limitPrice: lim,
+        stopPrice: stp,
+      },
+    };
+  }
+  if (Number.isFinite(lim) && lim > 0) {
+    return {
+      ok: true,
+      spec: { side, orderType: "limit", timeInForce: "day", quantity, limitPrice: lim },
+    };
+  }
+  if (Number.isFinite(stp) && stp > 0) {
+    return {
+      ok: true,
+      spec: { side, orderType: "stop", timeInForce: "day", quantity, stopPrice: stp },
+    };
+  }
+  if (Number.isFinite(px) && px > 0) {
+    return {
+      ok: true,
+      spec: { side, orderType: "limit", timeInForce: "day", quantity, limitPrice: px },
+    };
+  }
+  return {
+    ok: true,
+    spec: { side, orderType: "market", timeInForce: "day", quantity },
+  };
+}
+import type {
+  AccountPortfolioSnapshot,
+  InvestorTradingWorkspace,
+  TradableInstrument,
+} from "@/lib/trading.types";
+import { supabase } from "@/integrations/supabase/client";
 import {
   displayNameOfAsset,
   displaySymbolOfAsset,
@@ -56,6 +163,82 @@ function TradeWorkspacePage() {
   const navigate = useNavigate();
   const { loading, role } = usePortalAuth("investor");
   const [marketClass, setMarketClass] = useState<string>("commodities");
+  const [hdrWs, setHdrWs] = useState<InvestorTradingWorkspace | null>(null);
+
+  useEffect(() => {
+    if (loading || !role) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/portal/investor-trading");
+        const data = (await res.json().catch(() => ({}))) as InvestorTradingWorkspace & {
+          error?: string;
+        };
+        if (!res.ok || cancelled) return;
+        setHdrWs(data);
+      } catch {
+        /* non-fatal for layout */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, role]);
+
+  useEffect(() => {
+    if (loading || !role) return;
+    let disposed = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        const uid = data.session?.user?.id;
+        if (!uid || disposed) return;
+        channel = supabase
+          .channel(`workspace-hdr-${uid}`)
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "orders", filter: `placed_by=eq.${uid}` },
+            () => {
+              void fetch("/api/portal/investor-trading")
+                .then((r) => r.json())
+                .then((d) => {
+                  if (!disposed && d && typeof d === "object" && Array.isArray((d as any).accounts))
+                    setHdrWs(d as InvestorTradingWorkspace);
+                })
+                .catch(() => {});
+            },
+          )
+          .on("postgres_changes", { event: "*", schema: "public", table: "trades" }, () => {
+            void fetch("/api/portal/investor-trading")
+              .then((r) => r.json())
+              .then((d) => {
+                if (!disposed && d && typeof d === "object" && Array.isArray((d as any).accounts))
+                  setHdrWs(d as InvestorTradingWorkspace);
+              })
+              .catch(() => {});
+          })
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "positions" },
+            () => {
+              void fetch("/api/portal/investor-trading")
+                .then((r) => r.json())
+                .then((d) => {
+                  if (!disposed && d && typeof d === "object" && Array.isArray((d as any).accounts))
+                    setHdrWs(d as InvestorTradingWorkspace);
+                })
+                .catch(() => {});
+            },
+          )
+          .subscribe();
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+      if (channel) void supabase.removeChannel(channel);
+    };
+  }, [loading, role]);
 
   useEffect(() => {
     if (loading) return;
@@ -81,17 +264,7 @@ function TradeWorkspacePage() {
             Live
           </span>
         </div>
-        <div className="hidden lg:flex items-center gap-4 text-xs text-muted-foreground">
-          <span>
-            Funds: <b className="text-foreground">US$20,000.00</b>
-          </span>
-          <span>
-            P/L: <b className="text-foreground">US$0.00</b>
-          </span>
-          <span>
-            Available: <b className="text-success">US$20,000.00</b>
-          </span>
-        </div>
+        <WorkspaceHeaderFunds snapshots={hdrWs?.account_snapshots} />
         <div className="flex items-center gap-2">
           <button
             className="text-xs border border-border rounded px-2.5 py-1.5 hover:bg-surface-elevated"
@@ -156,6 +329,7 @@ function TradeWorkspacePage() {
         <aside className="border-l border-border bg-surface/30 p-3">
           <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Panels</div>
           <div className="flex flex-col gap-2">
+            <WorkspaceBlotter />
             <Panel title="Notifications" icon={Bell}>
               No new notifications.
             </Panel>
@@ -169,6 +343,209 @@ function TradeWorkspacePage() {
         </aside>
       </div>
     </div>
+  );
+}
+
+function WorkspaceHeaderFunds({ snapshots }: { snapshots?: AccountPortfolioSnapshot[] }) {
+  const snap = snapshots?.[0];
+  if (!snap) {
+    return (
+      <div className="hidden lg:flex items-center gap-4 text-xs text-muted-foreground">
+        <span>
+          Primary account: <b className="text-foreground">—</b>
+        </span>
+        <span>Cash · Realized · Positions loading after catalog sync…</span>
+      </div>
+    );
+  }
+  const cur = snap.base_currency ?? "USD";
+  return (
+    <div className="hidden lg:flex items-center gap-4 text-xs text-muted-foreground">
+      <span title={`Account ${snap.account_number}`}>
+       Acct <b className="text-foreground font-mono">{snap.account_number}</b> ({cur})
+      </span>
+      <span>
+        Cash:{" "}
+        <b className="text-foreground">{fmtNum(snap.cash_balance)}</b>
+      </span>
+      <span title="Aggregate realized P/L across open position rows">
+        Realized P/L:{" "}
+        <b className={snap.realized_pnl >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
+          {fmtNum(snap.realized_pnl)}
+        </b>
+      </span>
+      <span>
+        Open lines:{" "}
+        <b className="text-foreground">{snap.open_position_count}</b>
+      </span>
+    </div>
+  );
+}
+
+function WorkspaceBlotter() {
+  const [orders, setOrders] = useState<InvestorTradingWorkspace["orders"]>([]);
+  const [fills, setFills] = useState<
+    { id: string; executed_at: string; symbol: string; side: string; quantity: number; price: number }[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    try {
+      const [ordersRes, fillsRes] = await Promise.all([
+        fetch("/api/portal/investor-trading"),
+        fetch("/api/portal/trade-history"),
+      ]);
+      const ordersBody = await ordersRes.json().catch(() => ({}));
+      const fillsBody = await fillsRes.json().catch(() => []);
+      if (!ordersRes.ok) throw new Error(ordersBody?.error ?? `Orders failed (${ordersRes.status})`);
+      if (!fillsRes.ok) throw new Error(`Fills failed (${fillsRes.status})`);
+      const ws = ordersBody as InvestorTradingWorkspace;
+      const open = (ws.orders ?? []).filter((o) =>
+        ["pending", "working", "partially_filled"].includes(o.status),
+      );
+      setOrders(open.slice(0, 8));
+      setFills(
+        (Array.isArray(fillsBody) ? fillsBody : [])
+          .slice(0, 8)
+          .map((f: any) => ({
+            id: String(f.id),
+            executed_at: String(f.executed_at),
+            symbol: String(f.symbol ?? "—"),
+            side: String(f.side ?? ""),
+            quantity: Number(f.quantity ?? 0),
+            price: Number(f.price ?? 0),
+          })),
+      );
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Could not load blotter";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelOpen = async (orderId: string) => {
+    try {
+      const res = await fetch("/api/portal/investor-trading", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cancel", payload: { orderId } }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body?.error ?? `Cancel failed (${res.status})`);
+      toast.success("Order cancelled");
+      void load();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Cancel failed");
+    }
+  };
+
+  useEffect(() => {
+    void load();
+    const id = window.setInterval(() => {
+      void load();
+    }, 10000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        const uid = data.session?.user?.id;
+        if (!uid || disposed) return;
+        channel = supabase
+          .channel(`workspace-blotter-${uid}`)
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "orders", filter: `placed_by=eq.${uid}` },
+            () => void load(),
+          )
+          .on("postgres_changes", { event: "*", schema: "public", table: "trades" }, () => void load())
+          .subscribe();
+      })
+      .catch(() => {
+        // polling fallback already active
+      });
+    return () => {
+      disposed = true;
+      if (channel) void supabase.removeChannel(channel);
+    };
+  }, []);
+
+  return (
+    <section className="rounded-lg border border-border bg-background p-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-xs text-foreground">Order Blotter</div>
+        <button
+          type="button"
+          onClick={() => void load()}
+          className="text-[11px] text-muted-foreground hover:text-foreground"
+        >
+          Refresh
+        </button>
+      </div>
+      {loading ? (
+        <div className="text-xs text-muted-foreground">Loading...</div>
+      ) : (
+        <>
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">
+            Open orders
+          </div>
+          <div className="space-y-1 mb-3">
+            {orders.length === 0 ? (
+              <div className="text-xs text-muted-foreground">No open orders.</div>
+            ) : (
+              orders.map((o) => (
+                <div key={o.id} className="text-xs border border-border rounded px-2 py-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="font-medium truncate">{o.symbol}</span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="text-muted-foreground">{o.status}</span>
+                      <button
+                        type="button"
+                        onClick={() => void cancelOpen(o.id)}
+                        className="text-[10px] uppercase text-destructive hover:underline"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                  <div className="text-muted-foreground">
+                    {o.side} {o.quantity.toLocaleString(undefined, { maximumFractionDigits: 6 })}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">
+            Recent fills
+          </div>
+          <div className="space-y-1">
+            {fills.length === 0 ? (
+              <div className="text-xs text-muted-foreground">No fills yet.</div>
+            ) : (
+              fills.map((f) => (
+                <div key={f.id} className="text-xs border border-border rounded px-2 py-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{f.symbol}</span>
+                    <span className={f.side === "buy" ? "text-success" : "text-destructive"}>
+                      {f.side}
+                    </span>
+                  </div>
+                  <div className="text-muted-foreground">
+                    {f.quantity.toLocaleString(undefined, { maximumFractionDigits: 6 })} @{" "}
+                    {fmtPx(f.price)}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+    </section>
   );
 }
 
@@ -190,6 +567,22 @@ function AssetBrowser({ forcedAssetClass }: { forcedAssetClass?: string }) {
   const [ticketAsset, setTicketAsset] = useState<AssetListing | null>(null);
   const [dealTab, setDealTab] = useState<"deal" | "order" | "info">("deal");
   const [liveQuotes, setLiveQuotes] = useState<Record<string, AssetListingQuote>>({});
+  const [tradeWs, setTradeWs] = useState<InvestorTradingWorkspace | null>(null);
+
+  const loadTradeWs = useCallback(async () => {
+    try {
+      const res = await fetch("/api/portal/investor-trading");
+      const raw = await res.json().catch(() => ({}));
+      if (!res.ok) return;
+      setTradeWs(raw as InvestorTradingWorkspace);
+    } catch {
+      /* non-fatal */
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadTradeWs();
+  }, [loadTradeWs]);
 
   const load = async () => {
     setLoading(true);
@@ -665,12 +1058,19 @@ function AssetBrowser({ forcedAssetClass }: { forcedAssetClass?: string }) {
               mode={dealTab}
               onClose={() => setTicketAsset(null)}
               liveQuotes={liveQuotes}
+              workspace={tradeWs}
+              reloadWorkspace={loadTradeWs}
             />
           ) : null}
 
           <AssetDetailsCard asset={selected} />
           {dealTab === "info" ? (
-            <TradeTicketCard asset={ticketAsset ?? selected} onClose={() => setTicketAsset(null)} />
+            <TradeTicketCard
+              asset={ticketAsset ?? selected}
+              onClose={() => setTicketAsset(null)}
+              workspace={tradeWs}
+              reloadWorkspace={loadTradeWs}
+            />
           ) : null}
         </aside>
       </div>
@@ -757,20 +1157,34 @@ function AssetDetailsCard({ asset }: { asset: AssetListing | null }) {
   );
 }
 
-function TradeTicketCard({ asset, onClose }: { asset: AssetListing | null; onClose: () => void }) {
+function TradeTicketCard({
+  asset,
+  onClose,
+  workspace,
+  reloadWorkspace,
+}: {
+  asset: AssetListing | null;
+  onClose: () => void;
+  workspace: InvestorTradingWorkspace | null;
+  reloadWorkspace: () => void;
+}) {
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [orderType, setOrderType] = useState<"market" | "limit" | "stop" | "stop_limit">("market");
   const [tif, setTif] = useState<"day" | "gtc" | "ioc" | "fok">("day");
   const [quantity, setQuantity] = useState("");
-  const [price, setPrice] = useState("");
+  const [limitStr, setLimitStr] = useState("");
+  const [stopStr, setStopStr] = useState("");
   const [reviewing, setReviewing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     setReviewing(false);
     setQuantity("");
-    setPrice("");
+    setLimitStr("");
+    setStopStr("");
     setOrderType("market");
     setTif("day");
+    setSubmitting(false);
   }, [asset?.id]);
 
   if (!asset) {
@@ -790,8 +1204,16 @@ function TradeTicketCard({ asset, onClose }: { asset: AssetListing | null; onClo
   }
 
   const qty = Number(quantity || 0);
-  const px = Number(price || 0);
-  const estimated = qty > 0 && px > 0 ? qty * px : null;
+  const pxLimit = Number(limitStr || 0);
+  const pxStop = Number(stopStr || 0);
+  const estimatePx =
+    orderType === "limit" || orderType === "stop_limit"
+      ? pxLimit
+      : orderType === "stop"
+        ? pxStop
+        : NaN;
+  const estimated =
+    qty > 0 && Number.isFinite(estimatePx) && estimatePx > 0 ? qty * estimatePx : null;
 
   return (
     <section className="rounded-lg border border-border bg-background p-3">
@@ -849,18 +1271,32 @@ function TradeTicketCard({ asset, onClose }: { asset: AssetListing | null; onClo
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
           />
-          {orderType === "limit" || orderType === "stop" || orderType === "stop_limit" ? (
+          {orderType === "limit" || orderType === "stop_limit" ? (
             <input
               className="w-full bg-surface border border-border rounded-md px-2 py-2 text-sm"
-              placeholder="Price"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
+              placeholder="Limit price"
+              value={limitStr}
+              onChange={(e) => setLimitStr(e.target.value)}
+            />
+          ) : null}
+          {orderType === "stop" || orderType === "stop_limit" ? (
+            <input
+              className="w-full bg-surface border border-border rounded-md px-2 py-2 text-sm"
+              placeholder="Stop price"
+              value={stopStr}
+              onChange={(e) => setStopStr(e.target.value)}
             />
           ) : null}
           <button
             type="button"
             onClick={() => {
               if (!qty || qty <= 0) return toast.error("Enter quantity before review.");
+              if (orderType === "limit" && (!pxLimit || pxLimit <= 0))
+                return toast.error("Limit price is required.");
+              if (orderType === "stop" && (!pxStop || pxStop <= 0))
+                return toast.error("Stop price is required.");
+              if (orderType === "stop_limit" && (!pxLimit || !pxStop || pxLimit <= 0 || pxStop <= 0))
+                return toast.error("Stop-limit needs both limit and stop prices.");
               setReviewing(true);
             }}
             className="w-full border border-brand/40 text-brand rounded-md px-3 py-2 text-sm hover:bg-brand/10"
@@ -868,8 +1304,7 @@ function TradeTicketCard({ asset, onClose }: { asset: AssetListing | null; onClo
             Review Order
           </button>
           <p className="text-[11px] text-muted-foreground">
-            Ticket is broker-integration ready. Final execution wiring can reuse this payload
-            structure.
+            Submits a real pending order for staff execution (same pipeline as the classic ticket).
           </p>
         </div>
       ) : (
@@ -891,7 +1326,10 @@ function TradeTicketCard({ asset, onClose }: { asset: AssetListing | null; onClo
               Qty: <span className="text-foreground">{quantity}</span>
             </div>
             <div>
-              Est. price: <span className="text-foreground">{price || "Market"}</span>
+              Limit: <span className="text-foreground">{limitStr || "—"}</span>
+            </div>
+            <div>
+              Stop: <span className="text-foreground">{stopStr || "—"}</span>
             </div>
             <div>
               Estimated notional:{" "}
@@ -910,8 +1348,7 @@ function TradeTicketCard({ asset, onClose }: { asset: AssetListing | null; onClo
             </div>
           </div>
           <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-2.5 py-2 text-amber-700 dark:text-amber-300">
-            Confirming this submits an order intent. Final fill/execution depends on broker
-            integration and risk checks.
+            Confirming places the order in <b>pending</b> status for operations to work and fill.
           </p>
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -923,14 +1360,53 @@ function TradeTicketCard({ asset, onClose }: { asset: AssetListing | null; onClo
             </button>
             <button
               type="button"
+              disabled={submitting}
               onClick={() =>
-                toast.success(
-                  "Order intent captured. Broker execution wiring can be attached next.",
-                )
+                void (async () => {
+                  const inst = findTradableInstrumentForAsset(workspace?.instruments ?? [], asset);
+                  if (!inst) {
+                    toast.error(
+                      "This listing symbol is not linked to a tradable instrument. Try the classic ticket or another symbol.",
+                    );
+                    return;
+                  }
+                  const accountId = workspace?.accounts[0]?.id;
+                  if (!accountId) {
+                    toast.error("No active brokerage account on file.");
+                    return;
+                  }
+                  let limitPrice: number | null = null;
+                  let stopPrice: number | null = null;
+                  if (orderType === "limit" || orderType === "stop_limit") {
+                    limitPrice = pxLimit;
+                  }
+                  if (orderType === "stop" || orderType === "stop_limit") {
+                    stopPrice = pxStop;
+                  }
+                  setSubmitting(true);
+                  const out = await postWorkspacePlaceOrder({
+                    accountId,
+                    instrumentId: inst.id,
+                    side,
+                    orderType,
+                    timeInForce: tif,
+                    quantity: qty,
+                    limitPrice,
+                    stopPrice,
+                  });
+                  setSubmitting(false);
+                  if ("error" in out) {
+                    toast.error(out.error);
+                    return;
+                  }
+                  toast.success("Order placed");
+                  setReviewing(false);
+                  reloadWorkspace();
+                })()
               }
-              className="border border-brand/40 text-brand rounded-md px-2 py-2 hover:bg-brand/10"
+              className="border border-brand/40 text-brand rounded-md px-2 py-2 hover:bg-brand/10 disabled:opacity-50"
             >
-              Confirm
+              {submitting ? "Placing…" : "Place order"}
             </button>
           </div>
           <Link
@@ -951,17 +1427,22 @@ function DealTicketCard({
   mode,
   onClose,
   liveQuotes,
+  workspace,
+  reloadWorkspace,
 }: {
   asset: AssetListing | null;
   mode: "deal" | "order";
   onClose: () => void;
   liveQuotes: Record<string, AssetListingQuote>;
+  workspace: InvestorTradingWorkspace | null;
+  reloadWorkspace: () => void;
 }) {
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [size, setSize] = useState("");
   const [price, setPrice] = useState("");
   const [stop, setStop] = useState("");
   const [limit, setLimit] = useState("");
+  const [dealBusy, setDealBusy] = useState(false);
 
   useEffect(() => {
     setSide("buy");
@@ -969,6 +1450,7 @@ function DealTicketCard({
     setPrice("");
     setStop("");
     setLimit("");
+    setDealBusy(false);
   }, [asset?.id, mode]);
 
   if (!asset) {
@@ -1073,14 +1555,46 @@ function DealTicketCard({
 
       <button
         type="button"
+        disabled={dealBusy}
         onClick={() =>
-          toast.success(
-            `${side.toUpperCase()} deal staged for ${displaySymbolOfAsset(asset)}. Connect broker adapter for live execution.`,
-          )
+          void (async () => {
+            const mapped = parseDealFieldsToSpec(side, size, price, stop, limit);
+            if (!mapped.ok) {
+              toast.error(mapped.error);
+              return;
+            }
+            const inst = findTradableInstrumentForAsset(workspace?.instruments ?? [], asset);
+            if (!inst) {
+              toast.error(
+                "Listing symbol is not mapped to an instrument. Open the classic ticket or pick another listing.",
+              );
+              return;
+            }
+            const accountId = workspace?.accounts[0]?.id;
+            if (!accountId) {
+              toast.error("No active brokerage account.");
+              return;
+            }
+            setDealBusy(true);
+            const out = await postWorkspacePlaceOrder({
+              accountId,
+              instrumentId: inst.id,
+              ...mapped.spec,
+            });
+            setDealBusy(false);
+            if ("error" in out) {
+              toast.error(out.error);
+              return;
+            }
+            toast.success(
+              `${side.toUpperCase()} ${mapped.spec.orderType} order queued for ${displaySymbolOfAsset(asset)}`,
+            );
+            reloadWorkspace();
+          })()
         }
-        className="mt-3 w-full border border-brand/40 text-brand rounded-md px-3 py-2 text-sm hover:bg-brand/10"
+        className="mt-3 w-full border border-brand/40 text-brand rounded-md px-3 py-2 text-sm hover:bg-brand/10 disabled:opacity-50"
       >
-        {mode === "deal" ? "Place Deal" : "Place Order"}
+        {dealBusy ? "Placing…" : mode === "deal" ? "Place Deal" : "Place Order"}
       </button>
     </section>
   );

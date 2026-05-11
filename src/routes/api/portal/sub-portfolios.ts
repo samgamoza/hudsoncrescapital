@@ -1,33 +1,51 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireUserIdFromRequest } from "@/server/request-auth";
+import { apiErrorResponse, readJsonBody } from "../-_utils";
 
 export const Route = createFileRoute("/api/portal/sub-portfolios")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const url = new URL(request.url);
-        const userId = url.searchParams.get("userId") ?? undefined;
-        const accountId = url.searchParams.get("accountId") ?? undefined;
-        const { listSubPortfolios } = await import("@/server/portfolios.functions");
-        const data = await listSubPortfolios({ data: { userId, accountId } });
-        return Response.json(data);
+        try {
+          const actorId = await requireUserIdFromRequest(request);
+          const url = new URL(request.url);
+          const userId = url.searchParams.get("userId") ?? undefined;
+          const accountId = url.searchParams.get("accountId") ?? undefined;
+          const { listSubPortfoliosForApi } = await import("@/server/portfolios.functions");
+          return Response.json(await listSubPortfoliosForApi(actorId, { userId, accountId }));
+        } catch (error) {
+          return apiErrorResponse(error);
+        }
       },
       POST: async ({ request }) => {
-        const body = await request.json();
-        const { createSubPortfolio } = await import("@/server/portfolios.functions");
-        const data = await createSubPortfolio({ data: body });
-        return Response.json(data);
+        try {
+          const actorId = await requireUserIdFromRequest(request);
+          const body = await readJsonBody<unknown>(request);
+          const { createSubPortfolioForApi } = await import("@/server/portfolios.functions");
+          return Response.json(await createSubPortfolioForApi(actorId, body));
+        } catch (error) {
+          return apiErrorResponse(error);
+        }
       },
       PATCH: async ({ request }) => {
-        const body = await request.json();
-        const { updateSubPortfolio } = await import("@/server/portfolios.functions");
-        const data = await updateSubPortfolio({ data: body });
-        return Response.json(data);
+        try {
+          const actorId = await requireUserIdFromRequest(request);
+          const body = await readJsonBody<unknown>(request);
+          const { updateSubPortfolioForApi } = await import("@/server/portfolios.functions");
+          return Response.json(await updateSubPortfolioForApi(actorId, body));
+        } catch (error) {
+          return apiErrorResponse(error);
+        }
       },
       DELETE: async ({ request }) => {
-        const body = await request.json();
-        const { deleteSubPortfolio } = await import("@/server/portfolios.functions");
-        const data = await deleteSubPortfolio({ data: body });
-        return Response.json(data);
+        try {
+          const actorId = await requireUserIdFromRequest(request);
+          const body = await readJsonBody<unknown>(request);
+          const { deleteSubPortfolioForApi } = await import("@/server/portfolios.functions");
+          return Response.json(await deleteSubPortfolioForApi(actorId, body));
+        } catch (error) {
+          return apiErrorResponse(error);
+        }
       },
     },
   },

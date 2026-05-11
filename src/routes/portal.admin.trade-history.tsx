@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DataTable, PageHeader, SectionCard } from "@/lib/portalShared";
 import type { StaffTradeHistoryRow } from "@/lib/trade-history.types";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/portal/admin/trade-history")({
   component: AdminTradeHistoryPage,
@@ -11,22 +12,46 @@ export const Route = createFileRoute("/portal/admin/trade-history")({
 function AdminTradeHistoryPage() {
   const [rows, setRows] = useState<StaffTradeHistoryRow[] | null>(null);
 
-  useEffect(() => {
-    void (async () => {
-      try {
-        const res = await fetch("/api/portal/staff-trade-history");
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body?.error ?? `Failed (${res.status})`);
-        }
-        const data = (await res.json()) as StaffTradeHistoryRow[];
-        setRows(Array.isArray(data) ? data : []);
-      } catch (e: any) {
-        toast.error(e?.message ?? "Could not load trade history");
-        setRows([]);
+  const loadRows = useCallback(async () => {
+    try {
+      const res = await fetch("/api/portal/staff-trade-history");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          typeof (data as { error?: string })?.error === "string"
+            ? (data as { error: string }).error
+            : `Failed (${res.status})`,
+        );
       }
-    })();
+      setRows(Array.isArray(data) ? (data as StaffTradeHistoryRow[]) : []);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Could not load trade history");
+      setRows([]);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadRows();
+  }, [loadRows]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => void loadRows(), 12000);
+    return () => window.clearInterval(id);
+  }, [loadRows]);
+
+  useEffect(() => {
+    let disposed = false;
+    const channel = supabase
+      .channel("portal-admin-trade-history")
+      .on("postgres_changes", { event: "*", schema: "public", table: "trades" }, () => {
+        if (!disposed) void loadRows();
+      })
+      .subscribe();
+    return () => {
+      disposed = true;
+      void supabase.removeChannel(channel);
+    };
+  }, [loadRows]);
 
   if (rows === null) {
     return <p className="text-sm text-muted-foreground">Loading trade history…</p>;

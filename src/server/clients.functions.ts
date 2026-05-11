@@ -12,14 +12,19 @@ export async function listClientsForApi(actorUserId: string) {
     page: 1,
     perPage: 200,
   });
-  if (usersErr) throw new Error(usersErr.message);
+  if (usersErr) throw new Error(`clients.list: ${usersErr.message}`);
 
   const ids = usersResp.users.map((u) => u.id);
+  if (ids.length === 0) return [];
+
   const [profilesQ, rolesQ, accountsQ] = await Promise.all([
     supabaseAdmin.from("profiles").select("*").in("user_id", ids),
     supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids),
     supabaseAdmin.from("accounts").select("*").in("user_id", ids),
   ]);
+  if (profilesQ.error) throw new Error(`clients.list.profiles: ${profilesQ.error.message}`);
+  if (rolesQ.error) throw new Error(`clients.list.roles: ${rolesQ.error.message}`);
+  if (accountsQ.error) throw new Error(`clients.list.accounts: ${accountsQ.error.message}`);
 
   const profiles = profilesQ.data ?? [];
   const roles = rolesQ.data ?? [];
@@ -52,7 +57,7 @@ export async function getClientForApi(actorUserId: string, raw: unknown) {
   const data = z.object({ userId: z.string().uuid() }).parse(raw);
   await requireMinRole(actorUserId, "admin");
   const { data: userResp, error } = await supabaseAdmin.auth.admin.getUserById(data.userId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(`clients.detail.user: ${error.message}`);
   const u = userResp.user;
   if (!u) throw new Error("User not found");
 
@@ -75,6 +80,11 @@ export async function getClientForApi(actorUserId: string, raw: unknown) {
       .eq("user_id", u.id)
       .order("created_at", { ascending: false }),
   ]);
+  if (profileQ.error) throw new Error(`clients.detail.profile: ${profileQ.error.message}`);
+  if (rolesQ.error) throw new Error(`clients.detail.roles: ${rolesQ.error.message}`);
+  if (accountsQ.error) throw new Error(`clients.detail.accounts: ${accountsQ.error.message}`);
+  if (kycQ.error) throw new Error(`clients.detail.kyc: ${kycQ.error.message}`);
+  if (notesQ.error) throw new Error(`clients.detail.notes: ${notesQ.error.message}`);
 
   return {
     id: u.id,

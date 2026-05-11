@@ -128,11 +128,20 @@ type SP = {
 
 async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
   const res = await fetch(input, init);
+  const text = await res.text();
   if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(txt || `Request failed (${res.status})`);
+    let message = text || `Request failed (${res.status})`;
+    try {
+      const parsed = text ? JSON.parse(text) : {};
+      const err = typeof (parsed as any)?.error === "string" ? (parsed as any).error : "";
+      const hint = typeof (parsed as any)?.hint === "string" ? (parsed as any).hint : "";
+      message = [err, hint].filter(Boolean).join(" — ") || message;
+    } catch {
+      // keep raw text fallback
+    }
+    throw new Error(message);
   }
-  return (await res.json()) as T;
+  return (text ? JSON.parse(text) : {}) as T;
 }
 
 function getErrorMessage(error: unknown, fallback: string) {

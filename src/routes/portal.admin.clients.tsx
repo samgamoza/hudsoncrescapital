@@ -24,7 +24,22 @@ const btnDanger =
 async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
   const res = await fetch(input, init);
   const text = await res.text();
-  if (!res.ok) throw new Error(text || `Request failed (${res.status})`);
+  if (!res.ok) {
+    let message = text || `Request failed (${res.status})`;
+    try {
+      const parsed = text ? JSON.parse(text) : {};
+      if (parsed && typeof parsed === "object") {
+        const err = typeof (parsed as any).error === "string" ? (parsed as any).error : "";
+        const hint = typeof (parsed as any).hint === "string" ? (parsed as any).hint : "";
+        const details =
+          typeof (parsed as any).details === "string" ? (parsed as any).details : "";
+        message = [err, hint, details].filter(Boolean).join(" — ") || message;
+      }
+    } catch {
+      // keep raw text fallback
+    }
+    throw new Error(message);
+  }
   return (text ? JSON.parse(text) : {}) as T;
 }
 
@@ -70,7 +85,9 @@ function ClientsPage() {
     void refresh();
     void apiJson<string[]>("/api/portal/clients-admin?action=roles")
       .then((r) => setMyRoles(r as any[]))
-      .catch(() => {});
+      .catch((e: any) => {
+        console.error("[clients-admin] roles fetch failed:", e?.message ?? e);
+      });
   }, []);
 
   const doReset = async () => {

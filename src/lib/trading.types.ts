@@ -42,8 +42,19 @@ export type InvestorOrderRow = {
   client_order_id: string | null;
 };
 
+/** Per-account cash and position summary for workspace headers / P/L strip. */
+export type AccountPortfolioSnapshot = {
+  account_id: string;
+  account_number: string;
+  base_currency: string;
+  cash_balance: number;
+  open_position_count: number;
+  realized_pnl: number;
+};
+
 export type InvestorTradingWorkspace = {
   instruments: TradableInstrument[];
   accounts: TradingAccount[];
   orders: InvestorOrderRow[];
+  account_snapshots?: AccountPortfolioSnapshot[];
 };

@@ -74,6 +74,7 @@ import { Route as ApiPortalSubPortfoliosRouteImport } from './routes/api/portal/
 import { Route as ApiPortalSubPortfolioHoldingsRouteImport } from './routes/api/portal/sub-portfolio-holdings'
 import { Route as ApiPortalStaffTradeHistoryRouteImport } from './routes/api/portal/staff-trade-history'
 import { Route as ApiPortalProfileRouteImport } from './routes/api/portal/profile'
+import { Route as ApiPortalOrderExecutionRouteImport } from './routes/api/portal/order-execution'
 import { Route as ApiPortalOnboardClientRouteImport } from './routes/api/portal/onboard-client'
 import { Route as ApiPortalMyWalletsRouteImport } from './routes/api/portal/my-wallets'
 import { Route as ApiPortalMfaRouteImport } from './routes/api/portal/mfa'
@@ -422,6 +423,11 @@ const ApiPortalProfileRoute = ApiPortalProfileRouteImport.update({
   path: '/api/portal/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPortalOrderExecutionRoute = ApiPortalOrderExecutionRouteImport.update({
+  id: '/api/portal/order-execution',
+  path: '/api/portal/order-execution',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPortalOnboardClientRoute = ApiPortalOnboardClientRouteImport.update({
   id: '/api/portal/onboard-client',
   path: '/api/portal/onboard-client',
@@ -520,6 +526,7 @@ export interface FileRoutesByFullPath {
   '/api/portal/mfa': typeof ApiPortalMfaRoute
   '/api/portal/my-wallets': typeof ApiPortalMyWalletsRoute
   '/api/portal/onboard-client': typeof ApiPortalOnboardClientRoute
+  '/api/portal/order-execution': typeof ApiPortalOrderExecutionRoute
   '/api/portal/profile': typeof ApiPortalProfileRoute
   '/api/portal/staff-trade-history': typeof ApiPortalStaffTradeHistoryRoute
   '/api/portal/sub-portfolio-holdings': typeof ApiPortalSubPortfolioHoldingsRoute
@@ -597,6 +604,7 @@ export interface FileRoutesByTo {
   '/api/portal/mfa': typeof ApiPortalMfaRoute
   '/api/portal/my-wallets': typeof ApiPortalMyWalletsRoute
   '/api/portal/onboard-client': typeof ApiPortalOnboardClientRoute
+  '/api/portal/order-execution': typeof ApiPortalOrderExecutionRoute
   '/api/portal/profile': typeof ApiPortalProfileRoute
   '/api/portal/staff-trade-history': typeof ApiPortalStaffTradeHistoryRoute
   '/api/portal/sub-portfolio-holdings': typeof ApiPortalSubPortfolioHoldingsRoute
@@ -677,6 +685,7 @@ export interface FileRoutesById {
   '/api/portal/mfa': typeof ApiPortalMfaRoute
   '/api/portal/my-wallets': typeof ApiPortalMyWalletsRoute
   '/api/portal/onboard-client': typeof ApiPortalOnboardClientRoute
+  '/api/portal/order-execution': typeof ApiPortalOrderExecutionRoute
   '/api/portal/profile': typeof ApiPortalProfileRoute
   '/api/portal/staff-trade-history': typeof ApiPortalStaffTradeHistoryRoute
   '/api/portal/sub-portfolio-holdings': typeof ApiPortalSubPortfolioHoldingsRoute
@@ -758,6 +767,7 @@ export interface FileRouteTypes {
     | '/api/portal/mfa'
     | '/api/portal/my-wallets'
     | '/api/portal/onboard-client'
+    | '/api/portal/order-execution'
     | '/api/portal/profile'
     | '/api/portal/staff-trade-history'
     | '/api/portal/sub-portfolio-holdings'
@@ -835,6 +845,7 @@ export interface FileRouteTypes {
     | '/api/portal/mfa'
     | '/api/portal/my-wallets'
     | '/api/portal/onboard-client'
+    | '/api/portal/order-execution'
     | '/api/portal/profile'
     | '/api/portal/staff-trade-history'
     | '/api/portal/sub-portfolio-holdings'
@@ -914,6 +925,7 @@ export interface FileRouteTypes {
     | '/api/portal/mfa'
     | '/api/portal/my-wallets'
     | '/api/portal/onboard-client'
+    | '/api/portal/order-execution'
     | '/api/portal/profile'
     | '/api/portal/staff-trade-history'
     | '/api/portal/sub-portfolio-holdings'
@@ -994,6 +1006,7 @@ export interface RootRouteChildren {
   ApiPortalMfaRoute: typeof ApiPortalMfaRoute
   ApiPortalMyWalletsRoute: typeof ApiPortalMyWalletsRoute
   ApiPortalOnboardClientRoute: typeof ApiPortalOnboardClientRoute
+  ApiPortalOrderExecutionRoute: typeof ApiPortalOrderExecutionRoute
   ApiPortalProfileRoute: typeof ApiPortalProfileRoute
   ApiPortalStaffTradeHistoryRoute: typeof ApiPortalStaffTradeHistoryRoute
   ApiPortalSubPortfolioHoldingsRoute: typeof ApiPortalSubPortfolioHoldingsRoute
@@ -1474,6 +1487,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPortalProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/portal/order-execution': {
+      id: '/api/portal/order-execution'
+      path: '/api/portal/order-execution'
+      fullPath: '/api/portal/order-execution'
+      preLoaderRoute: typeof ApiPortalOrderExecutionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/portal/onboard-client': {
       id: '/api/portal/onboard-client'
       path: '/api/portal/onboard-client'
@@ -1672,6 +1692,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPortalMfaRoute: ApiPortalMfaRoute,
   ApiPortalMyWalletsRoute: ApiPortalMyWalletsRoute,
   ApiPortalOnboardClientRoute: ApiPortalOnboardClientRoute,
+  ApiPortalOrderExecutionRoute: ApiPortalOrderExecutionRoute,
   ApiPortalProfileRoute: ApiPortalProfileRoute,
   ApiPortalStaffTradeHistoryRoute: ApiPortalStaffTradeHistoryRoute,
   ApiPortalSubPortfolioHoldingsRoute: ApiPortalSubPortfolioHoldingsRoute,

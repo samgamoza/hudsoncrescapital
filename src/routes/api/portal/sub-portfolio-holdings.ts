@@ -1,25 +1,39 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireUserIdFromRequest } from "@/server/request-auth";
+import { apiErrorResponse, readJsonBody } from "../-_utils";
 
 export const Route = createFileRoute("/api/portal/sub-portfolio-holdings")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const body = await request.json();
-        const { addHolding } = await import("@/server/portfolios.functions");
-        const data = await addHolding({ data: body });
-        return Response.json(data);
+        try {
+          const actorId = await requireUserIdFromRequest(request);
+          const body = await readJsonBody<unknown>(request);
+          const { addHoldingForApi } = await import("@/server/portfolios.functions");
+          return Response.json(await addHoldingForApi(actorId, body));
+        } catch (error) {
+          return apiErrorResponse(error);
+        }
       },
       PATCH: async ({ request }) => {
-        const body = await request.json();
-        const { updateHolding } = await import("@/server/portfolios.functions");
-        const data = await updateHolding({ data: body });
-        return Response.json(data);
+        try {
+          const actorId = await requireUserIdFromRequest(request);
+          const body = await readJsonBody<unknown>(request);
+          const { updateHoldingForApi } = await import("@/server/portfolios.functions");
+          return Response.json(await updateHoldingForApi(actorId, body));
+        } catch (error) {
+          return apiErrorResponse(error);
+        }
       },
       DELETE: async ({ request }) => {
-        const body = await request.json();
-        const { deleteHolding } = await import("@/server/portfolios.functions");
-        const data = await deleteHolding({ data: body });
-        return Response.json(data);
+        try {
+          const actorId = await requireUserIdFromRequest(request);
+          const body = await readJsonBody<unknown>(request);
+          const { deleteHoldingForApi } = await import("@/server/portfolios.functions");
+          return Response.json(await deleteHoldingForApi(actorId, body));
+        } catch (error) {
+          return apiErrorResponse(error);
+        }
       },
     },
   },
