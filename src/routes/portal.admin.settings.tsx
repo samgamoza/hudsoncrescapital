@@ -51,7 +51,11 @@ function AdminSettingsPage() {
         body: JSON.stringify({ investorDashboard: next }),
       });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((body as { error?: string }).error ?? "Save failed");
+      const b = body as { error?: string; hint?: string };
+      if (!res.ok) {
+        const msg = [b.error, b.hint].filter(Boolean).join(" ");
+        throw new Error(msg || "Save failed");
+      }
       setLayout(next);
       toast.success(next === "v2" ? "Investors now use Dashboard 2 by default." : "Investors now use Dashboard 1.");
     } catch (e) {

@@ -113,6 +113,25 @@ export function apiErrorResponse(error: unknown): Response {
     );
   }
 
+  // portal_settings / PostgREST unknown table (messages vary by version)
+  if (
+    lower.includes("portal_settings") ||
+    lower.includes("pgrst205") ||
+    (lower.includes("could not find") &&
+      (lower.includes("table") || lower.includes("'public."))) ||
+    (lower.includes("schema cache") &&
+      (lower.includes("table") || lower.includes("find")))
+  ) {
+    console.error("[api]", message);
+    return Response.json(
+      {
+        error: "Database schema",
+        hint: "The portal_settings table is missing or not exposed to the API. Apply supabase/migrations/20260512180000_portal_settings.sql to your project, then in Supabase Dashboard use Settings → API → Reload schema (or wait a minute).",
+      },
+      { status: 503 },
+    );
+  }
+
   console.error("[api]", message);
   const isDev =
     process.env.NODE_ENV === "development" ||
