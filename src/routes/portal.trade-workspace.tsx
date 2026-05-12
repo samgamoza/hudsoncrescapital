@@ -185,10 +185,40 @@ export const Route = createFileRoute("/portal/trade-workspace")({
   component: TradeWorkspacePage,
 });
 
+function WorkspaceEmptyCanvas() {
+  return (
+    <div className="flex min-h-[min(70vh,calc(100vh-8rem))] w-full flex-col items-center justify-center bg-gradient-to-b from-muted/5 via-muted/15 to-muted/5 px-6 py-16 text-center md:px-12">
+      <div className="max-w-lg space-y-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          My Workspace
+        </p>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+          This is your new workspace
+        </h1>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          You can use it to watch a focused set of markets, keep your layouts tidy, or mirror how you
+          work across screens — it is up to you.
+        </p>
+        <p className="text-xs leading-relaxed text-muted-foreground/90">
+          <span className="font-medium text-foreground">To get started,</span> pick an asset class
+          under <span className="font-medium text-foreground">Market Main</span> on the left (for
+          example Commodities, Shares, FX, or Options). The catalog and tools load here after you
+          choose one.
+        </p>
+        <p className="text-[11px] text-muted-foreground/70">
+          Optional filters stay under{" "}
+          <span className="text-foreground/80">Search & filters</span> once a catalog is open.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function TradeWorkspacePage() {
   const navigate = useNavigate();
   const { loading, role } = usePortalAuth("investor");
-  const [marketClass, setMarketClass] = useState<string>("commodities");
+  /** No catalog until user picks an asset class (IG-style empty first view). */
+  const [marketClass, setMarketClass] = useState<string | null>(null);
   const [hdrWs, setHdrWs] = useState<InvestorTradingWorkspace | null>(null);
 
   useEffect(() => {
@@ -322,14 +352,14 @@ function TradeWorkspacePage() {
           <NavGroup
             title="Market Main"
             items={WORKSPACE_MARKET_MAIN_VISIBLE}
-            activeValue={marketClass}
+            activeValue={marketClass ?? undefined}
             onSelect={(value) => {
               if (value) setMarketClass(value);
             }}
           />
           <WorkspaceMoreMarketClasses
             items={WORKSPACE_MARKET_MAIN_MORE}
-            activeValue={marketClass}
+            activeValue={marketClass ?? ""}
             onSelect={(value) => {
               if (value) setMarketClass(value);
             }}
@@ -345,8 +375,14 @@ function TradeWorkspacePage() {
           />
         </aside>
 
-        <main className="bg-background p-4 md:p-6">
-          <AssetBrowser forcedAssetClass={marketClass} />
+        <main className="min-h-0 bg-background md:min-h-[calc(100vh-3.5rem)]">
+          {marketClass ? (
+            <div className="h-full p-4 md:p-6">
+              <AssetBrowser forcedAssetClass={marketClass} />
+            </div>
+          ) : (
+            <WorkspaceEmptyCanvas />
+          )}
         </main>
 
         <aside className="border-l border-border bg-surface/30 p-3">
@@ -772,31 +808,10 @@ function AssetBrowser({ forcedAssetClass }: { forcedAssetClass?: string }) {
 
   return (
     <div className="h-full rounded-xl border border-border bg-surface/40 overflow-hidden">
-      <div className="border-b border-border px-3 py-2 flex flex-col gap-2.5 text-xs">
-        <div className="flex flex-wrap items-center gap-2">
-          <Tab label="Asset Browser" active count={rows.length} />
-          <Tab label="Watchlist" count={watchlist.length} />
-          <div className="ml-auto text-muted-foreground">Catalog: asset_listings</div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            to="/portal/trade-workspace"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground shadow-glow transition-opacity hover:opacity-95 border border-brand/40"
-          >
-            <ExternalLink className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
-            Open Platform
-            {ticketAsset ? (
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-foreground/20 px-1 text-[10px] font-bold">
-                1
-              </span>
-            ) : null}
-          </Link>
-          <span className="text-[11px] text-muted-foreground max-w-[14rem] sm:max-w-none">
-            Opens workspace in a new tab
-          </span>
-        </div>
+      <div className="border-b border-border px-3 py-2 flex flex-wrap items-center gap-2 text-xs">
+        <Tab label="Asset Browser" active count={rows.length} />
+        <Tab label="Watchlist" count={watchlist.length} />
+        <div className="ml-auto text-muted-foreground">Catalog: asset_listings</div>
       </div>
 
       <details className="group border-b border-border bg-background/40 open:bg-background/50">
