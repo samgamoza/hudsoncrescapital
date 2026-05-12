@@ -1,19 +1,32 @@
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Download, FileSpreadsheet } from "lucide-react";
+import {
+  Download,
+  FileSpreadsheet,
+  Inbox,
+  Loader2,
+  type LucideIcon,
+} from "lucide-react";
 import type { TradeHistoryRow } from "@/lib/trade-history.types";
 import type { Dashboard2Tab } from "@/components/investor/InvestorDashboard2Shell";
 import { CountrySelect } from "@/components/portal/IntlPhoneInput";
 import { SectionCard } from "@/lib/portalShared";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
-const field =
-  "w-full bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground";
-const label = "block text-xs font-medium uppercase tracking-wider text-muted-foreground";
+const field = cn(
+  "w-full rounded-lg border border-border/70 bg-surface/90 px-3.5 py-2.5 text-sm text-foreground shadow-sm",
+  "transition-[border-color,box-shadow] placeholder:text-muted-foreground/65",
+  "focus:border-brand/45 focus:outline-none focus:ring-2 focus:ring-brand/15",
+);
+const fieldReadonly = cn(
+  field,
+  "cursor-not-allowed bg-muted/30 text-muted-foreground shadow-none focus:ring-0",
+);
+const label =
+  "mb-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/90";
 const req = <span className="text-destructive"> *</span>;
-
-const cnField = () => field;
 
 function downloadCsv(filename: string, headers: string[], rows: (string | number)[][]) {
   const esc = (c: string | number) => {
@@ -31,9 +44,23 @@ function downloadCsv(filename: string, headers: string[], rows: (string | number
   URL.revokeObjectURL(url);
 }
 
+function D2Empty({ icon: Icon, title, hint }: { icon: LucideIcon; title: string; hint?: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-border/55 bg-gradient-to-b from-muted/12 via-transparent to-transparent px-6 py-14 text-center">
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-brand/12 text-brand ring-1 ring-brand/20">
+        <Icon className="h-6 w-6 opacity-90" aria-hidden />
+      </div>
+      <p className="text-sm font-semibold text-foreground">{title}</p>
+      {hint ? (
+        <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-muted-foreground">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
 export function Dashboard2Main({ tab }: { tab: Dashboard2Tab }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {tab === "profile" && <ProfileTab />}
       {tab === "trading-buy" && <TradesTab mode="buy" />}
       {tab === "trading-sell" && <TradesTab mode="sell" />}
@@ -151,22 +178,35 @@ function ProfileTab() {
     }
   };
 
-  if (loading) return <p className="text-sm text-muted-foreground">Loading profile…</p>;
+  if (loading)
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border/50 bg-card/50 py-20 shadow-inner">
+        <Loader2 className="h-9 w-9 animate-spin text-brand" aria-hidden />
+        <p className="text-sm font-medium text-muted-foreground">Loading profile…</p>
+      </div>
+    );
 
   return (
-    <div className="space-y-6">
-      <SectionCard
+    <div className="space-y-8">
+      <SectionCard className="shadow-md ring-1 ring-border/40"
         title="Account profile"
         description="Individual and joint holder details, contact information, experience, and financial disclosures."
         right={
-          <button
+          <Button
             type="button"
             disabled={busy}
             onClick={() => void save()}
-            className="rounded-md bg-gradient-brand px-4 py-2 text-xs font-medium text-brand-foreground hover:opacity-90 disabled:opacity-50"
+            className="min-w-[108px] gap-2 bg-gradient-brand text-brand-foreground shadow-md shadow-brand/15 hover:opacity-95"
           >
-            Update
-          </button>
+            {busy ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving
+              </>
+            ) : (
+              "Update"
+            )}
+          </Button>
         }
       >
         <div className="grid gap-4 lg:grid-cols-2">
@@ -175,7 +215,7 @@ function ProfileTab() {
               <div className="sm:col-span-2">
                 <label className={label}>Select type of account{req}</label>
                 <select
-                  className={cnField()}
+                  className={field}
                   value={f.accountType}
                   onChange={(e) => setF({ ...f, accountType: e.target.value })}
                 >
@@ -187,7 +227,7 @@ function ProfileTab() {
               <div className="sm:col-span-2">
                 <label className={label}>Sales / coverage rep</label>
                 <input
-                  className={cnField()}
+                  className={field}
                   placeholder="Relationship manager or desk"
                   value={f.salesRep}
                   onChange={(e) => setF({ ...f, salesRep: e.target.value })}
@@ -195,19 +235,19 @@ function ProfileTab() {
               </div>
               <div>
                 <label className={label}>First name{req}</label>
-                <input className={cnField()} value={f.first} onChange={(e) => setF({ ...f, first: e.target.value })} />
+                <input className={field} value={f.first} onChange={(e) => setF({ ...f, first: e.target.value })} />
               </div>
               <div>
                 <label className={label}>Middle name</label>
-                <input className={cnField()} value={f.middle} onChange={(e) => setF({ ...f, middle: e.target.value })} />
+                <input className={field} value={f.middle} onChange={(e) => setF({ ...f, middle: e.target.value })} />
               </div>
               <div>
                 <label className={label}>Last name{req}</label>
-                <input className={cnField()} value={f.last} onChange={(e) => setF({ ...f, last: e.target.value })} />
+                <input className={field} value={f.last} onChange={(e) => setF({ ...f, last: e.target.value })} />
               </div>
               <div>
                 <label className={label}>Date of birth{req}</label>
-                <input type="date" className={cnField()} value={f.dob} onChange={(e) => setF({ ...f, dob: e.target.value })} />
+                <input type="date" className={field} value={f.dob} onChange={(e) => setF({ ...f, dob: e.target.value })} />
               </div>
               <div className="sm:col-span-2">
                 <span className={label}>Citizenship{req}</span>
@@ -232,7 +272,7 @@ function ProfileTab() {
               </div>
               <div>
                 <label className={label}>Type of ID{req}</label>
-                <select className={cnField()} value={f.idType} onChange={(e) => setF({ ...f, idType: e.target.value })}>
+                <select className={field} value={f.idType} onChange={(e) => setF({ ...f, idType: e.target.value })}>
                   <option value="">— Select —</option>
                   <option value="drivers_license">Driver&apos;s license</option>
                   <option value="passport">Passport</option>
@@ -241,26 +281,26 @@ function ProfileTab() {
               </div>
               <div>
                 <label className={label}>ID number{req}</label>
-                <input className={cnField()} value={f.idNumber} onChange={(e) => setF({ ...f, idNumber: e.target.value })} />
+                <input className={field} value={f.idNumber} onChange={(e) => setF({ ...f, idNumber: e.target.value })} />
               </div>
             </div>
             <h3 className="text-sm font-semibold text-brand border-b border-border pb-1">Mailing address</h3>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <label className={label}>Address line 1{req}</label>
-                <input className={cnField()} value={f.addr1} onChange={(e) => setF({ ...f, addr1: e.target.value })} />
+                <input className={field} value={f.addr1} onChange={(e) => setF({ ...f, addr1: e.target.value })} />
               </div>
               <div className="sm:col-span-2">
                 <label className={label}>Address line 2</label>
-                <input className={cnField()} value={f.addr2} onChange={(e) => setF({ ...f, addr2: e.target.value })} />
+                <input className={field} value={f.addr2} onChange={(e) => setF({ ...f, addr2: e.target.value })} />
               </div>
               <div>
                 <label className={label}>City{req}</label>
-                <input className={cnField()} value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} />
+                <input className={field} value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} />
               </div>
               <div>
                 <label className={label}>State / region{req}</label>
-                <input className={cnField()} value={f.state} onChange={(e) => setF({ ...f, state: e.target.value })} />
+                <input className={field} value={f.state} onChange={(e) => setF({ ...f, state: e.target.value })} />
               </div>
               <div>
                 <label className={label}>Country{req}</label>
@@ -271,30 +311,30 @@ function ProfileTab() {
               </div>
               <div>
                 <label className={label}>Postal code{req}</label>
-                <input className={cnField()} value={f.postal} onChange={(e) => setF({ ...f, postal: e.target.value })} />
+                <input className={field} value={f.postal} onChange={(e) => setF({ ...f, postal: e.target.value })} />
               </div>
             </div>
             <h3 className="text-sm font-semibold text-brand border-b border-border pb-1">Contact information</h3>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label className={label}>Primary / daytime phone{req}</label>
-                <input className={cnField()} value={f.phoneDay} onChange={(e) => setF({ ...f, phoneDay: e.target.value })} />
+                <input className={field} value={f.phoneDay} onChange={(e) => setF({ ...f, phoneDay: e.target.value })} />
               </div>
               <div>
                 <label className={label}>Home / evening phone</label>
-                <input className={cnField()} value={f.phoneEve} onChange={(e) => setF({ ...f, phoneEve: e.target.value })} />
+                <input className={field} value={f.phoneEve} onChange={(e) => setF({ ...f, phoneEve: e.target.value })} />
               </div>
               <div>
                 <label className={label}>Mobile phone</label>
-                <input className={cnField()} value={f.phoneCell} onChange={(e) => setF({ ...f, phoneCell: e.target.value })} />
+                <input className={field} value={f.phoneCell} onChange={(e) => setF({ ...f, phoneCell: e.target.value })} />
               </div>
               <div>
                 <label className={label}>Fax</label>
-                <input className={cnField()} value={f.fax} onChange={(e) => setF({ ...f, fax: e.target.value })} />
+                <input className={field} value={f.fax} onChange={(e) => setF({ ...f, fax: e.target.value })} />
               </div>
               <div className="sm:col-span-2">
                 <label className={label}>Email address{req}</label>
-                <input type="email" className={cnField()} value={f.mailEmail || email} onChange={(e) => setF({ ...f, mailEmail: e.target.value })} />
+                <input type="email" className={field} value={f.mailEmail || email} onChange={(e) => setF({ ...f, mailEmail: e.target.value })} />
               </div>
             </div>
             <h3 className="text-sm font-semibold text-brand border-b border-border pb-1">Filing status</h3>
@@ -323,19 +363,19 @@ function ProfileTab() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label className={label}>First name</label>
-                <input className={cnField()} value={f.jFirst} onChange={(e) => setF({ ...f, jFirst: e.target.value })} />
+                <input className={field} value={f.jFirst} onChange={(e) => setF({ ...f, jFirst: e.target.value })} />
               </div>
               <div>
                 <label className={label}>Last name</label>
-                <input className={cnField()} value={f.jLast} onChange={(e) => setF({ ...f, jLast: e.target.value })} />
+                <input className={field} value={f.jLast} onChange={(e) => setF({ ...f, jLast: e.target.value })} />
               </div>
               <div className="sm:col-span-2">
                 <label className={label}>Mailing address line 1</label>
-                <input className={cnField()} value={f.jAddr1} onChange={(e) => setF({ ...f, jAddr1: e.target.value })} />
+                <input className={field} value={f.jAddr1} onChange={(e) => setF({ ...f, jAddr1: e.target.value })} />
               </div>
               <div>
                 <label className={label}>City</label>
-                <input className={cnField()} value={f.jCity} onChange={(e) => setF({ ...f, jCity: e.target.value })} />
+                <input className={field} value={f.jCity} onChange={(e) => setF({ ...f, jCity: e.target.value })} />
               </div>
               <div>
                 <label className={label}>Country</label>
@@ -343,7 +383,7 @@ function ProfileTab() {
               </div>
               <div>
                 <label className={label}>Email</label>
-                <input className={cnField()} value={f.jEmail} onChange={(e) => setF({ ...f, jEmail: e.target.value })} />
+                <input className={field} value={f.jEmail} onChange={(e) => setF({ ...f, jEmail: e.target.value })} />
               </div>
             </div>
 
@@ -351,7 +391,7 @@ function ProfileTab() {
             <div className="grid gap-3">
               <div>
                 <label className={label}>Approximate annual income</label>
-                <select className={cnField()} value={f.income} onChange={(e) => setF({ ...f, income: e.target.value })}>
+                <select className={field} value={f.income} onChange={(e) => setF({ ...f, income: e.target.value })}>
                   <option value="">— Choose one —</option>
                   <option value="under50">Under USD 50,000</option>
                   <option value="50_100">USD 50,000 – 99,999</option>
@@ -361,7 +401,7 @@ function ProfileTab() {
               </div>
               <div>
                 <label className={label}>Nested marginal bracket</label>
-                <select className={cnField()} value={f.bracket} onChange={(e) => setF({ ...f, bracket: e.target.value })}>
+                <select className={field} value={f.bracket} onChange={(e) => setF({ ...f, bracket: e.target.value })}>
                   <option value="">— Choose one —</option>
                   <option value="10">10%</option>
                   <option value="12">12%</option>
@@ -374,7 +414,7 @@ function ProfileTab() {
               </div>
               <div>
                 <label className={label}>Approximate total net worth</label>
-                <select className={cnField()} value={f.netWorth} onChange={(e) => setF({ ...f, netWorth: e.target.value })}>
+                <select className={field} value={f.netWorth} onChange={(e) => setF({ ...f, netWorth: e.target.value })}>
                   <option value="">— Choose one —</option>
                   <option value="u50">Under USD 50,000</option>
                   <option value="50_250">USD 50,000 – 249,999</option>
@@ -388,7 +428,7 @@ function ProfileTab() {
               </div>
               <div>
                 <label className={label}>Approximate liquid net worth</label>
-                <select className={cnField()} value={f.liquidNet} onChange={(e) => setF({ ...f, liquidNet: e.target.value })}>
+                <select className={field} value={f.liquidNet} onChange={(e) => setF({ ...f, liquidNet: e.target.value })}>
                   <option value="">— Choose one —</option>
                   <option value="u50">Under USD 50,000</option>
                   <option value="50_250">USD 50,000 – 249,999</option>
@@ -400,7 +440,7 @@ function ProfileTab() {
               </div>
               <div>
                 <label className={label}>What is your source of income?</label>
-                <select className={cnField()} value={f.incomeSource} onChange={(e) => setF({ ...f, incomeSource: e.target.value })}>
+                <select className={field} value={f.incomeSource} onChange={(e) => setF({ ...f, incomeSource: e.target.value })}>
                   <option value="">— Choose one —</option>
                   <option value="employment">Employment</option>
                   <option value="inheritance">Inheritance</option>
@@ -412,20 +452,20 @@ function ProfileTab() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className={label}>Number of contracts</label>
-                  <input className={cnField()} value={f.contractN} onChange={(e) => setF({ ...f, contractN: e.target.value })} />
+                  <input className={field} value={f.contractN} onChange={(e) => setF({ ...f, contractN: e.target.value })} />
                 </div>
                 <div>
                   <label className={label}>Name of contract(s)</label>
-                  <input className={cnField()} value={f.contractNames} onChange={(e) => setF({ ...f, contractNames: e.target.value })} />
+                  <input className={field} value={f.contractNames} onChange={(e) => setF({ ...f, contractNames: e.target.value })} />
                 </div>
               </div>
               <div>
                 <label className={label}>Application monies</label>
-                <input className={cnField()} value={f.appMonies} onChange={(e) => setF({ ...f, appMonies: e.target.value })} />
+                <input className={field} value={f.appMonies} onChange={(e) => setF({ ...f, appMonies: e.target.value })} />
               </div>
               <div>
                 <label className={label}>Source of assets to be deposited</label>
-                <select className={cnField()} value={f.fundSource} onChange={(e) => setF({ ...f, fundSource: e.target.value })}>
+                <select className={field} value={f.fundSource} onChange={(e) => setF({ ...f, fundSource: e.target.value })}>
                   <option value="">— Choose one —</option>
                   <option value="savings">Savings</option>
                   <option value="securities">Sale of securities</option>
@@ -541,75 +581,98 @@ function TradesTab({ mode }: { mode: "buy" | "sell" }) {
   };
 
   return (
-    <SectionCard
+    <SectionCard className="shadow-md ring-1 ring-border/40"
       title={title}
       description="Confirmed fills from your linked brokerage accounts."
       right={
-        <div className="flex gap-2">
-          <button type="button" className={btnGhost()} onClick={exportCsv} title="Spreadsheet format">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5 border-border/70 shadow-sm"
+            onClick={exportCsv}
+            title="Spreadsheet format"
+          >
             <FileSpreadsheet className="h-4 w-4" /> Export CSV
-          </button>
-          <button type="button" className={btnGhost()} onClick={() => window.print()} title="Use browser print to PDF">
-            <Download className="h-4 w-4" /> Print / PDF
-          </button>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5 border-border/70 shadow-sm"
+            onClick={() => window.print()}
+            title="Use browser print to PDF"
+          >
+            <Download className="h-4 w-4" /> Print
+          </Button>
         </div>
       }
     >
       {rows === null ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
-      ) : filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-muted/10 py-12 text-center text-sm text-muted-foreground">
-          No records for this side yet.
+        <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin text-brand" aria-hidden />
+          Loading records…
         </div>
+      ) : filtered.length === 0 ? (
+        <D2Empty
+          icon={Inbox}
+          title="No records for this side"
+          hint="Confirmed fills from your linked brokerage accounts will appear here when available."
+        />
       ) : (
-        <div className="overflow-x-auto text-sm">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
-                <th className="py-2 pr-3">Trade date</th>
-                <th className="py-2 pr-3">Time</th>
-                <th className="py-2 pr-3">Ref</th>
-                <th className="py-2 pr-3">Symbol</th>
-                <th className="py-2 pr-3">Qty</th>
-                <th className="py-2 pr-3">Price</th>
-                <th className="py-2 pr-3">Gross</th>
-                <th className="py-2 pr-3">Fees</th>
-                <th className="py-2 pr-3">Total</th>
-                <th className="py-2">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((t) => (
-                <tr key={t.id} className="border-b border-border/60">
-                  <td className="py-2 pr-3 whitespace-nowrap">{new Date(t.executed_at).toLocaleDateString()}</td>
-                  <td className="py-2 pr-3 whitespace-nowrap">{new Date(t.executed_at).toLocaleTimeString()}</td>
-                  <td className="py-2 pr-3 font-mono text-xs">{t.order_id.slice(0, 8)}</td>
-                  <td className="py-2 pr-3">{t.symbol}</td>
-                  <td className="py-2 pr-3">{t.quantity}</td>
-                  <td className="py-2 pr-3">{t.price}</td>
-                  <td className="py-2 pr-3">{t.gross_amount}</td>
-                  <td className="py-2 pr-3">{t.fees}</td>
-                  <td className="py-2 pr-3">{Number(t.gross_amount) - Number(t.fees) - Number(t.commission)}</td>
-                  <td className="py-2 text-success">Filled</td>
+        <div className="overflow-hidden rounded-xl border border-border/60 shadow-sm">
+          <div className="overflow-x-auto text-sm">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-border/80 bg-muted/35 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-3 py-3 pr-3">Trade date</th>
+                  <th className="py-3 pr-3">Time</th>
+                  <th className="py-3 pr-3">Ref</th>
+                  <th className="py-3 pr-3">Symbol</th>
+                  <th className="py-3 pr-3">Qty</th>
+                  <th className="py-3 pr-3">Price</th>
+                  <th className="py-3 pr-3">Gross</th>
+                  <th className="py-3 pr-3">Fees</th>
+                  <th className="py-3 pr-3">Total</th>
+                  <th className="px-3 py-3">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {filtered.map((t) => (
+                  <tr
+                    key={t.id}
+                    className="transition-colors hover:bg-muted/25"
+                  >
+                    <td className="px-3 py-2.5 pr-3 whitespace-nowrap">{new Date(t.executed_at).toLocaleDateString()}</td>
+                    <td className="py-2.5 pr-3 whitespace-nowrap">{new Date(t.executed_at).toLocaleTimeString()}</td>
+                    <td className="py-2.5 pr-3 font-mono text-xs text-muted-foreground">{t.order_id.slice(0, 8)}</td>
+                    <td className="py-2.5 pr-3 font-medium">{t.symbol}</td>
+                    <td className="py-2.5 pr-3 tabular-nums">{t.quantity}</td>
+                    <td className="py-2.5 pr-3 tabular-nums">{t.price}</td>
+                    <td className="py-2.5 pr-3 tabular-nums">{t.gross_amount}</td>
+                    <td className="py-2.5 pr-3 tabular-nums">{t.fees}</td>
+                    <td className="py-2.5 pr-3 tabular-nums">
+                      {Number(t.gross_amount) - Number(t.fees) - Number(t.commission)}
+                    </td>
+                    <td className="px-3 py-2.5 text-success text-xs font-semibold uppercase tracking-wide">Filled</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
-      <p className="mt-4 text-xs text-muted-foreground">
-        Showing {filtered.length} entr{filtered.length === 1 ? "y" : "ies"}.
+      <p className="mt-4 text-xs font-medium text-muted-foreground">
+        Showing <span className="tabular-nums text-foreground">{filtered.length}</span> entr
+        {filtered.length === 1 ? "y" : "ies"}.
       </p>
-      <p className="mt-3 text-xs text-muted-foreground border-t border-border pt-3">
-        <span className="font-medium text-foreground">Note:</span> Cross-listed and ADR securities may carry additional
-        market and currency risks. Confirm settlement currency with your desk.
-      </p>
+      <div className="mt-4 rounded-lg border border-border/50 bg-muted/15 px-4 py-3 text-xs text-muted-foreground leading-relaxed">
+        <span className="font-semibold text-foreground">Note:</span> Cross-listed and ADR securities may carry
+        additional market and currency risks. Confirm settlement currency with your desk.
+      </div>
     </SectionCard>
   );
-}
-
-function btnGhost() {
-  return "inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-elevated";
 }
 
 function TradeOrderTab() {
@@ -627,13 +690,13 @@ function TradeOrderTab() {
   const totalInv = 0;
 
   return (
-    <SectionCard
+    <SectionCard className="shadow-md ring-1 ring-border/40"
       title="Trade order"
       description="Structured request form. Live equities and options tickets are submitted through the modern trading ticket."
     >
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b border-border pb-1">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground border-b border-border/60 pb-2">
               Order entry
             </h3>
             <div>
@@ -681,7 +744,7 @@ function TradeOrderTab() {
             </div>
           </div>
           <div className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b border-border pb-1">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground border-b border-border/60 pb-2">
               Economics (illustrative)
             </h3>
             <div>
@@ -690,52 +753,57 @@ function TradeOrderTab() {
             </div>
             <div>
               <label className={label}>Contract size</label>
-              <input className={cn("mt-1", field)} readOnly value={String(contractSize.toLocaleString())} />
+              <input className={cn("mt-1", fieldReadonly)} readOnly value={String(contractSize.toLocaleString())} />
             </div>
             <div>
               <label className={label}>Price per contract</label>
-              <input className={cn("mt-1", field)} readOnly value={pricePer.toFixed(2)} />
+              <input className={cn("mt-1", fieldReadonly)} readOnly value={pricePer.toFixed(2)} />
             </div>
             <div>
               <label className={label}>Trade value</label>
-              <input className={cn("mt-1", field)} readOnly value={String(totalInv.toFixed(2))} />
+              <input className={cn("mt-1", fieldReadonly)} readOnly value={String(totalInv.toFixed(2))} />
             </div>
             <div>
               <label className={label}>Trade fees (est.)</label>
-              <input className={cn("mt-1", field)} readOnly value={fees.toFixed(2)} />
+              <input className={cn("mt-1", fieldReadonly)} readOnly value={fees.toFixed(2)} />
             </div>
             <div>
               <label className={label}>Total invoiced</label>
-              <input className={cn("mt-1", field)} readOnly value={totalInv.toFixed(2)} />
+              <input className={cn("mt-1", fieldReadonly)} readOnly value={totalInv.toFixed(2)} />
             </div>
           </div>
         </div>
-        <div className="mt-6 flex flex-col gap-3 rounded-lg border border-border bg-muted/15 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Preview:</span> {side.toUpperCase()} {positions}× {opt.toUpperCase()}{" "}
-            · est. notional {pricePer.toFixed(2)}
+        <div className="mt-6 flex flex-col gap-4 rounded-xl border border-border/60 bg-gradient-to-br from-brand/[0.07] via-card to-card p-5 shadow-inner ring-1 ring-border/30 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Order preview</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">
+              {side.toUpperCase()} {positions}× {opt.toUpperCase()}
+              <span className="font-normal text-muted-foreground"> · est. notional </span>
+              <span className="tabular-nums">{pricePer.toFixed(2)}</span>
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground max-w-md">
-            Trade requests are reviewed by operations. For listed equities and options, use the live ticket for immediate
-            routing and risk checks.
+          <p className="max-w-md text-xs leading-relaxed text-muted-foreground">
+            Trade requests are reviewed by operations. For listed equities and options, use the live ticket for
+            immediate routing and risk checks.
           </p>
         </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <Button
             type="button"
-            className="rounded-md bg-gradient-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:opacity-90"
+            className="gap-2 bg-gradient-brand px-6 text-brand-foreground shadow-md shadow-brand/15 hover:opacity-95"
             onClick={() => {
               toast.message("Desk review", {
-                description: "Complex derivative requests are logged for broker callback. Opening the live ticket next.",
+                description:
+                  "Complex derivative requests are logged for broker callback. Opening the live ticket next.",
               });
               void navigate({ to: "/portal/investor/trade" });
             }}
           >
             Request trade
-          </button>
-          <Link to="/portal/investor/trade" className="rounded-md border border-border px-4 py-2 text-sm hover:bg-surface-elevated">
-            Open live ticket
-          </Link>
+          </Button>
+          <Button variant="outline" className="border-border/70 shadow-sm" asChild>
+            <Link to="/portal/investor/trade">Open live ticket</Link>
+          </Button>
         </div>
     </SectionCard>
   );
@@ -766,51 +834,78 @@ function FundingRecordTab() {
   };
 
   return (
-    <SectionCard
+    <SectionCard className="shadow-md ring-1 ring-border/40"
       title="Funding record"
       description="Deposit credits and related reference numbers."
       right={
-        <div className="flex gap-2">
-          <button type="button" className={btnGhost()} onClick={exportCsv}>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5 border-border/70 shadow-sm"
+            onClick={exportCsv}
+          >
             <FileSpreadsheet className="h-4 w-4" /> Export CSV
-          </button>
-          <button type="button" className={btnGhost()} onClick={() => window.print()}>
-            <Download className="h-4 w-4" /> Print / PDF
-          </button>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5 border-border/70 shadow-sm"
+            onClick={() => window.print()}
+          >
+            <Download className="h-4 w-4" /> Print
+          </Button>
         </div>
       }
     >
       {!data ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
-      ) : deposits.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-muted/10 py-12 text-center text-sm text-muted-foreground">
-          No funding records on file yet.
+        <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin text-brand" aria-hidden />
+          Loading funding data…
         </div>
+      ) : deposits.length === 0 ? (
+        <D2Empty
+          icon={Inbox}
+          title="No funding records on file"
+          hint="Deposit credits and reference numbers will show here after you submit funding instructions."
+        />
       ) : (
-        <div className="overflow-x-auto text-sm">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-                <th className="py-2 pr-3">Deposit credit</th>
-                <th className="py-2 pr-3">Reference</th>
-                <th className="py-2 pr-3">Transaction date</th>
-                <th className="py-2">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {deposits.map((d: any) => (
-                <tr key={d.id} className="border-b border-border/60">
-                  <td className="py-2 pr-3">{fmtMoney(d.amount, d.currency)}</td>
-                  <td className="py-2 pr-3 font-mono text-xs">{d.id?.slice(0, 8) ?? "—"}</td>
-                  <td className="py-2 pr-3">{d.created_at ? new Date(d.created_at).toLocaleString() : "—"}</td>
-                  <td className="py-2 capitalize">{d.status ?? "—"}</td>
+        <div className="overflow-hidden rounded-xl border border-border/60 shadow-sm">
+          <div className="overflow-x-auto text-sm">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-border/80 bg-muted/35 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-3 py-3 pr-3">Deposit credit</th>
+                  <th className="py-3 pr-3">Reference</th>
+                  <th className="py-3 pr-3">Transaction date</th>
+                  <th className="px-3 py-3">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {deposits.map((d: any) => (
+                  <tr key={d.id} className="transition-colors hover:bg-muted/25">
+                    <td className="px-3 py-2.5 pr-3 font-medium tabular-nums">{fmtMoney(d.amount, d.currency)}</td>
+                    <td className="py-2.5 pr-3 font-mono text-xs text-muted-foreground">{d.id?.slice(0, 8) ?? "—"}</td>
+                    <td className="py-2.5 pr-3 text-muted-foreground">
+                      {d.created_at ? new Date(d.created_at).toLocaleString() : "—"}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className="inline-flex rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-xs font-medium capitalize">
+                        {d.status ?? "—"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
-      <p className="mt-3 text-xs text-muted-foreground">Showing {deposits.length} entries.</p>
+      <p className="mt-4 text-xs font-medium text-muted-foreground">
+        Showing <span className="tabular-nums text-foreground">{deposits.length}</span> entries.
+      </p>
     </SectionCard>
   );
 }
@@ -895,7 +990,7 @@ function FundingTransferTab() {
 
   return (
     <div className="space-y-6">
-      <SectionCard
+      <SectionCard className="shadow-md ring-1 ring-border/40"
         title="Money withdrawal order"
         description="Telegraphic transfer instructions. Operations will verify bank details before releasing funds."
       >
@@ -930,55 +1025,75 @@ function FundingTransferTab() {
             />
           </div>
         </div>
-        <button
+        <Button
           type="button"
           disabled={busy}
           onClick={() => void submit()}
-          className="mt-4 rounded-md bg-gradient-brand px-5 py-2 text-sm font-medium text-brand-foreground hover:opacity-90 disabled:opacity-50"
+          className="mt-5 gap-2 bg-gradient-brand px-8 text-brand-foreground shadow-md shadow-brand/15 hover:opacity-95"
         >
-          {busy ? "Sending…" : "Send request"}
-        </button>
+          {busy ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Sending…
+            </>
+          ) : (
+            "Send request"
+          )}
+        </Button>
       </SectionCard>
 
-      <SectionCard
+      <SectionCard className="shadow-md ring-1 ring-border/40"
         title="Fund transfer history"
         description="Prior withdrawal instructions submitted from this portal."
         right={
-          <button type="button" className={btnGhost()} onClick={exportHist}>
+          <Button type="button" variant="outline" size="sm" className="gap-1.5 border-border/70 shadow-sm" onClick={exportHist}>
             <FileSpreadsheet className="h-4 w-4" /> Export CSV
-          </button>
+          </Button>
         }
       >
         {!data ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        ) : withdrawals.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border bg-muted/10 py-10 text-center text-sm text-muted-foreground">
-            No transfer records yet.
+          <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin text-brand" aria-hidden />
+            Loading…
           </div>
+        ) : withdrawals.length === 0 ? (
+          <D2Empty
+            icon={Inbox}
+            title="No transfer history yet"
+            hint="Submitted withdrawal instructions will appear here after you send a money withdrawal order."
+          />
         ) : (
-          <div className="overflow-x-auto text-xs">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border text-left text-muted-foreground uppercase">
-                  <th className="py-2 pr-2">Status</th>
-                  <th className="py-2 pr-2">Amount</th>
-                  <th className="py-2 pr-2">Currency</th>
-                  <th className="py-2 pr-2">Destination</th>
-                  <th className="py-2">Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {withdrawals.map((w: any) => (
-                  <tr key={w.id} className="border-b border-border/60">
-                    <td className="py-2 pr-2 capitalize">{w.status}</td>
-                    <td className="py-2 pr-2">{w.amount}</td>
-                    <td className="py-2 pr-2">{w.currency}</td>
-                    <td className="py-2 pr-2 max-w-[220px] truncate">{w.destination}</td>
-                    <td className="py-2 whitespace-nowrap">{new Date(w.created_at).toLocaleString()}</td>
+          <div className="overflow-hidden rounded-xl border border-border/60 shadow-sm">
+            <div className="overflow-x-auto text-xs">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-border/80 bg-muted/35 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <th className="px-3 py-3 pr-2">Status</th>
+                    <th className="py-3 pr-2">Amount</th>
+                    <th className="py-3 pr-2">Currency</th>
+                    <th className="py-3 pr-2">Destination</th>
+                    <th className="px-3 py-3">Created</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {withdrawals.map((w: any) => (
+                    <tr key={w.id} className="transition-colors hover:bg-muted/25">
+                      <td className="px-3 py-2.5 pr-2">
+                        <span className="inline-flex rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-[11px] font-medium capitalize">
+                          {w.status}
+                        </span>
+                      </td>
+                      <td className="py-2.5 pr-2 tabular-nums">{w.amount}</td>
+                      <td className="py-2.5 pr-2">{w.currency}</td>
+                      <td className="py-2.5 pr-2 max-w-[220px] truncate text-muted-foreground">{w.destination}</td>
+                      <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+                        {new Date(w.created_at).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </SectionCard>
@@ -1018,7 +1133,12 @@ function HelpDeskTab() {
   };
 
   return (
-    <SectionCard title="Help desk — account support" description="Priority routing to the Hudson Crest service desk.">
+    <SectionCard className="shadow-md ring-1 ring-border/40" title="Help desk — account support" description="Priority routing to the Hudson Crest service desk.">
+      <div className="mb-5 rounded-lg border border-brand/20 bg-brand/[0.06] px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+        <span className="font-semibold text-foreground">Response time:</span> normal priority is typically within one
+        business day. Use <span className="font-medium text-foreground">high</span> only for time-sensitive account or
+        funding issues.
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className={label}>Priority{req}</label>
@@ -1052,14 +1172,21 @@ function HelpDeskTab() {
           />
         </div>
       </div>
-      <button
+      <Button
         type="button"
         disabled={busy}
         onClick={() => void send()}
-        className="mt-4 rounded-md bg-gradient-brand px-5 py-2 text-sm font-medium text-brand-foreground hover:opacity-90 disabled:opacity-50"
+        className="mt-5 gap-2 bg-gradient-brand px-8 text-brand-foreground shadow-md shadow-brand/15 hover:opacity-95"
       >
-        {busy ? "Sending…" : "Send"}
-      </button>
+        {busy ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Sending…
+          </>
+        ) : (
+          "Send message"
+        )}
+      </Button>
     </SectionCard>
   );
 }

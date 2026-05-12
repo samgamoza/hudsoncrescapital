@@ -28,6 +28,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 import { getMarketingWebsiteHomeUrl } from "@/lib/site-origin";
+import { cn } from "@/lib/utils";
 
 export type NavItem = {
   to: string;
@@ -202,14 +203,16 @@ export function SectionCard({
   description,
   right,
   children,
+  className,
 }: {
   title: string;
   description?: ReactNode;
   right?: ReactNode;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="surface-card p-5">
+    <div className={cn("surface-card p-5 sm:p-6", className)}>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>
