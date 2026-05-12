@@ -137,6 +137,32 @@ function resolveAssetListingQuoteSymbols(symbol: string): string[] {
   return [...new Set(candidates)];
 }
 
+/** Finnhub FX symbols use OANDA:BASE_QUOTE (underscore). */
+function finnhubFxPairCandidates(sym: string): string[] {
+  const u = sym.trim().toUpperCase().replace(/\s+/g, "");
+  const out: string[] = [];
+  const slash = u.match(/^([A-Z]{3})\/([A-Z]{3})$/);
+  if (slash) out.push(`OANDA:${slash[1]}_${slash[2]}`);
+  const concat6 = u.match(/^([A-Z]{3})([A-Z]{3})$/);
+  if (concat6) out.push(`OANDA:${concat6[1]}_${concat6[2]}`);
+  return out;
+}
+
+function allListingQuoteCandidates(sym: string): string[] {
+  const normalized = sym.trim().toUpperCase();
+  if (!normalized) return [];
+  const fx = finnhubFxPairCandidates(sym);
+  const rest = resolveAssetListingQuoteSymbols(sym);
+  return [...new Set([normalized, ...fx, ...rest])];
+}
+
+export function inferQuoteTypeForSymbol(symbol: string): "stock" | "fx" | "crypto" {
+  const s = symbol.trim().toUpperCase();
+  if (s.startsWith("BINANCE:") || s.startsWith("COINBASE:")) return "crypto";
+  if (s.startsWith("OANDA:")) return "fx";
+  return "stock";
+}
+
 export function fmtPrice(v: number, type: "stock" | "fx" | "crypto") {
   if (type === "fx") return v.toFixed(4);
   if (v >= 1000) return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
@@ -183,11 +209,12 @@ export async function fetchAssetListingQuotes(
   const results = await Promise.all(
     unique.map(async (sym) => {
       try {
-        const quoteSymbols = resolveAssetListingQuoteSymbols(sym);
+        const quoteSymbols = allListingQuoteCandidates(sym);
         let q: { c: number; d: number; dp: number } | null = null;
         let sourceSymbol: string | undefined;
         for (const candidate of quoteSymbols) {
-          const next = await fetchQuoteUniversal(candidate, "stock");
+          const t = inferQuoteTypeForSymbol(candidate);
+          const next = await fetchQuoteUniversal(candidate, t);
           if (next) {
             q = next;
             sourceSymbol = candidate;

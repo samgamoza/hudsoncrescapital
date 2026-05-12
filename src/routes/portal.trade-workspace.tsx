@@ -979,6 +979,7 @@ function AssetBrowser({ forcedAssetClass }: { forcedAssetClass?: string }) {
   const [ticketAsset, setTicketAsset] = useState<AssetListing | null>(null);
   const [dealTab, setDealTab] = useState<"deal" | "order" | "info">("deal");
   const [liveQuotes, setLiveQuotes] = useState<Record<string, AssetListingQuote>>({});
+  const [quoteFeedHint, setQuoteFeedHint] = useState<string | null>(null);
   const [tradeWs, setTradeWs] = useState<InvestorTradingWorkspace | null>(null);
 
   const loadTradeWs = useCallback(async () => {
@@ -1080,11 +1081,7 @@ function AssetBrowser({ forcedAssetClass }: { forcedAssetClass?: string }) {
       new Set(
         rows
           .slice(0, 80)
-          .map((r) =>
-            String(r.symbol || "")
-              .trim()
-              .toUpperCase(),
-          )
+          .map((r) => displaySymbolOfAsset(r).trim().toUpperCase())
           .filter(Boolean),
       ),
     );
@@ -1103,6 +1100,11 @@ function AssetBrowser({ forcedAssetClass }: { forcedAssetClass?: string }) {
         if (cancelled) return;
         const bySym = Object.fromEntries(list.map((q) => [q.symbol.toUpperCase(), q]));
         setLiveQuotes(bySym);
+        setQuoteFeedHint(
+          list.length === 0 && typeof (body as { error?: string }).error === "string"
+            ? (body as { error: string }).error
+            : null,
+        );
       } catch {
         // silent fallback
       }
@@ -1308,6 +1310,12 @@ function AssetBrowser({ forcedAssetClass }: { forcedAssetClass?: string }) {
         </div>
       </details>
 
+      {quoteFeedHint ? (
+        <p className="mb-3 text-xs text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-md px-2.5 py-2 bg-amber-500/5">
+          Live prices unavailable: {quoteFeedHint}
+        </p>
+      ) : null}
+
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] min-h-[600px]">
         <section className="overflow-auto">
           {loading ? (
@@ -1343,7 +1351,8 @@ function AssetBrowser({ forcedAssetClass }: { forcedAssetClass?: string }) {
               <tbody>
                 {rows.map((asset) => {
                   const watch = watchlist.includes(String(asset.id));
-                  const q = liveQuotes[String(asset.symbol || "").toUpperCase()];
+                  const qKey = displaySymbolOfAsset(asset).trim().toUpperCase();
+                  const q = liveQuotes[qKey];
                   const sellTxt = q ? fmtPx(q.sell) : "—";
                   const buyTxt = q ? fmtPx(q.buy) : "—";
                   const chgTxt = q ? `${q.change >= 0 ? "+" : ""}${fmtNum(q.change)}` : "—";
@@ -1878,7 +1887,7 @@ function DealTicketCard({
     );
   }
 
-  const quote = liveQuotes[String(asset.symbol || "").toUpperCase()] ?? quoteForAsset(asset);
+  const quote = liveQuotes[displaySymbolOfAsset(asset).trim().toUpperCase()] ?? quoteForAsset(asset);
 
   if (!isDirectlyTradableAsset(asset)) {
     return (
