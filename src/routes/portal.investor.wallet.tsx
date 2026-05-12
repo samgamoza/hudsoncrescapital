@@ -3,6 +3,11 @@ import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { PageHeader, SectionCard, MetricCard, DataTable } from "@/lib/portalShared";
+import {
+  FundingEligibilityCallout,
+  activeFundingAccounts,
+  pendingFundingAccounts,
+} from "@/components/portal/FundingEligibilityCallout";
 
 export const Route = createFileRoute("/portal/investor/wallet")({
   component: WalletPage,
@@ -52,6 +57,9 @@ function WalletPage() {
     0,
   );
   const totalHold = (d?.wallets ?? []).reduce((s, w: any) => s + Number(w.on_hold), 0);
+  const acctRows = d?.accounts ?? [];
+  const activeAcctCount = activeFundingAccounts(acctRows).length;
+  const pendingAcctCount = pendingFundingAccounts(acctRows).length;
 
   return (
     <>
@@ -65,7 +73,14 @@ function WalletPage() {
         <MetricCard title="On Hold" value={fmt(totalHold)} />
         <MetricCard
           title="Active Accounts"
-          value={String((d?.accounts ?? []).filter((a: any) => a.status === "active").length)}
+          value={String(activeAcctCount)}
+          helper={
+            pendingAcctCount > 0
+              ? `${pendingAcctCount} pending approval (Admin → Clients → Accounts — not Funding Review)`
+              : activeAcctCount === 0 && acctRows.length > 0
+                ? "None active — see message under Deposit"
+                : undefined
+          }
         />
       </div>
 
@@ -189,7 +204,7 @@ function WalletPage() {
 }
 
 function DepositForm({ accounts, onDone }: { accounts: any[]; onDone: () => void }) {
-  const active = accounts.filter((a) => a.status === "active");
+  const active = activeFundingAccounts(accounts);
   const [accountId, setAccountId] = useState(active[0]?.id ?? "");
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("bank_transfer");
@@ -202,7 +217,7 @@ function DepositForm({ accounts, onDone }: { accounts: any[]; onDone: () => void
   });
 
   useEffect(() => {
-    if (!accountId && active[0]) setAccountId(active[0].id);
+    if (!accountId && active[0]) setAccountId(String(active[0].id ?? ""));
   }, [active.length]);
   useEffect(() => {
     void fetch("/api/portal/wallet-actions", {
@@ -270,12 +285,7 @@ function DepositForm({ accounts, onDone }: { accounts: any[]; onDone: () => void
     }
   };
 
-  if (!active.length)
-    return (
-      <p className="text-sm text-muted-foreground">
-        No active accounts. Contact support to activate your account.
-      </p>
-    );
+  if (!active.length) return <FundingEligibilityCallout accounts={accounts} />;
 
   return (
     <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -357,7 +367,7 @@ function WithdrawForm({
   wallets: any[];
   onDone: () => void;
 }) {
-  const active = accounts.filter((a) => a.status === "active");
+  const active = activeFundingAccounts(accounts);
   const [accountId, setAccountId] = useState(active[0]?.id ?? "");
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("bank_transfer");
@@ -366,7 +376,7 @@ function WithdrawForm({
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!accountId && active[0]) setAccountId(active[0].id);
+    if (!accountId && active[0]) setAccountId(String(active[0].id ?? ""));
   }, [active.length]);
   const wallet = wallets.find((w: any) => w.account_id === accountId);
 
@@ -401,7 +411,7 @@ function WithdrawForm({
     }
   };
 
-  if (!active.length) return <p className="text-sm text-muted-foreground">No active accounts.</p>;
+  if (!active.length) return <FundingEligibilityCallout accounts={accounts} />;
 
   return (
     <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-3">

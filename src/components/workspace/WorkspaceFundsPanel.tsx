@@ -4,6 +4,12 @@ import { CreditCard, Landmark, Link2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DataTable } from "@/lib/portalShared";
+import type { FundingAccountRow } from "@/components/portal/FundingEligibilityCallout";
+import {
+  FundingEligibilityCallout,
+  activeFundingAccounts as activeAccounts,
+  pendingFundingAccounts as pendingAccounts,
+} from "@/components/portal/FundingEligibilityCallout";
 
 const field = "bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground w-full";
 const btn = "text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-surface-elevated";
@@ -15,22 +21,11 @@ type WalletPayload = {
   transactions: unknown[];
   deposits: Array<Record<string, unknown> & { id?: string; created_at?: string }>;
   withdrawals: Array<Record<string, unknown> & { id?: string; created_at?: string }>;
-  accounts: Array<
-    Record<string, unknown> & {
-      id?: string;
-      status?: string;
-      account_number?: string;
-      base_currency?: string;
-    }
-  >;
+  accounts: FundingAccountRow[];
 };
 
 function fmt(n: unknown, c = "USD") {
   return Number(n ?? 0).toLocaleString(undefined, { style: "currency", currency: c });
-}
-
-function activeAccounts(accounts: WalletPayload["accounts"]) {
-  return accounts.filter((a) => a.status === "active");
 }
 
 /** Disabled fields mirroring Stripe Elements layout — swap for `<PaymentElement />` when wiring Stripe.js */
@@ -216,11 +211,7 @@ function DepositRequestForm({
   };
 
   if (!active.length) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        No active brokerage accounts. Contact support to activate funding.
-      </p>
-    );
+    return <FundingEligibilityCallout accounts={accounts} />;
   }
 
   return (
@@ -352,7 +343,7 @@ function WithdrawRequestForm({
   };
 
   if (!active.length) {
-    return <p className="text-sm text-muted-foreground">No active accounts.</p>;
+    return <FundingEligibilityCallout accounts={accounts} />;
   }
 
   return (
@@ -439,15 +430,17 @@ export function WorkspaceFundsPanel() {
 
   const wallets = data?.wallets ?? [];
   const accounts = data?.accounts ?? [];
+  const activeCount = activeAccounts(accounts).length;
+  const pendingAcctCount = pendingAccounts(accounts).length;
   const totalAvailable = wallets.reduce((s, w) => s + Number(w.available_balance ?? 0), 0);
   const currency = String(wallets[0]?.currency ?? accounts[0]?.base_currency ?? "USD");
 
   const pendingRows = [
     ...(data?.deposits ?? []).map((r) => ({ ...r, kind: "Deposit" as const })),
     ...(data?.withdrawals ?? []).map((r) => ({ ...r, kind: "Withdrawal" as const })),
-  ].sort((a, b) => +new Date(String(b.created_at ?? 0)) - +new Date(String(a.created_at ?? 0))) as Array<
-    Record<string, unknown> & { kind: "Deposit" | "Withdrawal" }
-  >;
+  ].sort(
+    (a, b) => +new Date(String(b.created_at ?? 0)) - +new Date(String(a.created_at ?? 0)),
+  ) as Array<Record<string, unknown> & { kind: "Deposit" | "Withdrawal" }>;
 
   const cancelRequest = async (
     row: Record<string, unknown> & { kind: "Deposit" | "Withdrawal" },
@@ -496,9 +489,16 @@ export function WorkspaceFundsPanel() {
           <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Active accounts
           </div>
-          <div className="mt-2 text-xl font-semibold text-foreground">
-            {activeAccounts(accounts).length}
-          </div>
+          <div className="mt-2 text-xl font-semibold text-foreground">{activeCount}</div>
+          {pendingAcctCount > 0 ? (
+            <div className="mt-1 text-[11px] text-muted-foreground">
+              {pendingAcctCount} pending approval (not shown in Funding Review)
+            </div>
+          ) : accounts.length > 0 && activeCount === 0 ? (
+            <div className="mt-1 text-[11px] text-muted-foreground">
+              None active — see Deposit tab
+            </div>
+          ) : null}
         </div>
         <div className="rounded-xl border border-border bg-surface/40 p-4">
           <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
