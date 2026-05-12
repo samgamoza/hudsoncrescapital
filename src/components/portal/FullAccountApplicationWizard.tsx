@@ -19,6 +19,7 @@ import type { AccountApplicationPayload } from "@/server/applications.functions"
 
 const field =
   "w-full bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground";
+const fieldCompact = cn(field, "py-1.5 text-[13px] leading-tight");
 const label = "block text-xs font-medium uppercase tracking-wider text-muted-foreground";
 const req = <span className="text-destructive"> *</span>;
 const sectionTitle = "text-sm font-semibold text-brand border-b border-border pb-1 mb-3";
@@ -608,15 +609,19 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <nav aria-label="Application steps" className="flex flex-wrap gap-2">
+    <div className={cn("flex min-h-0 flex-col", step === 0 ? "gap-2 sm:gap-2.5" : "gap-6")}>
+      <nav
+        aria-label="Application steps"
+        className={cn("flex shrink-0 flex-wrap", step === 0 ? "gap-1.5" : "gap-2")}
+      >
         {STEPS.map((s, i) => (
           <button
             key={s.key}
             type="button"
             onClick={() => (i < step ? setStep(i) : undefined)}
             className={cn(
-              "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+              "rounded-full border font-medium transition-colors",
+              step === 0 ? "px-2.5 py-0.5 text-[10px] sm:px-3 sm:py-1 sm:text-xs" : "px-3 py-1 text-xs",
               i === step && "border-brand bg-brand/15 text-foreground",
               i < step && "border-brand/40 text-brand hover:bg-brand/10",
               i > step && "border-border text-muted-foreground cursor-default",
@@ -628,9 +633,16 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
         ))}
       </nav>
 
-      <div>
-        <h2 className="text-lg font-semibold text-foreground">{STEPS[step].title}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+      <div className="shrink-0">
+        <h2 className={cn("font-semibold text-foreground", step === 0 ? "text-base" : "text-lg")}>
+          {STEPS[step].title}
+        </h2>
+        <p
+          className={cn(
+            "text-muted-foreground",
+            step === 0 ? "mt-0.5 text-xs leading-snug sm:max-w-[42rem]" : "mt-1 text-sm",
+          )}
+        >
           {step === 1 && mode === "signup"
             ? "Choose a secure password for the email you entered. You can add MFA after sign-in from Settings."
             : STEPS[step].subtitle}
@@ -638,96 +650,112 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
       </div>
 
       {step === 0 && (
-        <div className="space-y-5 text-sm">
-          <div className="rounded-lg border border-border bg-muted/20 p-4 text-muted-foreground">
-            <p className="font-medium text-foreground">Opening a Hudson Crest account</p>
-            <p className="mt-2">
-              Opening an account is structured so we can meet regulatory and suitability standards. In most cases
-              you can finish this flow in under ten minutes. Each account owner will typically need:
-            </p>
-            <ul className="mt-3 list-disc space-y-1 pl-5">
-              <li>Government-issued photo ID (driver license, passport, or national ID)</li>
-              <li>Employer name and business address</li>
-              <li>Residential mailing address and contact numbers</li>
-            </ul>
-          </div>
-          <div>
-            <label className={label}>
-              Representative{req}
-            </label>
-            <select className={cn("mt-1", field)} value={f.rep} onChange={(e) => setF({ ...f, rep: e.target.value })}>
-              {REP_OPTIONS.map((o) => (
-                <option key={o.value || "blank"} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div>
-              <label className={label}>First name{req}</label>
+        <div className="space-y-2.5 text-sm sm:space-y-2">
+          <details className="group rounded-md border border-border/80 bg-muted/10 text-xs text-muted-foreground open:bg-muted/15">
+            <summary className="cursor-pointer list-none px-2.5 py-1.5 font-medium text-foreground marker:content-none [&::-webkit-details-marker]:hidden">
+              <span className="inline-flex w-full items-center justify-between gap-2">
+                <span>What you will need for this application</span>
+                <span className="text-[10px] font-normal text-brand group-open:hidden">Show</span>
+                <span className="hidden text-[10px] font-normal text-brand group-open:inline">Hide</span>
+              </span>
+            </summary>
+            <div className="border-t border-border/50 px-2.5 pb-2 pt-1.5 leading-snug">
+              <p className="text-[11px]">
+                Most people finish in under ten minutes. Have government ID ready, plus employer name and address.
+                You will add mailing address and household details on a later step.
+              </p>
+              <ul className="mt-1.5 list-disc space-y-0.5 pl-4 text-[11px]">
+                <li>Photo ID (driver license, passport, or national ID)</li>
+                <li>Employer legal name and business address</li>
+                <li>Country of residence drives phone format and regulatory routing</li>
+              </ul>
+            </div>
+          </details>
+
+          <div className="grid grid-cols-1 gap-2.5 sm:gap-2 md:grid-cols-2 lg:grid-cols-12 lg:gap-x-3 lg:gap-y-2">
+            <div className="md:col-span-2 lg:col-span-4">
+              <label className={cn(label, "text-[10px]")}>
+                Representative{req}
+              </label>
+              <select
+                className={cn("mt-0.5", fieldCompact)}
+                value={f.rep}
+                onChange={(e) => setF({ ...f, rep: e.target.value })}
+              >
+                {REP_OPTIONS.map((o) => (
+                  <option key={o.value || "blank"} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3 md:col-span-2 lg:col-span-8">
+              <div>
+                <label className={cn(label, "text-[10px]")}>First name{req}</label>
+                <input
+                  className={cn("mt-0.5", fieldCompact)}
+                  value={f.firstName}
+                  onChange={(e) => setF({ ...f, firstName: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className={cn(label, "text-[10px]")}>Middle</label>
+                <input
+                  className={cn("mt-0.5", fieldCompact)}
+                  value={f.middleName}
+                  onChange={(e) => setF({ ...f, middleName: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className={cn(label, "text-[10px]")}>Last name{req}</label>
+                <input
+                  className={cn("mt-0.5", fieldCompact)}
+                  value={f.lastName}
+                  onChange={(e) => setF({ ...f, lastName: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="lg:col-span-4">
+              <label className={cn(label, "text-[10px]")}>Country of residence{req}</label>
+              <div className="mt-0.5">
+                <CountrySelect value={f.country} onChange={(c) => setF({ ...f, country: c })} />
+              </div>
+            </div>
+            <div className="lg:col-span-4">
+              <label className={cn(label, "text-[10px]")}>Primary / daytime phone{req}</label>
+              <div className="mt-0.5">
+                <IntlPhoneInput value={f.phone} onChange={(p) => setF({ ...f, phone: p })} country={f.country} />
+              </div>
+            </div>
+            <div className="md:col-span-2 lg:col-span-4">
+              <label className={cn(label, "text-[10px]")}>Email{req}</label>
               <input
-                className={cn("mt-1", field)}
-                value={f.firstName}
-                onChange={(e) => setF({ ...f, firstName: e.target.value })}
+                type="email"
+                className={cn("mt-0.5", fieldCompact)}
+                value={f.email}
+                onChange={(e) => setF({ ...f, email: e.target.value })}
               />
             </div>
-            <div>
-              <label className={label}>Middle name</label>
+
+            <div className="md:col-span-1 lg:col-span-6">
+              <label className={cn(label, "text-[10px]")}>Employer name{req}</label>
               <input
-                className={cn("mt-1", field)}
-                value={f.middleName}
-                onChange={(e) => setF({ ...f, middleName: e.target.value })}
+                className={cn("mt-0.5", fieldCompact)}
+                value={f.employerName}
+                onChange={(e) => setF({ ...f, employerName: e.target.value })}
               />
             </div>
-            <div>
-              <label className={label}>Last name{req}</label>
-              <input
-                className={cn("mt-1", field)}
-                value={f.lastName}
-                onChange={(e) => setF({ ...f, lastName: e.target.value })}
+            <div className="md:col-span-1 lg:col-span-6">
+              <label className={cn(label, "text-[10px]")}>Employer address{req}</label>
+              <textarea
+                rows={2}
+                className={cn("mt-0.5 min-h-0 resize-y", fieldCompact)}
+                placeholder="Street, city, region / state"
+                value={f.employerAddress}
+                onChange={(e) => setF({ ...f, employerAddress: e.target.value })}
               />
             </div>
-          </div>
-          <div>
-            <label className={label}>Country of residence{req}</label>
-            <div className="mt-1">
-              <CountrySelect value={f.country} onChange={(c) => setF({ ...f, country: c })} />
-            </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              Used for regulatory jurisdiction and statements. ISO country codes are stored.
-            </p>
-          </div>
-          <div>
-            <label className={label}>Primary / daytime phone{req}</label>
-            <div className="mt-1">
-              <IntlPhoneInput value={f.phone} onChange={(p) => setF({ ...f, phone: p })} country={f.country} />
-            </div>
-          </div>
-          <div>
-            <label className={label}>Email{req}</label>
-            <input
-              type="email"
-              className={cn("mt-1", field)}
-              value={f.email}
-              onChange={(e) => setF({ ...f, email: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className={label}>Employer name{req}</label>
-            <input
-              className={cn("mt-1", field)}
-              value={f.employerName}
-              onChange={(e) => setF({ ...f, employerName: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className={label}>Employer address{req}</label>
-            <textarea
-              className={cn("mt-1 min-h-[72px]", field)}
-              value={f.employerAddress}
-              onChange={(e) => setF({ ...f, employerAddress: e.target.value })}
-            />
           </div>
         </div>
       )}
@@ -1322,7 +1350,12 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+      <div
+        className={cn(
+          "flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border",
+          step === 0 ? "pt-2.5" : "pt-4",
+        )}
+      >
         <button
           type="button"
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
