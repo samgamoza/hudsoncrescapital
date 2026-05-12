@@ -2,7 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import type { InvestorOrderRow, InvestorTradingWorkspace, TradableInstrument, TradingAccount } from "@/lib/trading.types";
+import type {
+  InvestorOrderRow,
+  InvestorPositionRow,
+  InvestorTradingWorkspace,
+  TradableInstrument,
+  TradingAccount,
+} from "@/lib/trading.types";
 
 function nearlyIntegerMultiple(value: number, step: number): boolean {
   if (step <= 0) return true;
@@ -257,46 +263,82 @@ export async function loadInvestorTradingWorkspaceForApi(userId: string): Promis
         realized_pnl: number;
       }[]
     | undefined;
+  let positions: InvestorPositionRow[] = [];
 
-  if (accountIds.length > 0) {
-    const [posQ, ...cashBalances] = await Promise.all([
-      supabaseAdmin
-        .from("positions")
-        .select("account_id, quantity, realized_pnl")
-        .in("account_id", accountIds),
-      ...accountIds.map((id) =>
-        getCurrentCashBalance(id).then((cash) => ({ accountId: id, cash })),
-      ),
-    ]);
-    if (posQ.error) throw new Error(posQ.error.message);
-
-    const cashById = Object.fromEntries(
-      (cashBalances as { accountId: string; cash: number }[]).map((x) => [x.accountId, x.cash]),
-    );
-    const posAgg: Record<
-      string,
-      { openCount: number; realized: number }
-    > = {};
-    for (const id of accountIds) posAgg[id] = { openCount: 0, realized: 0 };
-    for (const row of posQ.data ?? []) {
-      const aid = row.account_id as string;
-      if (!posAgg[aid]) continue;
-      const q = Number(row.quantity ?? 0);
-      if (Math.abs(q) > 1e-8) posAgg[aid].openCount += 1;
-      posAgg[aid].realized += Number(row.realized_pnl ?? 0);
-    }
-
-    account_snapshots = accounts.map((a) => ({
-      account_id: a.id,
-      account_number: a.account_number,
-      base_currency: a.base_currency,
-      cash_balance: cashById[a.id] ?? 0,
-      open_position_count: posAgg[a.id]?.openCount ?? 0,
-      realized_pnl: posAgg[a.id]?.realized ?? 0,
-    }));
+  if (accountIds.length === 0) {
+    return { instruments, accounts, orders, positions, account_snapshots };
   }
 
-  return { instruments, accounts, orders, account_snapshots };
+  const [posQ, ...cashBalances] = await Promise.all([
+    supabaseAdmin
+      .from("positions")
+      .select("id, account_id, instrument_id, quantity, avg_cost, realized_pnl, currency, last_trade_at")
+      .in("account_id", accountIds),
+    ...accountIds.map((id) =>
+      getCurrentCashBalance(id).then((cash) => ({ accountId: id, cash })),
+    ),
+  ]);
+  if (posQ.error) throw new Error(posQ.error.message);
+
+  const cashById = Object.fromEntries(
+    (cashBalances as { accountId: string; cash: number }[]).map((x) => [x.accountId, x.cash]),
+  );
+  const posAgg: Record<string, { openCount: number; realized: number }> = {};
+  for (const id of accountIds) posAgg[id] = { openCount: 0, realized: 0 };
+  for (const row of posQ.data ?? []) {
+    const aid = row.account_id as string;
+    if (!posAgg[aid]) continue;
+    const q = Number(row.quantity ?? 0);
+    if (Math.abs(q) > 1e-8) posAgg[aid].openCount += 1;
+    posAgg[aid].realized += Number(row.realized_pnl ?? 0);
+  }
+
+  account_snapshots = accounts.map((a) => ({
+    account_id: a.id,
+    account_number: a.account_number,
+    base_currency: a.base_currency,
+    cash_balance: cashById[a.id] ?? 0,
+    open_position_count: posAgg[a.id]?.openCount ?? 0,
+    realized_pnl: posAgg[a.id]?.realized ?? 0,
+  }));
+
+  const rawPos = posQ.data ?? [];
+  const posInstIds = [...new Set(rawPos.map((r: any) => r.instrument_id as string))];
+  if (posInstIds.length > 0) {
+    const { data: posInstRows, error: piErr } = await supabaseAdmin
+      .from("instruments")
+      .select("id, symbol, name")
+      .in("id", posInstIds);
+    if (piErr) throw new Error(piErr.message);
+    const piBy = Object.fromEntries((posInstRows ?? []).map((i: any) => [i.id as string, i]));
+    const acctById = Object.fromEntries(accounts.map((a) => [a.id, a]));
+    positions = rawPos
+      .filter((r: any) => Math.abs(Number(r.quantity ?? 0)) > 1e-8)
+      .map((r: any) => {
+        const inst = piBy[r.instrument_id as string];
+        const acct = acctById[r.account_id as string];
+        return {
+          id: r.id,
+          account_id: r.account_id,
+          account_number: acct?.account_number ?? null,
+          instrument_id: r.instrument_id,
+          symbol: inst?.symbol ?? "—",
+          instrument_name: inst?.name ?? "—",
+          quantity: Number(r.quantity),
+          avg_cost: Number(r.avg_cost ?? 0),
+          realized_pnl: Number(r.realized_pnl ?? 0),
+          currency: String(r.currency ?? "USD"),
+          last_trade_at: r.last_trade_at ?? null,
+        };
+      });
+    positions.sort((a, b) => {
+      const ta = a.last_trade_at ? +new Date(a.last_trade_at) : 0;
+      const tb = b.last_trade_at ? +new Date(b.last_trade_at) : 0;
+      return tb - ta;
+    });
+  }
+
+  return { instruments, accounts, orders, positions, account_snapshots };
 }
 
 export async function placeInvestorOrderForApi(userId: string, raw: unknown) {

@@ -44,7 +44,7 @@ function InvestorTradePage() {
       setInstrumentId((i) => i || w.instruments[0]?.id || "");
     } catch (e: any) {
       toast.error(e?.message ?? "Could not load trading data");
-      setWs({ instruments: [], accounts: [], orders: [] });
+      setWs({ instruments: [], accounts: [], orders: [], positions: [] });
     } finally {
       setLoading(false);
     }

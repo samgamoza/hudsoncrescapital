@@ -132,6 +132,8 @@ import type {
   InvestorTradingWorkspace,
   TradableInstrument,
 } from "@/lib/trading.types";
+import type { TradeHistoryRow } from "@/lib/trade-history.types";
+import { DataTable } from "@/lib/portalShared";
 import { supabase } from "@/integrations/supabase/client";
 import {
   displayNameOfAsset,
@@ -185,6 +187,188 @@ export const Route = createFileRoute("/portal/trade-workspace")({
   component: TradeWorkspacePage,
 });
 
+type WorkspaceMainPanel =
+  | "catalog"
+  | "search"
+  | "discover"
+  | "positions"
+  | "orders"
+  | "history"
+  | "alerts";
+
+const WORKSPACE_RAIL_VALUES = new Set<WorkspaceMainPanel>(["search", "discover"]);
+
+const PORTFOLIO_MAIN_VALUES = new Set<WorkspaceMainPanel>(["positions", "orders", "history", "alerts"]);
+
+function WorkspacePortfolioOrdersPanel({
+  workspace,
+  onRefresh,
+}: {
+  workspace: InvestorTradingWorkspace | null;
+  onRefresh: () => void;
+}) {
+  const cancelOpen = async (orderId: string) => {
+    try {
+      const res = await fetch("/api/portal/investor-trading", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cancel", payload: { orderId } }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body?.error ?? `Cancel failed (${res.status})`);
+      toast.success("Order cancelled");
+      onRefresh();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Cancel failed");
+    }
+  };
+
+  const rows = workspace?.orders ?? [];
+  if (!workspace) {
+    return <p className="text-sm text-muted-foreground">Loading orders…</p>;
+  }
+  if (rows.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        No orders on file yet. Place an order from the catalog or the classic ticket to see it here.
+      </p>
+    );
+  }
+
+  return (
+    <DataTable
+      rows={rows}
+      columns={[
+        {
+          key: "placed_at",
+          label: "Placed",
+          render: (r) => new Date(r.placed_at).toLocaleString(),
+        },
+        { key: "symbol", label: "Symbol" },
+        {
+          key: "instrument_name",
+          label: "Name",
+          render: (r) => <span className="text-muted-foreground">{r.instrument_name}</span>,
+        },
+        {
+          key: "side",
+          label: "Side",
+          render: (r) => (
+            <span className={r.side === "buy" ? "text-success font-medium" : "text-danger font-medium"}>
+              {r.side === "buy" ? "Buy" : "Sell"}
+            </span>
+          ),
+        },
+        { key: "order_type", label: "Type" },
+        { key: "status", label: "Status" },
+        {
+          key: "quantity",
+          label: "Qty",
+          render: (r) => r.quantity.toLocaleString(undefined, { maximumFractionDigits: 8 }),
+        },
+        {
+          key: "id",
+          label: "",
+          render: (r) =>
+            ["pending", "working", "partially_filled"].includes(r.status) ? (
+              <button
+                type="button"
+                className="text-xs text-destructive hover:underline"
+                onClick={() => void cancelOpen(r.id)}
+              >
+                Cancel
+              </button>
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            ),
+        },
+      ]}
+    />
+  );
+}
+
+function WorkspacePortfolioHistoryPanel() {
+  const [rows, setRows] = useState<TradeHistoryRow[] | null>(null);
+
+  const loadRows = useCallback(async () => {
+    try {
+      const res = await fetch("/api/portal/trade-history");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg =
+          typeof (data as { error?: string })?.error === "string"
+            ? (data as { error: string }).error
+            : `Failed (${res.status})`;
+        throw new Error(msg);
+      }
+      setRows(Array.isArray(data) ? (data as TradeHistoryRow[]) : []);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Could not load trade history");
+      setRows([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadRows();
+  }, [loadRows]);
+
+  if (rows === null) {
+    return <p className="text-sm text-muted-foreground">Loading trade history…</p>;
+  }
+  if (rows.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        No executions on file yet. Fills will appear here once your accounts begin trading.
+      </p>
+    );
+  }
+
+  return (
+    <DataTable
+      rows={rows}
+      columns={[
+        {
+          key: "executed_at",
+          label: "Executed",
+          render: (r) => new Date(r.executed_at).toLocaleString(),
+        },
+        { key: "symbol", label: "Symbol" },
+        {
+          key: "instrument_name",
+          label: "Name",
+          render: (r) => <span className="text-muted-foreground">{r.instrument_name}</span>,
+        },
+        {
+          key: "side",
+          label: "Side",
+          render: (r) => (
+            <span className={r.side === "buy" ? "text-success font-medium" : "text-danger font-medium"}>
+              {r.side === "buy" ? "Buy" : "Sell"}
+            </span>
+          ),
+        },
+        {
+          key: "quantity",
+          label: "Qty",
+          render: (r) => r.quantity.toLocaleString(undefined, { maximumFractionDigits: 8 }),
+        },
+        {
+          key: "price",
+          label: "Price",
+          render: (r) =>
+            `${Number(r.price).toLocaleString(undefined, { maximumFractionDigits: 6 })} ${r.currency}`,
+        },
+        {
+          key: "gross_amount",
+          label: "Gross",
+          render: (r) =>
+            `${Number(r.gross_amount).toLocaleString(undefined, { maximumFractionDigits: 2 })} ${r.currency}`,
+        },
+      ]}
+    />
+  );
+}
+
 function WorkspaceEmptyCanvas() {
   return (
     <div className="flex min-h-[min(70vh,calc(100vh-8rem))] w-full flex-col items-center justify-center bg-gradient-to-b from-muted/5 via-muted/15 to-muted/5 px-6 py-16 text-center md:px-12">
@@ -219,7 +403,21 @@ function TradeWorkspacePage() {
   const { loading, role } = usePortalAuth("investor");
   /** No catalog until user picks an asset class (IG-style empty first view). */
   const [marketClass, setMarketClass] = useState<string | null>(null);
+  const [mainPanel, setMainPanel] = useState<WorkspaceMainPanel>("catalog");
   const [hdrWs, setHdrWs] = useState<InvestorTradingWorkspace | null>(null);
+
+  const reloadHdrWs = useCallback(async () => {
+    try {
+      const res = await fetch("/api/portal/investor-trading");
+      const data = (await res.json().catch(() => ({}))) as InvestorTradingWorkspace & {
+        error?: string;
+      };
+      if (!res.ok) return;
+      setHdrWs(data);
+    } catch {
+      /* non-fatal for layout */
+    }
+  }, []);
 
   useEffect(() => {
     if (loading || !role) return;
@@ -345,44 +543,199 @@ function TradeWorkspacePage() {
           <NavGroup
             title="Workspace"
             items={[
-              { label: "Search", icon: Search },
-              { label: "DiscoverAI", icon: Lightbulb },
+              { label: "Search", icon: Search, value: "search" },
+              { label: "DiscoverAI", icon: Lightbulb, value: "discover" },
             ]}
+            activeValue={WORKSPACE_RAIL_VALUES.has(mainPanel) ? mainPanel : undefined}
+            onSelect={(value) => {
+              if (value === "search" || value === "discover") setMainPanel(value);
+            }}
           />
           <NavGroup
             title="Market Main"
             items={WORKSPACE_MARKET_MAIN_VISIBLE}
-            activeValue={marketClass ?? undefined}
+            activeValue={mainPanel === "catalog" ? (marketClass ?? undefined) : undefined}
             onSelect={(value) => {
-              if (value) setMarketClass(value);
+              if (value) {
+                setMarketClass(value);
+                setMainPanel("catalog");
+              }
             }}
           />
           <WorkspaceMoreMarketClasses
             items={WORKSPACE_MARKET_MAIN_MORE}
-            activeValue={marketClass ?? ""}
+            activeValue={mainPanel === "catalog" ? marketClass ?? "" : ""}
             onSelect={(value) => {
-              if (value) setMarketClass(value);
+              if (value) {
+                setMarketClass(value);
+                setMainPanel("catalog");
+              }
             }}
           />
           <NavGroup
             title="Portfolio"
             items={[
-              { label: "Positions", icon: LayoutDashboard },
-              { label: "Orders", icon: ChartCandlestick },
-              { label: "History", icon: History },
-              { label: "Alerts", icon: Bell },
+              { label: "Positions", icon: LayoutDashboard, value: "positions" },
+              { label: "Orders", icon: ChartCandlestick, value: "orders" },
+              { label: "History", icon: History, value: "history" },
+              { label: "Alerts", icon: Bell, value: "alerts" },
             ]}
+            activeValue={PORTFOLIO_MAIN_VALUES.has(mainPanel) ? mainPanel : undefined}
+            onSelect={(value) => {
+              if (value === "positions" || value === "orders" || value === "history" || value === "alerts") {
+                setMainPanel(value);
+              }
+            }}
           />
         </aside>
 
         <main className="min-h-0 bg-background md:min-h-[calc(100vh-3.5rem)]">
-          {marketClass ? (
+          {mainPanel === "catalog" && !marketClass ? <WorkspaceEmptyCanvas /> : null}
+          {mainPanel === "catalog" && marketClass ? (
             <div className="h-full p-4 md:p-6">
               <AssetBrowser forcedAssetClass={marketClass} />
             </div>
-          ) : (
-            <WorkspaceEmptyCanvas />
-          )}
+          ) : null}
+          {mainPanel === "search" ? (
+            <div className="h-full p-4 md:p-6">
+              <div className="mb-3">
+                <h2 className="text-sm font-semibold tracking-tight">Search</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Search and filter listings across all asset classes. Pick a class under{" "}
+                  <span className="text-foreground/90">Market Main</span> for a focused catalog view.
+                </p>
+              </div>
+              <AssetBrowser />
+            </div>
+          ) : null}
+          {mainPanel === "discover" ? (
+            <div className="h-full space-y-3 overflow-auto p-4 md:p-6">
+              <div>
+                <h2 className="text-sm font-semibold tracking-tight">DiscoverAI</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  AI-assisted discovery and thematic screens are not connected to this workspace yet.
+                </p>
+              </div>
+              <p className="text-sm text-muted-foreground border border-border rounded-lg p-4 bg-surface/30">
+                Coming soon: ask in natural language for ideas, compare sectors, and surface instruments
+                that match your goals — with clear disclosures and human oversight where required.
+              </p>
+            </div>
+          ) : null}
+          {mainPanel === "positions" ? (
+            <div className="h-full space-y-3 overflow-auto p-4 md:p-6">
+              <div>
+                <h2 className="text-sm font-semibold tracking-tight">Positions</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Open lines across your accounts (non-zero quantity), newest activity first.
+                </p>
+              </div>
+              {!hdrWs ? (
+                <p className="text-sm text-muted-foreground">Loading positions…</p>
+              ) : (hdrWs.positions ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">No open positions on file.</p>
+              ) : (
+                <DataTable
+                  rows={hdrWs.positions}
+                  columns={[
+                    { key: "symbol", label: "Symbol" },
+                    {
+                      key: "instrument_name",
+                      label: "Name",
+                      render: (r) => <span className="text-muted-foreground">{r.instrument_name}</span>,
+                    },
+                    {
+                      key: "account_number",
+                      label: "Account",
+                      render: (r) => (
+                        <span className="font-mono text-xs">{r.account_number ?? "—"}</span>
+                      ),
+                    },
+                    {
+                      key: "quantity",
+                      label: "Qty",
+                      render: (r) =>
+                        r.quantity.toLocaleString(undefined, { maximumFractionDigits: 8 }),
+                    },
+                    {
+                      key: "avg_cost",
+                      label: "Avg cost",
+                      render: (r) =>
+                        `${r.avg_cost.toLocaleString(undefined, { maximumFractionDigits: 6 })} ${r.currency}`,
+                    },
+                    {
+                      key: "realized_pnl",
+                      label: "Realized P/L",
+                      render: (r) => (
+                        <span
+                          className={
+                            r.realized_pnl >= 0
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-red-600 dark:text-red-400"
+                          }
+                        >
+                          {r.realized_pnl.toLocaleString(undefined, { maximumFractionDigits: 2 })}{" "}
+                          {r.currency}
+                        </span>
+                      ),
+                    },
+                    {
+                      key: "last_trade_at",
+                      label: "Last activity",
+                      render: (r) =>
+                        r.last_trade_at ? new Date(r.last_trade_at).toLocaleString() : "—",
+                    },
+                  ]}
+                />
+              )}
+            </div>
+          ) : null}
+          {mainPanel === "orders" ? (
+            <div className="h-full space-y-3 overflow-auto p-4 md:p-6">
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <div>
+                  <h2 className="text-sm font-semibold tracking-tight">Orders</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Recent orders across your accounts (newest first). Cancel is available for open
+                    lines.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void reloadHdrWs()}
+                  className="text-xs border border-border rounded px-2.5 py-1.5 hover:bg-surface-elevated"
+                >
+                  Refresh
+                </button>
+              </div>
+              <WorkspacePortfolioOrdersPanel workspace={hdrWs} onRefresh={reloadHdrWs} />
+            </div>
+          ) : null}
+          {mainPanel === "history" ? (
+            <div className="h-full space-y-3 overflow-auto p-4 md:p-6">
+              <div>
+                <h2 className="text-sm font-semibold tracking-tight">History</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Confirmed executions (fills), newest first.
+                </p>
+              </div>
+              <WorkspacePortfolioHistoryPanel />
+            </div>
+          ) : null}
+          {mainPanel === "alerts" ? (
+            <div className="h-full space-y-3 overflow-auto p-4 md:p-6">
+              <div>
+                <h2 className="text-sm font-semibold tracking-tight">Alerts</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Price and account alerts are not wired to this workspace yet.
+                </p>
+              </div>
+              <p className="text-sm text-muted-foreground border border-border rounded-lg p-4 bg-surface/30">
+                Coming soon: configurable alerts will appear here and can optionally notify you by
+                email.
+              </p>
+            </div>
+          ) : null}
         </main>
 
         <aside className="border-l border-border bg-surface/30 p-3">

@@ -52,9 +52,26 @@ export type AccountPortfolioSnapshot = {
   realized_pnl: number;
 };
 
+/** Open position row for investor workspace / portfolio views. */
+export type InvestorPositionRow = {
+  id: string;
+  account_id: string;
+  account_number: string | null;
+  instrument_id: string;
+  symbol: string;
+  instrument_name: string;
+  quantity: number;
+  avg_cost: number;
+  realized_pnl: number;
+  currency: string;
+  last_trade_at: string | null;
+};
+
 export type InvestorTradingWorkspace = {
   instruments: TradableInstrument[];
   accounts: TradingAccount[];
   orders: InvestorOrderRow[];
   account_snapshots?: AccountPortfolioSnapshot[];
+  /** Non-flat position lines (quantity ≠ 0), newest activity first. */
+  positions: InvestorPositionRow[];
 };
