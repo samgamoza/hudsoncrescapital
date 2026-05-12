@@ -1,5 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from "react";
 import {
   BadgeInfo,
   BarChart3,
@@ -7,17 +14,21 @@ import {
   BookOpenText,
   ChartCandlestick,
   ChevronDown,
+  ChevronRight,
+  ChevronsUpDown,
+  ClipboardList,
   Clock3,
   ExternalLink,
   Filter,
   History,
-  Lightbulb,
   LayoutDashboard,
+  MoreHorizontal,
   SearchX,
   ShieldAlert,
   Search,
   Settings2,
   SlidersHorizontal,
+  Sparkles,
   Star,
   TrendingUp,
   Wallet,
@@ -45,7 +56,11 @@ function findTradableInstrumentForAsset(
 ): TradableInstrument | null {
   if (!asset) return null;
   const candidates = [asset.display_symbol, asset.symbol, asset.cqs_symbol, asset.nasdaq_symbol]
-    .map((s) => String(s ?? "").trim().toUpperCase())
+    .map((s) =>
+      String(s ?? "")
+        .trim()
+        .toUpperCase(),
+    )
     .filter(Boolean);
   const bySym = new Map(instruments.map((i) => [i.symbol.trim().toUpperCase(), i]));
   for (const c of candidates) {
@@ -55,7 +70,9 @@ function findTradableInstrumentForAsset(
   return null;
 }
 
-async function postWorkspacePlaceOrder(payload: PlacePayload): Promise<{ ok: true } | { error: string }> {
+async function postWorkspacePlaceOrder(
+  payload: PlacePayload,
+): Promise<{ ok: true } | { error: string }> {
   const res = await fetch("/api/portal/investor-trading", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -86,9 +103,12 @@ function parseDealFieldsToSpec(
   price: string,
   stop: string,
   limit: string,
-): { ok: true; spec: Omit<PlacePayload, "accountId" | "instrumentId"> } | { ok: false; error: string } {
+):
+  | { ok: true; spec: Omit<PlacePayload, "accountId" | "instrumentId"> }
+  | { ok: false; error: string } {
   const quantity = Number(size);
-  if (!Number.isFinite(quantity) || quantity <= 0) return { ok: false, error: "Enter a valid size." };
+  if (!Number.isFinite(quantity) || quantity <= 0)
+    return { ok: false, error: "Enter a valid size." };
   const lim = Number(limit);
   const stp = Number(stop);
   const px = Number(price);
@@ -143,6 +163,7 @@ import {
   isOptionsChainAsset,
   isReferenceOnlyAsset,
 } from "@/lib/asset-listings.types";
+import { cn } from "@/lib/utils";
 type AssetListingQuote = {
   symbol: string;
   last: number;
@@ -196,10 +217,6 @@ type WorkspaceMainPanel =
   | "orders"
   | "history"
   | "alerts";
-
-const WORKSPACE_RAIL_VALUES = new Set<WorkspaceMainPanel>(["search", "discover"]);
-
-const PORTFOLIO_MAIN_VALUES = new Set<WorkspaceMainPanel>(["positions", "orders", "history", "alerts"]);
 
 function WorkspacePortfolioOrdersPanel({
   workspace,
@@ -255,7 +272,9 @@ function WorkspacePortfolioOrdersPanel({
           key: "side",
           label: "Side",
           render: (r) => (
-            <span className={r.side === "buy" ? "text-success font-medium" : "text-danger font-medium"}>
+            <span
+              className={r.side === "buy" ? "text-success font-medium" : "text-danger font-medium"}
+            >
               {r.side === "buy" ? "Buy" : "Sell"}
             </span>
           ),
@@ -343,7 +362,9 @@ function WorkspacePortfolioHistoryPanel() {
           key: "side",
           label: "Side",
           render: (r) => (
-            <span className={r.side === "buy" ? "text-success font-medium" : "text-danger font-medium"}>
+            <span
+              className={r.side === "buy" ? "text-success font-medium" : "text-danger font-medium"}
+            >
               {r.side === "buy" ? "Buy" : "Sell"}
             </span>
           ),
@@ -381,8 +402,8 @@ function WorkspaceEmptyCanvas() {
           This is your new workspace
         </h1>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          You can use it to watch a focused set of markets, keep your layouts tidy, or mirror how you
-          work across screens — it is up to you.
+          You can use it to watch a focused set of markets, keep your layouts tidy, or mirror how
+          you work across screens — it is up to you.
         </p>
         <p className="text-xs leading-relaxed text-muted-foreground/90">
           <span className="font-medium text-foreground">To get started,</span> pick an asset class
@@ -391,11 +412,260 @@ function WorkspaceEmptyCanvas() {
           choose one.
         </p>
         <p className="text-[11px] text-muted-foreground/70">
-          Optional filters stay under{" "}
-          <span className="text-foreground/80">Search & filters</span> once a catalog is open.
+          Optional filters stay under <span className="text-foreground/80">Search & filters</span>{" "}
+          once a catalog is open.
         </p>
       </div>
     </div>
+  );
+}
+
+function railRowClass(active: boolean) {
+  return cn(
+    "flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] leading-tight transition-colors",
+    active
+      ? "bg-muted font-medium text-foreground shadow-sm"
+      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+  );
+}
+
+function WorkspaceTradeSidebar({
+  mainPanel,
+  setMainPanel,
+  marketClass,
+  setMarketClass,
+  onOpenSearch,
+  userShort,
+  navigate,
+}: {
+  mainPanel: WorkspaceMainPanel;
+  setMainPanel: (p: WorkspaceMainPanel) => void;
+  marketClass: string | null;
+  setMarketClass: (c: string | null) => void;
+  onOpenSearch: () => void;
+  userShort: string;
+  navigate: ReturnType<typeof useNavigate>;
+}) {
+  const catalogActive = (cls: string) => mainPanel === "catalog" && marketClass === cls;
+
+  return (
+    <aside className="flex min-h-0 w-full shrink-0 flex-col border-r border-border bg-muted/20 dark:bg-muted/10 md:w-[240px]">
+      <div className="shrink-0 space-y-2 border-b border-border/70 p-2">
+        <button
+          type="button"
+          className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-muted/50"
+          onClick={() => navigate({ to: "/portal/investor" })}
+          title="Back to investor dashboard"
+        >
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-[11px] font-bold text-brand-foreground">
+            HC
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold text-foreground">My Workspace</div>
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <span className="rounded-md border border-border bg-background px-1.5 py-0 text-[10px] font-medium text-muted-foreground">
+                Live
+              </span>
+            </div>
+          </div>
+          <ChevronsUpDown
+            className="h-4 w-4 shrink-0 text-muted-foreground opacity-70"
+            aria-hidden
+          />
+        </button>
+
+        <button
+          type="button"
+          onClick={onOpenSearch}
+          className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-2 text-left text-sm text-muted-foreground shadow-sm hover:bg-muted/40 hover:text-foreground"
+        >
+          <Search className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+          <span className="min-w-0 flex-1 truncate">Find…</span>
+          <kbd className="hidden shrink-0 rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline-block">
+            ⌘K
+          </kbd>
+        </button>
+      </div>
+
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-1.5 py-2">
+        <div className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+          Workspace
+        </div>
+        <button
+          type="button"
+          className={railRowClass(mainPanel === "search")}
+          onClick={onOpenSearch}
+        >
+          <Search className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+          <span className="truncate">Search</span>
+        </button>
+        <button
+          type="button"
+          className={railRowClass(mainPanel === "discover")}
+          onClick={() => setMainPanel("discover")}
+        >
+          <Sparkles className="h-4 w-4 shrink-0 text-violet-500 opacity-90" aria-hidden />
+          <span className="truncate">DiscoverAI</span>
+          <span className="ml-auto rounded bg-brand/15 px-1 py-0 text-[9px] font-semibold uppercase text-brand">
+            New
+          </span>
+        </button>
+
+        <div className="my-2 h-px bg-border/80" />
+
+        <div className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+          Markets
+        </div>
+        {WORKSPACE_MARKET_MAIN_VISIBLE.map((item) => (
+          <button
+            key={item.value}
+            type="button"
+            className={railRowClass(catalogActive(item.value))}
+            onClick={() => {
+              setMarketClass(item.value);
+              setMainPanel("catalog");
+            }}
+          >
+            <item.icon className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+            <span className="truncate">{item.label}</span>
+          </button>
+        ))}
+
+        <details className="group rounded-md [&_summary::-webkit-details-marker]:hidden">
+          <summary
+            className={cn(
+              "flex cursor-pointer list-none items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+              WORKSPACE_MARKET_MAIN_MORE.some(
+                (i) => i.value && i.value === marketClass && mainPanel === "catalog",
+              ) && "bg-muted/50 font-medium text-foreground",
+            )}
+          >
+            <SlidersHorizontal className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+            <span className="min-w-0 flex-1 truncate">More asset classes</span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
+          </summary>
+          <div className="mt-0.5 space-y-0.5 border-l border-border/60 pl-2 ml-3 py-1">
+            {WORKSPACE_MARKET_MAIN_MORE.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                disabled={!item.value}
+                className={cn(
+                  railRowClass(!!item.value && catalogActive(item.value)),
+                  !item.value && "cursor-not-allowed opacity-40 hover:bg-transparent",
+                )}
+                onClick={() => {
+                  if (!item.value) return;
+                  setMarketClass(item.value);
+                  setMainPanel("catalog");
+                }}
+              >
+                <item.icon className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+                <span className="truncate">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </details>
+
+        <div className="my-2 h-px bg-border/80" />
+
+        <div className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+          Portfolio
+        </div>
+        <button
+          type="button"
+          className={railRowClass(mainPanel === "positions")}
+          onClick={() => setMainPanel("positions")}
+        >
+          <LayoutDashboard className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+          <span className="truncate">Positions</span>
+        </button>
+        <button
+          type="button"
+          className={railRowClass(mainPanel === "orders")}
+          onClick={() => setMainPanel("orders")}
+        >
+          <ClipboardList className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+          <span className="truncate">Orders</span>
+        </button>
+        <button
+          type="button"
+          className={railRowClass(mainPanel === "history")}
+          onClick={() => setMainPanel("history")}
+        >
+          <History className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+          <span className="truncate">History</span>
+        </button>
+        <button
+          type="button"
+          className={railRowClass(mainPanel === "alerts")}
+          onClick={() => setMainPanel("alerts")}
+        >
+          <Bell className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+          <span className="truncate">Alerts</span>
+        </button>
+
+        <div className="my-2 h-px bg-border/80" />
+
+        <div className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+          Tools
+        </div>
+        <button
+          type="button"
+          className={railRowClass(false)}
+          onClick={() => navigate({ to: "/portal/investor/trade" })}
+        >
+          <TrendingUp className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+          <span className="truncate">Classic ticket</span>
+          <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground/60" aria-hidden />
+        </button>
+        <button
+          type="button"
+          className={railRowClass(false)}
+          onClick={() => navigate({ to: "/portal/investor/trade-history" })}
+        >
+          <BarChart3 className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+          <span className="truncate">Trade history</span>
+          <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground/60" aria-hidden />
+        </button>
+        <button
+          type="button"
+          className={railRowClass(false)}
+          onClick={() => navigate({ to: "/portal/investor/settings" })}
+        >
+          <Settings2 className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+          <span className="truncate">Settings</span>
+          <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground/60" aria-hidden />
+        </button>
+      </nav>
+
+      <div className="shrink-0 border-t border-border/70 p-2">
+        <div className="flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-muted/50">
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-600/90 text-[11px] font-semibold text-white">
+            {userShort.slice(0, 1).toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+            {userShort}
+          </div>
+          <button
+            type="button"
+            className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            title="More"
+            onClick={() => navigate({ to: "/portal/investor" })}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            title="Alerts"
+            onClick={() => setMainPanel("alerts")}
+          >
+            <Bell className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </aside>
   );
 }
 
@@ -407,6 +677,31 @@ function TradeWorkspacePage() {
   const [mainPanel, setMainPanel] = useState<WorkspaceMainPanel>("catalog");
   const [searchFiltersPulse, setSearchFiltersPulse] = useState(0);
   const [hdrWs, setHdrWs] = useState<InvestorTradingWorkspace | null>(null);
+  const [userLabel, setUserLabel] = useState("Investor");
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => {
+      const e = data.session?.user?.email;
+      if (!e) return;
+      const short = e.split("@")[0]?.trim();
+      if (!short) return;
+      setUserLabel(short.length > 20 ? `${short.slice(0, 20)}…` : short);
+    });
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "k") return;
+      const el = e.target as HTMLElement | null;
+      if (!el) return;
+      if (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable) return;
+      e.preventDefault();
+      setMainPanel("search");
+      setSearchFiltersPulse((n) => n + 1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const reloadHdrWs = useCallback(async () => {
     try {
@@ -459,7 +754,12 @@ function TradeWorkspacePage() {
               void fetch("/api/portal/investor-trading")
                 .then((r) => r.json())
                 .then((d) => {
-                  if (!disposed && d && typeof d === "object" && Array.isArray((d as any).accounts))
+                  if (
+                    !disposed &&
+                    d &&
+                    typeof d === "object" &&
+                    Array.isArray((d as Record<string, unknown>).accounts)
+                  )
                     setHdrWs(d as InvestorTradingWorkspace);
                 })
                 .catch(() => {});
@@ -469,24 +769,30 @@ function TradeWorkspacePage() {
             void fetch("/api/portal/investor-trading")
               .then((r) => r.json())
               .then((d) => {
-                if (!disposed && d && typeof d === "object" && Array.isArray((d as any).accounts))
+                if (
+                  !disposed &&
+                  d &&
+                  typeof d === "object" &&
+                  Array.isArray((d as Record<string, unknown>).accounts)
+                )
                   setHdrWs(d as InvestorTradingWorkspace);
               })
               .catch(() => {});
           })
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "positions" },
-            () => {
-              void fetch("/api/portal/investor-trading")
-                .then((r) => r.json())
-                .then((d) => {
-                  if (!disposed && d && typeof d === "object" && Array.isArray((d as any).accounts))
-                    setHdrWs(d as InvestorTradingWorkspace);
-                })
-                .catch(() => {});
-            },
-          )
+          .on("postgres_changes", { event: "*", schema: "public", table: "positions" }, () => {
+            void fetch("/api/portal/investor-trading")
+              .then((r) => r.json())
+              .then((d) => {
+                if (
+                  !disposed &&
+                  d &&
+                  typeof d === "object" &&
+                  Array.isArray((d as Record<string, unknown>).accounts)
+                )
+                  setHdrWs(d as InvestorTradingWorkspace);
+              })
+              .catch(() => {});
+          })
           .subscribe();
       })
       .catch(() => {});
@@ -540,60 +846,19 @@ function TradeWorkspacePage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-[220px_1fr_260px] min-h-[calc(100vh-56px)]">
-        <aside className="border-r border-border bg-surface/30 p-3">
-          <NavGroup
-            title="Workspace"
-            items={[
-              { label: "Search", icon: Search, value: "search" },
-              { label: "DiscoverAI", icon: Lightbulb, value: "discover" },
-            ]}
-            activeValue={WORKSPACE_RAIL_VALUES.has(mainPanel) ? mainPanel : undefined}
-            onSelect={(value) => {
-              if (value === "discover") setMainPanel("discover");
-              else if (value === "search") {
-                setMainPanel("search");
-                setSearchFiltersPulse((n) => n + 1);
-              }
-            }}
-          />
-          <NavGroup
-            title="Market Main"
-            items={WORKSPACE_MARKET_MAIN_VISIBLE}
-            activeValue={mainPanel === "catalog" ? (marketClass ?? undefined) : undefined}
-            onSelect={(value) => {
-              if (value) {
-                setMarketClass(value);
-                setMainPanel("catalog");
-              }
-            }}
-          />
-          <WorkspaceMoreMarketClasses
-            items={WORKSPACE_MARKET_MAIN_MORE}
-            activeValue={mainPanel === "catalog" ? marketClass ?? "" : ""}
-            onSelect={(value) => {
-              if (value) {
-                setMarketClass(value);
-                setMainPanel("catalog");
-              }
-            }}
-          />
-          <NavGroup
-            title="Portfolio"
-            items={[
-              { label: "Positions", icon: LayoutDashboard, value: "positions" },
-              { label: "Orders", icon: ChartCandlestick, value: "orders" },
-              { label: "History", icon: History, value: "history" },
-              { label: "Alerts", icon: Bell, value: "alerts" },
-            ]}
-            activeValue={PORTFOLIO_MAIN_VALUES.has(mainPanel) ? mainPanel : undefined}
-            onSelect={(value) => {
-              if (value === "positions" || value === "orders" || value === "history" || value === "alerts") {
-                setMainPanel(value);
-              }
-            }}
-          />
-        </aside>
+      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr_260px] min-h-[calc(100vh-56px)]">
+        <WorkspaceTradeSidebar
+          mainPanel={mainPanel}
+          setMainPanel={setMainPanel}
+          marketClass={marketClass}
+          setMarketClass={setMarketClass}
+          onOpenSearch={() => {
+            setMainPanel("search");
+            setSearchFiltersPulse((n) => n + 1);
+          }}
+          userShort={userLabel}
+          navigate={navigate}
+        />
 
         <main className="min-h-0 bg-background md:min-h-[calc(100vh-3.5rem)]">
           {mainPanel === "catalog" && !marketClass ? <WorkspaceEmptyCanvas /> : null}
@@ -608,9 +873,11 @@ function TradeWorkspacePage() {
             </div>
           ) : null}
           {mainPanel === "discover" ? (
-            <div className="flex h-full min-h-0 flex-col">
-              <DiscoverAIPanel onClose={() => setMainPanel("catalog")} />
-            </div>
+            <DiscoverWorkspaceSplit
+              onClose={() => setMainPanel("catalog")}
+              workspace={hdrWs}
+              reloadHdrWs={reloadHdrWs}
+            />
           ) : null}
           {mainPanel === "positions" ? (
             <div className="h-full space-y-3 overflow-auto p-4 md:p-6">
@@ -632,7 +899,9 @@ function TradeWorkspacePage() {
                     {
                       key: "instrument_name",
                       label: "Name",
-                      render: (r) => <span className="text-muted-foreground">{r.instrument_name}</span>,
+                      render: (r) => (
+                        <span className="text-muted-foreground">{r.instrument_name}</span>
+                      ),
                     },
                     {
                       key: "account_number",
@@ -764,21 +1033,25 @@ function WorkspaceHeaderFunds({ snapshots }: { snapshots?: AccountPortfolioSnaps
   return (
     <div className="hidden lg:flex items-center gap-4 text-xs text-muted-foreground">
       <span title={`Account ${snap.account_number}`}>
-       Acct <b className="text-foreground font-mono">{snap.account_number}</b> ({cur})
+        Acct <b className="text-foreground font-mono">{snap.account_number}</b> ({cur})
       </span>
       <span>
-        Cash:{" "}
-        <b className="text-foreground">{fmtNum(snap.cash_balance)}</b>
+        Cash: <b className="text-foreground">{fmtNum(snap.cash_balance)}</b>
       </span>
       <span title="Aggregate realized P/L across open position rows">
         Realized P/L:{" "}
-        <b className={snap.realized_pnl >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
+        <b
+          className={
+            snap.realized_pnl >= 0
+              ? "text-emerald-600 dark:text-emerald-400"
+              : "text-red-600 dark:text-red-400"
+          }
+        >
           {fmtNum(snap.realized_pnl)}
         </b>
       </span>
       <span>
-        Open lines:{" "}
-        <b className="text-foreground">{snap.open_position_count}</b>
+        Open lines: <b className="text-foreground">{snap.open_position_count}</b>
       </span>
     </div>
   );
@@ -787,7 +1060,14 @@ function WorkspaceHeaderFunds({ snapshots }: { snapshots?: AccountPortfolioSnaps
 function WorkspaceBlotter() {
   const [orders, setOrders] = useState<InvestorTradingWorkspace["orders"]>([]);
   const [fills, setFills] = useState<
-    { id: string; executed_at: string; symbol: string; side: string; quantity: number; price: number }[]
+    {
+      id: string;
+      executed_at: string;
+      symbol: string;
+      side: string;
+      quantity: number;
+      price: number;
+    }[]
   >([]);
   const [loading, setLoading] = useState(true);
 
@@ -799,7 +1079,8 @@ function WorkspaceBlotter() {
       ]);
       const ordersBody = await ordersRes.json().catch(() => ({}));
       const fillsBody = await fillsRes.json().catch(() => []);
-      if (!ordersRes.ok) throw new Error(ordersBody?.error ?? `Orders failed (${ordersRes.status})`);
+      if (!ordersRes.ok)
+        throw new Error(ordersBody?.error ?? `Orders failed (${ordersRes.status})`);
       if (!fillsRes.ok) throw new Error(`Fills failed (${fillsRes.status})`);
       const ws = ordersBody as InvestorTradingWorkspace;
       const open = (ws.orders ?? []).filter((o) =>
@@ -809,7 +1090,7 @@ function WorkspaceBlotter() {
       setFills(
         (Array.isArray(fillsBody) ? fillsBody : [])
           .slice(0, 8)
-          .map((f: any) => ({
+          .map((f: Record<string, unknown>) => ({
             id: String(f.id),
             executed_at: String(f.executed_at),
             symbol: String(f.symbol ?? "—"),
@@ -865,7 +1146,11 @@ function WorkspaceBlotter() {
             { event: "*", schema: "public", table: "orders", filter: `placed_by=eq.${uid}` },
             () => void load(),
           )
-          .on("postgres_changes", { event: "*", schema: "public", table: "trades" }, () => void load())
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "trades" },
+            () => void load(),
+          )
           .subscribe();
       })
       .catch(() => {
@@ -1032,8 +1317,8 @@ function AssetBrowser({
         const refreshed = nextRows.find((r) => r.id === selected.id) ?? null;
         setSelected(refreshed);
       }
-    } catch (e: any) {
-      toast.error(e?.message ?? "Could not load asset listings");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Could not load asset listings");
       setRows([]);
     } finally {
       setLoading(false);
@@ -1067,6 +1352,7 @@ function AssetBrowser({
       void load();
     }, 250);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: `load` is recreated each render; deps mirror its closure inputs
   }, [
     activeClass,
     query,
@@ -1180,142 +1466,145 @@ function AssetBrowser({
         onToggle={(e) => setSearchFiltersOpen((e.target as HTMLDetailsElement).open)}
       >
         <summary className="cursor-pointer list-none px-3 py-2.5 text-xs text-muted-foreground transition-colors hover:text-foreground flex items-center gap-2 select-none [&::-webkit-details-marker]:hidden">
-          <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 text-brand" aria-hidden />
+          <ChevronDown
+            className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 text-brand"
+            aria-hidden
+          />
           <span className="font-medium uppercase tracking-wide">Search & filters</span>
           <span className="normal-case font-normal opacity-80">(optional)</span>
         </summary>
         <div className="border-t border-border/60 p-3 flex flex-col gap-3">
-        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-2">
-          <input
-            className="bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground md:col-span-2"
-            placeholder="Search symbol, name, base/quote, category..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                void refresh();
-              }
-            }}
-          />
-          <select
-            className="bg-surface border border-border rounded-md px-2 py-2 text-sm"
-            value={assetType}
-            onChange={(e) => setAssetType(e.target.value)}
-          >
-            <option value="">Asset Type</option>
-            {assetTypeOpts.map((x) => (
-              <option key={x} value={x}>
-                {x}
-              </option>
-            ))}
-          </select>
-          <select
-            className="bg-surface border border-border rounded-md px-2 py-2 text-sm"
-            value={exchange}
-            onChange={(e) => setExchange(e.target.value)}
-          >
-            <option value="">Exchange</option>
-            {exchangeOpts.map((x) => (
-              <option key={x} value={x}>
-                {x}
-              </option>
-            ))}
-          </select>
-          <select
-            className="bg-surface border border-border rounded-md px-2 py-2 text-sm"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option value="">Category</option>
-            {categoryOpts.map((x) => (
-              <option key={x} value={x}>
-                {x}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={() => void refresh()}
-            className="inline-flex items-center justify-center gap-1.5 border border-border rounded-md px-3 py-2 text-sm hover:bg-surface-elevated"
-          >
-            <Filter className="h-4 w-4" />
-            Apply
-          </button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-2">
-          <select
-            className="bg-surface border border-border rounded-md px-2 py-2 text-sm"
-            value={subCategory}
-            onChange={(e) => setSubCategory(e.target.value)}
-          >
-            <option value="">Sub Category</option>
-            {subCategoryOpts.map((x) => (
-              <option key={x} value={x}>
-                {x}
-              </option>
-            ))}
-          </select>
-          <select
-            className="bg-surface border border-border rounded-md px-2 py-2 text-sm"
-            value={issuer}
-            onChange={(e) => setIssuer(e.target.value)}
-          >
-            <option value="">Issuer</option>
-            {issuerOpts.map((x) => (
-              <option key={x} value={x}>
-                {x}
-              </option>
-            ))}
-          </select>
-          <select
-            className="bg-surface border border-border rounded-md px-2 py-2 text-sm"
-            value={settlementType}
-            onChange={(e) => setSettlementType(e.target.value)}
-          >
-            <option value="">Settlement</option>
-            {settlementOpts.map((x) => (
-              <option key={x} value={x}>
-                {x}
-              </option>
-            ))}
-          </select>
-          <label className="inline-flex items-center gap-2 text-xs border border-border rounded-md px-3 py-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-2">
             <input
-              type="checkbox"
-              checked={activeOnly}
-              onChange={(e) => setActiveOnly(e.target.checked)}
+              className="bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground md:col-span-2"
+              placeholder="Search symbol, name, base/quote, category..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void refresh();
+                }
+              }}
             />
-            Active only
-          </label>
-          <label className="inline-flex items-center gap-2 text-xs border border-border rounded-md px-3 py-2">
-            <input
-              type="checkbox"
-              checked={etfOnly}
-              onChange={(e) => setEtfOnly(e.target.checked)}
-            />
-            ETF only
-          </label>
-          <button
-            type="button"
-            onClick={() => {
-              setAssetType("");
-              setExchange("");
-              setCategory("");
-              setSubCategory("");
-              setIssuer("");
-              setSettlementType("");
-              setEtfOnly(false);
-              setActiveOnly(true);
-              setQuery("");
-              setActiveClass("all");
-              void load();
-            }}
-            className="border border-border rounded-md px-3 py-2 text-sm hover:bg-surface-elevated"
-          >
-            Reset
-          </button>
-        </div>
+            <select
+              className="bg-surface border border-border rounded-md px-2 py-2 text-sm"
+              value={assetType}
+              onChange={(e) => setAssetType(e.target.value)}
+            >
+              <option value="">Asset Type</option>
+              {assetTypeOpts.map((x) => (
+                <option key={x} value={x}>
+                  {x}
+                </option>
+              ))}
+            </select>
+            <select
+              className="bg-surface border border-border rounded-md px-2 py-2 text-sm"
+              value={exchange}
+              onChange={(e) => setExchange(e.target.value)}
+            >
+              <option value="">Exchange</option>
+              {exchangeOpts.map((x) => (
+                <option key={x} value={x}>
+                  {x}
+                </option>
+              ))}
+            </select>
+            <select
+              className="bg-surface border border-border rounded-md px-2 py-2 text-sm"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              <option value="">Category</option>
+              {categoryOpts.map((x) => (
+                <option key={x} value={x}>
+                  {x}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => void refresh()}
+              className="inline-flex items-center justify-center gap-1.5 border border-border rounded-md px-3 py-2 text-sm hover:bg-surface-elevated"
+            >
+              <Filter className="h-4 w-4" />
+              Apply
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-2">
+            <select
+              className="bg-surface border border-border rounded-md px-2 py-2 text-sm"
+              value={subCategory}
+              onChange={(e) => setSubCategory(e.target.value)}
+            >
+              <option value="">Sub Category</option>
+              {subCategoryOpts.map((x) => (
+                <option key={x} value={x}>
+                  {x}
+                </option>
+              ))}
+            </select>
+            <select
+              className="bg-surface border border-border rounded-md px-2 py-2 text-sm"
+              value={issuer}
+              onChange={(e) => setIssuer(e.target.value)}
+            >
+              <option value="">Issuer</option>
+              {issuerOpts.map((x) => (
+                <option key={x} value={x}>
+                  {x}
+                </option>
+              ))}
+            </select>
+            <select
+              className="bg-surface border border-border rounded-md px-2 py-2 text-sm"
+              value={settlementType}
+              onChange={(e) => setSettlementType(e.target.value)}
+            >
+              <option value="">Settlement</option>
+              {settlementOpts.map((x) => (
+                <option key={x} value={x}>
+                  {x}
+                </option>
+              ))}
+            </select>
+            <label className="inline-flex items-center gap-2 text-xs border border-border rounded-md px-3 py-2">
+              <input
+                type="checkbox"
+                checked={activeOnly}
+                onChange={(e) => setActiveOnly(e.target.checked)}
+              />
+              Active only
+            </label>
+            <label className="inline-flex items-center gap-2 text-xs border border-border rounded-md px-3 py-2">
+              <input
+                type="checkbox"
+                checked={etfOnly}
+                onChange={(e) => setEtfOnly(e.target.checked)}
+              />
+              ETF only
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                setAssetType("");
+                setExchange("");
+                setCategory("");
+                setSubCategory("");
+                setIssuer("");
+                setSettlementType("");
+                setEtfOnly(false);
+                setActiveOnly(true);
+                setQuery("");
+                setActiveClass("all");
+                void load();
+              }}
+              className="border border-border rounded-md px-3 py-2 text-sm hover:bg-surface-elevated"
+            >
+              Reset
+            </button>
+          </div>
         </div>
       </details>
 
@@ -1683,7 +1972,11 @@ function TradeTicketCard({
           <select
             className="w-full bg-surface border border-border rounded-md px-2 py-2 text-sm"
             value={orderType}
-            onChange={(e) => setOrderType(e.target.value as any)}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "market" || v === "limit" || v === "stop" || v === "stop_limit")
+                setOrderType(v);
+            }}
           >
             <option value="market">Market</option>
             <option value="limit">Limit</option>
@@ -1693,7 +1986,10 @@ function TradeTicketCard({
           <select
             className="w-full bg-surface border border-border rounded-md px-2 py-2 text-sm"
             value={tif}
-            onChange={(e) => setTif(e.target.value as any)}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "day" || v === "gtc" || v === "ioc" || v === "fok") setTif(v);
+            }}
           >
             <option value="day">Day</option>
             <option value="gtc">GTC</option>
@@ -1730,7 +2026,10 @@ function TradeTicketCard({
                 return toast.error("Limit price is required.");
               if (orderType === "stop" && (!pxStop || pxStop <= 0))
                 return toast.error("Stop price is required.");
-              if (orderType === "stop_limit" && (!pxLimit || !pxStop || pxLimit <= 0 || pxStop <= 0))
+              if (
+                orderType === "stop_limit" &&
+                (!pxLimit || !pxStop || pxLimit <= 0 || pxStop <= 0)
+              )
                 return toast.error("Stop-limit needs both limit and stop prices.");
               setReviewing(true);
             }}
@@ -1896,7 +2195,8 @@ function DealTicketCard({
     );
   }
 
-  const quote = liveQuotes[displaySymbolOfAsset(asset).trim().toUpperCase()] ?? quoteForAsset(asset);
+  const quote =
+    liveQuotes[displaySymbolOfAsset(asset).trim().toUpperCase()] ?? quoteForAsset(asset);
 
   if (!isDirectlyTradableAsset(asset)) {
     return (
@@ -2035,6 +2335,70 @@ function DealTicketCard({
   );
 }
 
+function DiscoverWorkspaceSplit({
+  onClose,
+  workspace,
+  reloadHdrWs,
+}: {
+  onClose: () => void;
+  workspace: InvestorTradingWorkspace | null;
+  reloadHdrWs: () => void;
+}) {
+  const [pick, setPick] = useState<AssetListing | null>(null);
+  const [liveQuotes, setLiveQuotes] = useState<Record<string, AssetListingQuote>>({});
+
+  useEffect(() => {
+    if (!pick) {
+      setLiveQuotes({});
+      return;
+    }
+    const sym = displaySymbolOfAsset(pick).trim().toUpperCase();
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/public/asset-listing-quotes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ symbols: [sym] }),
+        });
+        const body = await res.json().catch(() => ({}));
+        const list = Array.isArray((body as { quotes?: unknown }).quotes)
+          ? ((body as { quotes: AssetListingQuote[] }).quotes ?? [])
+          : [];
+        if (cancelled) return;
+        setLiveQuotes(Object.fromEntries(list.map((q) => [q.symbol.toUpperCase(), q])));
+      } catch {
+        if (!cancelled) setLiveQuotes({});
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pick]);
+
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-background xl:flex-row">
+      <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+        <DiscoverAIPanel
+          onClose={onClose}
+          selectedListingId={pick?.id ?? null}
+          onSelectListing={(a) => setPick(a)}
+        />
+      </div>
+      <aside className="max-h-[46vh] shrink-0 overflow-y-auto border-t border-border bg-surface/25 p-3 dark:bg-surface/10 xl:max-h-none xl:w-[380px] xl:border-l xl:border-t-0">
+        <DealTicketCard
+          asset={pick}
+          mode="deal"
+          onClose={() => setPick(null)}
+          liveQuotes={liveQuotes}
+          workspace={workspace}
+          reloadWorkspace={reloadHdrWs}
+        />
+      </aside>
+    </div>
+  );
+}
+
 function Tab({
   label,
   count,
@@ -2060,93 +2424,6 @@ function Tab({
         </span>
       ) : null}
     </button>
-  );
-}
-
-function WorkspaceMoreMarketClasses({
-  items,
-  activeValue,
-  onSelect,
-}: {
-  items: { label: string; icon: ComponentType<{ className?: string }>; value?: string }[];
-  activeValue: string;
-  onSelect: (value?: string) => void;
-}) {
-  const activeMoreLabel = items.find((i) => i.value === activeValue)?.label;
-  const btnClass = (active: boolean) =>
-    `inline-flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-left transition-colors ${
-      active
-        ? "bg-brand/10 text-foreground border border-brand/30"
-        : "text-muted-foreground hover:bg-surface-elevated hover:text-foreground"
-    }`;
-
-  return (
-    <div className="mb-4">
-      <details className="group rounded-md border border-border/70 bg-background/30 [&_summary::-webkit-details-marker]:hidden">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-md px-2.5 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground hover:bg-surface-elevated hover:text-foreground">
-          <span className="flex min-w-0 flex-1 items-center gap-2">
-            <span className="truncate">More asset classes</span>
-            {activeMoreLabel ? (
-              <span className="truncate normal-case font-normal text-brand">· {activeMoreLabel}</span>
-            ) : null}
-          </span>
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
-        </summary>
-        <div className="mt-1 flex flex-col gap-1 border-t border-border/60 pt-1.5">
-          {items.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              disabled={!item.value}
-              onClick={() => onSelect(item.value)}
-              className={`${btnClass(!!item.value && item.value === activeValue)} ${
-                !item.value ? "cursor-not-allowed opacity-50 hover:bg-transparent" : ""
-              }`}
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </details>
-    </div>
-  );
-}
-
-function NavGroup({
-  title,
-  items,
-  activeValue,
-  onSelect,
-}: {
-  title: string;
-  items: { label: string; icon: ComponentType<{ className?: string }>; value?: string }[];
-  activeValue?: string;
-  onSelect?: (value?: string) => void;
-}) {
-  return (
-    <div className="mb-4">
-      <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">
-        {title}
-      </div>
-      <div className="flex flex-col gap-1">
-        {items.map((item) => (
-          <button
-            key={item.label}
-            type="button"
-            onClick={() => onSelect?.(item.value)}
-            className={`inline-flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-left transition-colors ${
-              activeValue && item.value === activeValue
-                ? "bg-brand/10 text-foreground border border-brand/30"
-                : "text-muted-foreground hover:bg-surface-elevated hover:text-foreground"
-            }`}
-          >
-            <item.icon className="h-4 w-4" />
-            {item.label}
-          </button>
-        ))}
-      </div>
-    </div>
   );
 }
 

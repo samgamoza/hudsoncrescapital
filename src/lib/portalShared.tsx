@@ -1,6 +1,30 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Globe, LogOut, ExternalLink } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeftRight,
+  Banknote,
+  ChartCandlestick,
+  ExternalLink,
+  Globe,
+  Globe2,
+  History,
+  LayoutDashboard,
+  LifeBuoy,
+  LineChart,
+  LogOut,
+  PieChart,
+  ScrollText,
+  Settings,
+  Shield,
+  ShieldCheck,
+  Target,
+  UserCircle,
+  UserPlus,
+  Users,
+  Wallet,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 
@@ -45,6 +69,8 @@ function LanguageSwitcher() {
 export type NavItem = {
   to: string;
   label: string;
+  /** Optional icon (IG-style rail) — shown before the label when set. */
+  icon?: LucideIcon;
   openInNewWindow?: boolean;
   /** Render below other links with CTA styling (e.g. Open Platform). */
   pinBelow?: boolean;
@@ -80,6 +106,8 @@ export function PortalShell({
           .filter((item) => !item.pinBelow)
           .map((item) => {
             const isRoot = item.to === "/portal/investor" || item.to === "/portal/admin";
+            const Icon = item.icon;
+            const rowClass = Icon ? "flex w-full min-w-0 items-center gap-2.5" : "";
             if (item.openInNewWindow) {
               return (
                 <Link
@@ -87,9 +115,10 @@ export function PortalShell({
                   to={item.to}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-2 rounded-lg text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-surface-elevated"
+                  className={`px-3 py-2 rounded-lg text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-surface-elevated ${rowClass}`}
                 >
-                  {item.label}
+                  {Icon ? <Icon className="h-4 w-4 shrink-0 opacity-80" aria-hidden /> : null}
+                  <span className="truncate">{item.label}</span>
                 </Link>
               );
             }
@@ -98,13 +127,19 @@ export function PortalShell({
               <Link
                 key={item.to}
                 to={item.to}
-                className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                className={`px-3 py-2 rounded-lg text-sm transition-colors ${rowClass} ${
                   active
                     ? "bg-brand/15 text-foreground border border-brand/30"
                     : "text-muted-foreground hover:text-foreground hover:bg-surface-elevated"
                 }`}
               >
-                {item.label}
+                {Icon ? (
+                  <Icon
+                    className={`h-4 w-4 shrink-0 ${active ? "text-brand opacity-95" : "opacity-80"}`}
+                    aria-hidden
+                  />
+                ) : null}
+                <span className="truncate">{item.label}</span>
               </Link>
             );
           })}
@@ -112,18 +147,21 @@ export function PortalShell({
           <div className="mt-auto pt-6 border-t border-border space-y-2">
             {nav
               .filter((item) => item.pinBelow)
-              .map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  target={item.openInNewWindow ? "_blank" : undefined}
-                  rel={item.openInNewWindow ? "noopener noreferrer" : undefined}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-brand px-4 py-3 text-sm font-semibold text-brand-foreground shadow-glow transition-opacity hover:opacity-95 border border-brand/30"
-                >
-                  <ExternalLink className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
-                  {item.label}
-                </Link>
-              ))}
+              .map((item) => {
+                const PinIcon = item.icon ?? ExternalLink;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    target={item.openInNewWindow ? "_blank" : undefined}
+                    rel={item.openInNewWindow ? "noopener noreferrer" : undefined}
+                    className="flex min-w-0 items-center justify-center gap-2 rounded-xl bg-gradient-brand px-4 py-3 text-sm font-semibold text-brand-foreground shadow-glow transition-opacity hover:opacity-95 border border-brand/30"
+                  >
+                    <PinIcon className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+                    <span className="truncate">{item.label}</span>
+                  </Link>
+                );
+              })}
           </div>
         ) : null}
       </aside>
@@ -212,7 +250,7 @@ export function SectionCard({
   );
 }
 
-export function DataTable<T extends Record<string, any>>({
+export function DataTable<T extends Record<string, unknown>>({
   rows,
   columns,
 }: {
@@ -248,33 +286,34 @@ export function DataTable<T extends Record<string, any>>({
 }
 
 export const NAV_INVESTOR: NavItem[] = [
-  { to: "/portal/investor", label: "Dashboard" },
-  { to: "/portal/investor/portfolio", label: "Portfolio" },
-  { to: "/portal/investor/performance", label: "Performance" },
-  { to: "/portal/investor/trade-history", label: "Trade history" },
-  { to: "/portal/investor/wallet", label: "Wallet" },
-  { to: "/portal/investor/transactions", label: "Transactions" },
-  { to: "/portal/investor/kyc", label: "KYC" },
-  { to: "/portal/investor/profile", label: "Profile" },
-  { to: "/portal/investor/support", label: "Support" },
-  { to: "/portal/investor/settings", label: "Settings" },
+  { to: "/portal/investor", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/portal/investor/portfolio", label: "Portfolio", icon: PieChart },
+  { to: "/portal/investor/performance", label: "Performance", icon: LineChart },
+  { to: "/portal/investor/trade-history", label: "Trade history", icon: History },
+  { to: "/portal/investor/wallet", label: "Wallet", icon: Wallet },
+  { to: "/portal/investor/transactions", label: "Transactions", icon: ArrowLeftRight },
+  { to: "/portal/investor/kyc", label: "KYC", icon: ShieldCheck },
+  { to: "/portal/investor/profile", label: "Profile", icon: UserCircle },
+  { to: "/portal/investor/support", label: "Support", icon: LifeBuoy },
+  { to: "/portal/investor/settings", label: "Settings", icon: Settings },
   {
     to: "/portal/trade-workspace",
     label: "Open Platform",
+    icon: ChartCandlestick,
     openInNewWindow: true,
     pinBelow: true,
   },
 ];
 
 export const NAV_ADMIN: NavItem[] = [
-  { to: "/portal/admin", label: "Trading" },
-  { to: "/portal/admin/clients", label: "Clients" },
-  { to: "/portal/admin/trade-history", label: "Trade history" },
-  { to: "/portal/admin/onboarding", label: "Open Account" },
-  { to: "/portal/admin/funding", label: "Funding Review" },
-  { to: "/portal/admin/strategies", label: "Strategies" },
-  { to: "/portal/admin/risk", label: "Risk" },
-  { to: "/portal/admin/global-desk", label: "Global Desk" },
-  { to: "/portal/admin/admins", label: "Admins" },
-  { to: "/portal/admin/audit", label: "Audit Log" },
+  { to: "/portal/admin", label: "Trading", icon: LayoutDashboard },
+  { to: "/portal/admin/clients", label: "Clients", icon: Users },
+  { to: "/portal/admin/trade-history", label: "Trade history", icon: History },
+  { to: "/portal/admin/onboarding", label: "Open Account", icon: UserPlus },
+  { to: "/portal/admin/funding", label: "Funding Review", icon: Banknote },
+  { to: "/portal/admin/strategies", label: "Strategies", icon: Target },
+  { to: "/portal/admin/risk", label: "Risk", icon: AlertTriangle },
+  { to: "/portal/admin/global-desk", label: "Global Desk", icon: Globe2 },
+  { to: "/portal/admin/admins", label: "Admins", icon: Shield },
+  { to: "/portal/admin/audit", label: "Audit Log", icon: ScrollText },
 ];
