@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const field = cn(
-  "w-full rounded-lg border border-border/70 bg-surface/90 px-3.5 py-2.5 text-sm text-foreground shadow-sm",
+  "w-full rounded-lg border border-border/70 bg-surface/90 px-3 py-2 text-sm text-foreground shadow-sm",
   "transition-[border-color,box-shadow] placeholder:text-muted-foreground/65",
   "focus:border-brand/45 focus:outline-none focus:ring-2 focus:ring-brand/15",
 );
@@ -25,7 +25,7 @@ const fieldReadonly = cn(
   "cursor-not-allowed bg-muted/30 text-muted-foreground shadow-none focus:ring-0",
 );
 const label =
-  "mb-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/90";
+  "mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/90";
 const req = <span className="text-destructive"> *</span>;
 
 function downloadCsv(filename: string, headers: string[], rows: (string | number)[][]) {
@@ -82,10 +82,10 @@ function ProfileSection({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-border/55 bg-card/35 p-4 shadow-sm ring-1 ring-black/[0.03] sm:p-5 dark:ring-white/[0.05]">
-      <header className="mb-4 border-b border-border/50 pb-3">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand">{title}</h3>
-        {subtitle ? <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{subtitle}</p> : null}
+    <section className="rounded-xl border border-border/55 bg-card/35 p-3 shadow-sm ring-1 ring-black/[0.03] sm:p-4 dark:ring-white/[0.05]">
+      <header className="mb-2.5 border-b border-border/50 pb-2">
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand">{title}</h3>
+        {subtitle ? <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{subtitle}</p> : null}
       </header>
       {children}
     </section>
@@ -123,10 +123,10 @@ function ExperienceMatrix<T extends Record<string, string | number | boolean>>({
   ];
 
   return (
-    <section className="rounded-xl border border-border/55 bg-card/35 p-4 shadow-sm ring-1 ring-black/[0.03] sm:p-5 dark:ring-white/[0.05]">
-      <header className="mb-4 border-b border-border/50 pb-3">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand">Trading & suitability</h3>
-        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+    <section className="rounded-xl border border-border/55 bg-card/35 p-3 shadow-sm ring-1 ring-black/[0.03] sm:p-4 dark:ring-white/[0.05]">
+      <header className="mb-2.5 border-b border-border/50 pb-2">
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand">Trading & suitability</h3>
+        <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
           One row per asset class. Values are used for desk review only unless separately attested in onboarding.
         </p>
       </header>
@@ -134,11 +134,11 @@ function ExperienceMatrix<T extends Record<string, string | number | boolean>>({
         <table className="w-full min-w-[560px] text-sm md:min-w-[600px]">
           <thead>
             <tr className="border-b border-border/70 bg-muted/30 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              <th className="sticky left-0 z-20 whitespace-nowrap border-r border-border/50 bg-muted/95 px-3 py-2.5 pr-4 backdrop-blur-sm dark:bg-muted/90">
+              <th className="sticky left-0 z-20 whitespace-nowrap border-r border-border/50 bg-muted/95 px-2.5 py-2 pr-3 backdrop-blur-sm dark:bg-muted/90">
                 Asset
               </th>
               {cols.map((c) => (
-                <th key={c.prefix} className="min-w-[132px] px-2 py-2.5 md:min-w-[140px]">
+                <th key={c.prefix} className="min-w-[124px] px-1.5 py-2 md:min-w-[132px]">
                   {c.label}
                   {!c.optional && <span className="text-destructive"> *</span>}
                 </th>
@@ -156,7 +156,7 @@ function ExperienceMatrix<T extends Record<string, string | number | boolean>>({
               >
                 <td
                   className={cn(
-                    "sticky left-0 z-10 whitespace-nowrap border-r border-border/50 px-3 py-2 pr-4 text-xs font-semibold text-foreground shadow-[3px_0_10px_-4px_rgba(0,0,0,0.12)] dark:shadow-[3px_0_10px_-4px_rgba(0,0,0,0.35)]",
+                    "sticky left-0 z-10 whitespace-nowrap border-r border-border/50 px-2.5 py-1.5 pr-3 text-xs font-semibold text-foreground shadow-[3px_0_10px_-4px_rgba(0,0,0,0.12)] dark:shadow-[3px_0_10px_-4px_rgba(0,0,0,0.35)]",
                     row % 2 === 1 ? "bg-muted/50 group-hover/row:bg-muted/55" : "bg-card group-hover/row:bg-muted/20",
                   )}
                 >
@@ -166,11 +166,11 @@ function ExperienceMatrix<T extends Record<string, string | number | boolean>>({
                   const key = `${c.prefix}_${asset}` as keyof T;
                   const raw = (f as Record<string, string | undefined>)[key as string] ?? "";
                   return (
-                    <td key={c.prefix} className="p-2 align-middle">
+                    <td key={c.prefix} className="p-1.5 align-middle">
                       <select
                         className={cn(
                           field,
-                          "h-9 min-w-0 w-full text-xs",
+                          "h-8 min-w-0 w-full text-xs",
                           "border-border/60 bg-surface/90",
                         )}
                         value={String(raw)}
@@ -308,7 +308,7 @@ function ProfileTab() {
     );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <SectionCard className="shadow-md ring-1 ring-border/40"
         title="Account profile"
         description="Identity, mailing, and filing on the left; contact, joint holder, and funding details on the right. Income and net worth sit with the left column; trading suitability is below."
@@ -330,15 +330,15 @@ function ProfileTab() {
           </Button>
         }
       >
-        <div className="space-y-8">
-          <div className="mb-1 hidden gap-x-10 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/90 xl:grid xl:grid-cols-12">
+        <div className="space-y-5">
+          <div className="mb-0.5 hidden gap-x-8 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/90 xl:grid xl:grid-cols-12">
             <div className="xl:col-span-5">Holder, address & wealth</div>
-            <div className="xl:col-span-7 xl:border-l xl:border-border/40 xl:pl-10">Contact, joint & funding</div>
+            <div className="xl:col-span-7 xl:border-l xl:border-border/40 xl:pl-8">Contact, joint & funding</div>
           </div>
-          <div className="grid gap-8 lg:grid-cols-2 lg:items-start xl:grid-cols-12 xl:gap-x-10">
-            <div className="space-y-6 xl:col-span-5">
+          <div className="grid gap-5 lg:grid-cols-2 lg:items-start xl:grid-cols-12 xl:gap-x-8">
+            <div className="space-y-4 xl:col-span-5">
               <ProfileSection title="Account">
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-2 sm:grid-cols-2">
                   <div className="sm:col-span-2">
                     <label className={label}>Select type of account{req}</label>
                     <select
@@ -378,7 +378,7 @@ function ProfileTab() {
                   </div>
                   <div className="sm:col-span-2">
                     <span className={label}>Citizenship{req}</span>
-                    <div className="mt-2 flex flex-wrap gap-4 text-sm">
+                    <div className="mt-1.5 flex flex-wrap gap-3 text-sm">
                       <label className="flex items-center gap-2">
                         <input type="radio" checked={f.ukCitizen} onChange={() => setF({ ...f, ukCitizen: true })} />
                         U.S. / UK citizen (simplified)
@@ -390,7 +390,7 @@ function ProfileTab() {
                     </div>
                     {!f.ukCitizen && (
                       <input
-                        className={cn("mt-2", field)}
+                        className={cn("mt-1.5", field)}
                         placeholder="Country of citizenship"
                         value={f.citizenCountry}
                         onChange={(e) => setF({ ...f, citizenCountry: e.target.value })}
@@ -414,7 +414,7 @@ function ProfileTab() {
               </ProfileSection>
 
               <ProfileSection title="Mailing address">
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-2 sm:grid-cols-2">
                   <div className="sm:col-span-2">
                     <label className={label}>Address line 1{req}</label>
                     <input className={field} value={f.addr1} onChange={(e) => setF({ ...f, addr1: e.target.value })} />
@@ -434,7 +434,7 @@ function ProfileTab() {
                   <div>
                     <label className={label}>Country{req}</label>
                     <CountrySelect value={f.country} onChange={(c) => setF({ ...f, country: c })} />
-                    <p className="mt-1 text-[10px] text-muted-foreground">
+                    <p className="mt-0.5 text-[10px] text-muted-foreground leading-snug">
                       <span className="text-brand">What&apos;s this?</span> Country of record for statements and tax reporting.
                     </p>
                   </div>
@@ -446,10 +446,10 @@ function ProfileTab() {
               </ProfileSection>
 
               <ProfileSection title="Filing & household">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
                   <div className="min-w-0 flex-1">
                     <span className={label}>Filing status{req}</span>
-                    <div className="mt-2 flex flex-wrap gap-4 text-sm">
+                    <div className="mt-1.5 flex flex-wrap gap-3 text-sm">
                       {["Single", "Married", "Other"].map((x) => (
                         <label key={x} className="flex items-center gap-2">
                           <input type="radio" name="fil" checked={f.filing === x} onChange={() => setF({ ...f, filing: x })} />
@@ -470,7 +470,7 @@ function ProfileTab() {
               </ProfileSection>
 
               <ProfileSection title="Income & net worth">
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2.5 sm:grid-cols-2">
                   <div className="sm:col-span-1">
                     <label className={label}>Approximate annual income</label>
                     <select className={field} value={f.income} onChange={(e) => setF({ ...f, income: e.target.value })}>
@@ -503,7 +503,7 @@ function ProfileTab() {
                       <option value="250_1m">USD 250,000 – 999,999</option>
                       <option value="1m">USD 1,000,000+</option>
                     </select>
-                    <p className="mt-1 text-[10px] text-muted-foreground leading-snug">
+                    <p className="mt-0.5 text-[10px] text-muted-foreground leading-snug">
                       Total net worth includes investments, cash, property, and other assets minus liabilities (primary
                       residence rules vary).
                     </p>
@@ -516,7 +516,7 @@ function ProfileTab() {
                       <option value="50_250">USD 50,000 – 249,999</option>
                       <option value="250p">USD 250,000+</option>
                     </select>
-                    <p className="mt-1 text-[10px] text-muted-foreground leading-snug">
+                    <p className="mt-0.5 text-[10px] text-muted-foreground leading-snug">
                       Liquid net worth is cash and readily marketable securities minus short-term obligations.
                     </p>
                   </div>
@@ -524,9 +524,9 @@ function ProfileTab() {
               </ProfileSection>
             </div>
 
-            <div className="space-y-6 xl:col-span-7 xl:border-l xl:border-border/40 xl:pl-10">
+            <div className="space-y-4 xl:col-span-7 xl:border-l xl:border-border/40 xl:pl-8">
               <ProfileSection title="Contact">
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-2 sm:grid-cols-2">
                   <div>
                     <label className={label}>Primary / daytime phone{req}</label>
                     <input className={field} value={f.phoneDay} onChange={(e) => setF({ ...f, phoneDay: e.target.value })} />
@@ -559,7 +559,7 @@ function ProfileTab() {
                 title="Joint account owner"
                 subtitle="Optional — complete when opening a joint profile. Desk review may request additional signatures."
               >
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-2 sm:grid-cols-2">
                   <div>
                     <label className={label}>First name</label>
                     <input className={field} value={f.jFirst} onChange={(e) => setF({ ...f, jFirst: e.target.value })} />
@@ -591,7 +591,7 @@ function ProfileTab() {
                 title="Funding & program"
                 subtitle="Contracts, application funds, and deposit sources for desk review."
               >
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2.5 sm:grid-cols-2">
                   <div className="sm:col-span-2">
                     <label className={label}>What is your source of income?</label>
                     <select className={field} value={f.incomeSource} onChange={(e) => setF({ ...f, incomeSource: e.target.value })}>
