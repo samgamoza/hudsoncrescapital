@@ -31,9 +31,14 @@ async function apiJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise
       if (parsed && typeof parsed === "object") {
         const err = typeof (parsed as any).error === "string" ? (parsed as any).error : "";
         const hint = typeof (parsed as any).hint === "string" ? (parsed as any).hint : "";
-        const details =
-          typeof (parsed as any).details === "string" ? (parsed as any).details : "";
-        message = [err, hint, details].filter(Boolean).join(" — ") || message;
+        const rawDetails = (parsed as any).details;
+        const detailsStr =
+          typeof rawDetails === "string"
+            ? rawDetails
+            : rawDetails && typeof rawDetails === "object" && rawDetails.fieldErrors
+              ? JSON.stringify(rawDetails.fieldErrors)
+              : "";
+        message = [err, hint, detailsStr].filter(Boolean).join(" — ") || message;
       }
     } catch {
       // keep raw text fallback

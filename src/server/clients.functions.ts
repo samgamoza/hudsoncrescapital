@@ -311,20 +311,53 @@ export const onboardClient = createServerFn({ method: "POST" })
   .inputValidator((d) => onboardSchema.parse(d))
   .handler(({ context, data }) => onboardClientForApi(context.userId, data));
 
+const PROFILE_VERIFICATION_STATUSES = ["incomplete", "submitted", "approved", "rejected"] as const;
+
+/**
+ * Detail API returns raw `profiles` rows: many nullable columns stringify as JSON `null`.
+ * Zod's `.optional()` only allows `undefined`, not `null`. Also coerce odd types seen in legacy data.
+ */
+function sanitizeAdminProfilePatch(patch: unknown): unknown {
+  if (typeof patch !== "object" || patch === null) return patch;
+  const src = patch as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  const statusSet = new Set<string>(PROFILE_VERIFICATION_STATUSES);
+
+  for (const [k, v] of Object.entries(src)) {
+    if (v === null) continue;
+
+    if (k === "status") {
+      if (typeof v === "string" && statusSet.has(v)) out[k] = v;
+      continue;
+    }
+
+    if (k === "tax_id_last4") {
+      if (typeof v === "number" && Number.isFinite(v)) out[k] = String(Math.trunc(Math.abs(v))).slice(-4);
+      else if (typeof v === "string") out[k] = v.trim();
+      continue;
+    }
+
+    out[k] = v;
+  }
+  return out;
+}
+
+const profilePatchShape = z.object({
+  legal_first_name: z.string().trim().max(100).optional(),
+  legal_last_name: z.string().trim().max(100).optional(),
+  display_name: z.string().trim().max(200).optional(),
+  phone: z.string().trim().max(64).optional(),
+  date_of_birth: z.string().trim().max(32).optional(),
+  /** UI may store ISO-2 codes or full country labels from CountrySelect. */
+  country_of_residence: z.string().trim().max(120).optional().nullable(),
+  nationality: z.string().trim().max(120).optional().nullable(),
+  tax_id_last4: z.string().trim().max(4).optional(),
+  status: z.enum(PROFILE_VERIFICATION_STATUSES).optional(),
+});
+
 const updateClientProfileInput = z.object({
   userId: z.string().uuid(),
-  patch: z.object({
-    legal_first_name: z.string().trim().max(100).optional(),
-    legal_last_name: z.string().trim().max(100).optional(),
-    display_name: z.string().trim().max(200).optional(),
-    phone: z.string().trim().max(40).optional(),
-    date_of_birth: z.string().optional(),
-    /** UI may store ISO-2 codes or full country labels from CountrySelect. */
-    country_of_residence: z.string().trim().max(120).optional().nullable(),
-    nationality: z.string().trim().max(120).optional().nullable(),
-    tax_id_last4: z.string().trim().max(4).optional(),
-    status: z.enum(["incomplete", "submitted", "approved", "rejected"]).optional(),
-  }),
+  patch: z.preprocess(sanitizeAdminProfilePatch, profilePatchShape),
 });
 
 // ---- update profile ----
