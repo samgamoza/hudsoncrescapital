@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
+import { getMarketingWebsiteHomeUrl } from "@/lib/site-origin";
 
 export const Route = createFileRoute("/portal/reset-password")({
   head: () => ({
@@ -85,9 +86,13 @@ function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-background grid-bg flex items-center justify-center px-6">
       <div className="w-full max-w-md surface-card p-8 shadow-elevated">
-        <Link to="/" className="flex items-center justify-center mb-6">
+        <a
+          href={getMarketingWebsiteHomeUrl()}
+          className="flex items-center justify-center mb-6"
+          rel="noreferrer"
+        >
           <img src={logo} alt="Hudson Crest Capital" className="h-12 w-auto" />
-        </Link>
+        </a>
         <h1 className="text-2xl font-semibold text-foreground text-center">Set a new password</h1>
         <p className="text-sm text-muted-foreground text-center mt-1">
           Choose a strong password you don't use anywhere else.

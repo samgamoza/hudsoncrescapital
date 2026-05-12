@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { PageHeader, SectionCard } from "@/lib/portalShared";
@@ -133,7 +133,7 @@ function ClientsPage() {
     <>
       <PageHeader
         title="Clients"
-        subtitle="Manage existing clients: KYC, account lifecycle, profile, notes."
+        subtitle="Manage existing clients: verification (KYC) status, account lifecycle, profile, notes."
       />
 
       <div className="flex flex-wrap gap-3 items-center">
@@ -181,7 +181,7 @@ function ClientsPage() {
                   <th className="py-2 pr-4 font-medium">Name</th>
                   <th className="py-2 pr-4 font-medium">Email</th>
                   <th className="py-2 pr-4 font-medium">Accounts</th>
-                  <th className="py-2 pr-4 font-medium">KYC</th>
+                  <th className="py-2 pr-4 font-medium">Verification</th>
                   <th className="py-2 pr-4 font-medium">Login</th>
                   <th className="py-2 pr-4 font-medium">Joined</th>
                   <th className="py-2 pr-4 font-medium" />
@@ -330,6 +330,55 @@ function ClientDrawer({
 
   const banned = data?.banned_until && new Date(data.banned_until) > new Date();
 
+  const verificationToastShown = useRef(false);
+  useEffect(() => {
+    verificationToastShown.current = false;
+  }, [userId]);
+
+  useEffect(() => {
+    if (!data || verificationToastShown.current) return;
+    const st = (data.profile?.status as string | undefined) ?? "incomplete";
+    if (st !== "approved") {
+      verificationToastShown.current = true;
+      toast.message("Verification not approved", {
+        description:
+          "This client’s profile status is still incomplete or pending approval. Use the alert below or Verification status in Profile to mark Approved after KYC. Deposits also need an active brokerage account.",
+        duration: 14_000,
+      });
+    }
+  }, [data, userId]);
+
+  const verificationState =
+    data != null
+      ? ((profile?.status as string | undefined) ??
+          (data.profile?.status as string | undefined) ??
+          "incomplete")
+      : "incomplete";
+  const hasActiveAccount = !!(data?.accounts ?? []).some((a: any) => a.status === "active");
+  const hasPendingAccount = !!(data?.accounts ?? []).some((a: any) => a.status === "pending");
+  const noAccounts = (data?.accounts ?? []).length === 0;
+  const depositReady = hasActiveAccount;
+  const verificationApproved = verificationState === "approved";
+
+  const approveVerificationNow = () => {
+    if (
+      !window.confirm(
+        "Mark this client’s verification as Approved? Only confirm after required KYC/AML checks are satisfied. Deposits still require an active brokerage account.",
+      )
+    )
+      return;
+    void wrap("Verification approved", () =>
+      apiJson("/api/portal/clients-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "updateProfile",
+          payload: { userId, patch: { ...profile, status: "approved" } },
+        }),
+      }),
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex justify-end" onClick={onClose}>
       <div
@@ -447,6 +496,72 @@ function ClientDrawer({
               )}
             </div>
 
+            {data && (!verificationApproved || !depositReady) && (
+              <div
+                className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-foreground/95 space-y-2"
+                role="status"
+              >
+                <p className="font-semibold text-foreground">Funding & verification checklist</p>
+                {!verificationApproved && (
+                  <p className="text-muted-foreground leading-relaxed">
+                    <span className="text-foreground font-medium">Verification</span> is{" "}
+                    <span className="text-foreground capitalize">{verificationState}</span> (this is
+                    what the client list column shows). The investor portal treats anything other than{" "}
+                    <span className="text-foreground font-medium">Approved</span> as not fully cleared.
+                    Set <strong className="text-foreground">Verification status</strong> below to
+                    Approved and click <strong className="text-foreground">Save profile</strong>, or use
+                    the shortcut.
+                  </p>
+                )}
+                {!verificationApproved && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    className={btnPrimary}
+                    onClick={() => void approveVerificationNow()}
+                  >
+                    Approve verification now
+                  </button>
+                )}
+                {!depositReady && (
+                  <p className="text-muted-foreground leading-relaxed pt-1 border-t border-amber-500/25 mt-2">
+                    <span className="text-foreground font-medium">Deposits</span> (wallet / hosted
+                    checkout) only unlock when at least one brokerage account here is{" "}
+                    <span className="text-foreground font-medium">active</span> — that is separate from
+                    profile verification.
+                    {noAccounts && (
+                      <>
+                        {" "}
+                        This client has <span className="text-foreground font-medium">no accounts</span>
+                        . Create one from{" "}
+                        <Link
+                          to="/portal/admin/onboarding"
+                          className="text-brand underline-offset-2 hover:underline font-medium"
+                        >
+                          Admin → Open New Account
+                        </Link>
+                        , then return here to approve it.
+                      </>
+                    )}
+                    {hasPendingAccount && !hasActiveAccount && (
+                      <>
+                        {" "}
+                        Use <span className="text-foreground font-medium">Approve</span> under{" "}
+                        <span className="text-foreground font-medium">Accounts</span> below when ready.
+                      </>
+                    )}
+                    {!noAccounts && !hasPendingAccount && !hasActiveAccount && (
+                      <>
+                        {" "}
+                        Review account rows under <strong className="text-foreground">Accounts</strong>{" "}
+                        — none are active yet.
+                      </>
+                    )}
+                  </p>
+                )}
+              </div>
+            )}
+
             <SectionCard title="Profile">
               <div className="grid grid-cols-2 gap-3">
                 <input
@@ -491,16 +606,27 @@ function ClientDrawer({
                   onChange={(c) => setProfile({ ...profile, nationality: c })}
                   includeBlank
                 />
-                <select
-                  className={field}
-                  value={profile.status ?? "incomplete"}
-                  onChange={(e) => setProfile({ ...profile, status: e.target.value })}
-                >
-                  <option value="incomplete">Incomplete</option>
-                  <option value="submitted">Submitted</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
+                <div className="col-span-2 rounded-md border border-border bg-surface/40 p-3 space-y-2">
+                  <label className="block text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Verification status (client list / KYC gate)
+                  </label>
+                  <select
+                    className={field + " w-full"}
+                    value={profile.status ?? "incomplete"}
+                    onChange={(e) => setProfile({ ...profile, status: e.target.value })}
+                  >
+                    <option value="incomplete">Incomplete — not cleared for full onboarding</option>
+                    <option value="submitted">Submitted — awaiting staff review</option>
+                    <option value="approved">Approved — verification complete (manual attestation)</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    This field updates the <strong className="text-foreground">Verification</strong> badge
+                    on the client list. Choosing <strong className="text-foreground">Approved</strong> does
+                    not by itself enable deposits — the investor still needs an{" "}
+                    <strong className="text-foreground">active</strong> account under Accounts.
+                  </p>
+                </div>
               </div>
               <div className="mt-3 flex justify-end">
                 <button
@@ -532,7 +658,7 @@ function ClientDrawer({
 
             <SectionCard
               title="Accounts"
-              description="Approve onboarding, suspend, reactivate, or close."
+              description="Approve onboarding so the account becomes active. Deposits require at least one active account (separate from profile verification above)."
             >
               {data.accounts.length === 0 && (
                 <div className="text-sm text-muted-foreground">No accounts.</div>

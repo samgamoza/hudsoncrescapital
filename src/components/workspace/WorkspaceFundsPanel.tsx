@@ -4,12 +4,13 @@ import { CreditCard, Landmark, Link2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DataTable } from "@/lib/portalShared";
-import type { FundingAccountRow } from "@/components/portal/FundingEligibilityCallout";
 import {
+  type FundingAccountRow,
   FundingEligibilityCallout,
   activeFundingAccounts as activeAccounts,
   pendingFundingAccounts as pendingAccounts,
 } from "@/components/portal/FundingEligibilityCallout";
+import { assignLocationHref } from "@/lib/assign-location-href";
 
 const field = "bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground w-full";
 const btn = "text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-surface-elevated";
@@ -203,7 +204,7 @@ function DepositRequestForm({
       const body = (await res.json()) as { url?: string; error?: string };
       if (body.error) throw new Error(body.error);
       if (!body.url) throw new Error("No redirect URL returned");
-      window.location.href = body.url;
+      assignLocationHref(body.url);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Could not start checkout");
       setBusyHosted(false);

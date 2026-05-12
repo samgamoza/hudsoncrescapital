@@ -8,6 +8,7 @@ import {
   activeFundingAccounts,
   pendingFundingAccounts,
 } from "@/components/portal/FundingEligibilityCallout";
+import { assignLocationHref } from "@/lib/assign-location-href";
 
 export const Route = createFileRoute("/portal/investor/wallet")({
   component: WalletPage,
@@ -247,7 +248,7 @@ function DepositForm({ accounts, onDone }: { accounts: any[]; onDone: () => void
       });
       if (!res.ok) throw new Error(`Failed (${res.status})`);
       const { url } = await res.json();
-      window.location.href = url;
+      assignLocationHref(url);
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to start checkout");
       setBusy(false);

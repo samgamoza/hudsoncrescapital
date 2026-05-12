@@ -28,3 +28,22 @@ export function getPublicAppOrigin(): string {
 
   return envUrl ?? "";
 }
+
+const DEFAULT_MARKETING_ORIGIN = "https://hudsoncrestcapital.com";
+
+/**
+ * Public marketing homepage (main website), not the current app host — so portal preview
+ * deployments (e.g. `*.vercel.app`) still send users to production when they choose “Back to website”.
+ *
+ * Override with `VITE_MARKETING_SITE_URL` (e.g. `https://staging.example.com`) if needed.
+ */
+export function getMarketingWebsiteHomeUrl(): string {
+  const raw = (import.meta.env.VITE_MARKETING_SITE_URL as string | undefined)?.trim();
+  const candidate = raw || DEFAULT_MARKETING_ORIGIN;
+  try {
+    const u = new URL(/^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`);
+    return `${u.origin}/`;
+  } catch {
+    return `${DEFAULT_MARKETING_ORIGIN}/`;
+  }
+}

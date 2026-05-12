@@ -11,7 +11,7 @@ import {
 import logo from "@/assets/logo.png";
 import { CountrySelect, IntlPhoneInput } from "@/components/portal/IntlPhoneInput";
 import { isValidE164 } from "@/lib/countries";
-import { getPublicAppOrigin } from "@/lib/site-origin";
+import { getMarketingWebsiteHomeUrl, getPublicAppOrigin } from "@/lib/site-origin";
 
 export type PortalAudience = "investor" | "admin";
 
@@ -265,9 +265,13 @@ export function PortalLoginForm({ audience, fromRouteId }: Props) {
   return (
     <div className="min-h-screen bg-background grid-bg flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md surface-card p-8 shadow-elevated">
-        <Link to="/" className="flex items-center justify-center mb-6">
+        <a
+          href={getMarketingWebsiteHomeUrl()}
+          className="flex items-center justify-center mb-6"
+          rel="noreferrer"
+        >
           <img src={logo} alt="Hudson Crest Capital" className="h-12 w-auto" />
-        </Link>
+        </a>
         <div
           className={`mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-widest ${
             isAdmin
@@ -418,9 +422,9 @@ export function PortalLoginForm({ audience, fromRouteId }: Props) {
         )}
 
         <div className="mt-6 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-          <Link to="/" className="hover:text-foreground">
+          <a href={getMarketingWebsiteHomeUrl()} className="hover:text-foreground" rel="noreferrer">
             ← Back to website
-          </Link>
+          </a>
           {showOtherPortal && (
             <Link to={otherPortalHref} className="hover:text-foreground">
               {otherPortalLabel} →

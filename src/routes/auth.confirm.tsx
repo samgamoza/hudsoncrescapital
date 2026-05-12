@@ -4,6 +4,7 @@ import { z } from "zod";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPortalAuthError, isSafeInternalPath } from "@/lib/portal-auth";
+import { getMarketingWebsiteHomeUrl } from "@/lib/site-origin";
 
 /** Where to send the user after Supabase finishes (must stay same-origin, root-relative). */
 function resolvePostConfirmPath(nextParam: string | undefined): string {
@@ -112,9 +113,13 @@ function AuthEmailConfirmPage() {
   return (
     <div className="min-h-screen bg-background grid-bg flex items-center justify-center px-6 py-10">
       <div className="w-full max-w-md surface-card p-8 shadow-elevated text-center">
-        <Link to="/" className="flex items-center justify-center mb-6">
+        <a
+          href={getMarketingWebsiteHomeUrl()}
+          className="flex items-center justify-center mb-6"
+          rel="noreferrer"
+        >
           <img src={logo} alt="Hudson Crest Capital" className="h-12 w-auto" />
-        </Link>
+        </a>
 
         {phase === "working" && (
           <>
@@ -145,9 +150,13 @@ function AuthEmailConfirmPage() {
               >
                 Go to sign in
               </Link>
-              <Link to="/" className="text-muted-foreground hover:text-foreground">
+              <a
+                href={getMarketingWebsiteHomeUrl()}
+                className="text-muted-foreground hover:text-foreground"
+                rel="noreferrer"
+              >
                 Back to website
-              </Link>
+              </a>
             </div>
           </>
         )}

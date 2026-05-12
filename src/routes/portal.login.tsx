@@ -2,6 +2,7 @@ import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-rout
 import { z } from "zod";
 import { Briefcase, ArrowRight } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { getMarketingWebsiteHomeUrl } from "@/lib/site-origin";
 
 const searchSchema = z.object({
   redirect: z.string().optional(),
@@ -35,9 +36,13 @@ function PortalChooser() {
   return (
     <div className="min-h-screen bg-background grid-bg flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-2xl">
-        <Link to="/" className="flex items-center justify-center mb-8">
+        <a
+          href={getMarketingWebsiteHomeUrl()}
+          className="flex items-center justify-center mb-8"
+          rel="noreferrer"
+        >
           <img src={logo} alt="Hudson Crest Capital" className="h-12 w-auto" />
-        </Link>
+        </a>
         <div className="text-center mb-10">
           <h1 className="text-3xl font-semibold text-foreground">Select your portal</h1>
           <p className="text-sm text-muted-foreground mt-2">
@@ -64,9 +69,13 @@ function PortalChooser() {
         </div>
 
         <div className="mt-8 text-center">
-          <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">
+          <a
+            href={getMarketingWebsiteHomeUrl()}
+            className="text-xs text-muted-foreground hover:text-foreground"
+            rel="noreferrer"
+          >
             ← Back to website
-          </Link>
+          </a>
         </div>
       </div>
     </div>

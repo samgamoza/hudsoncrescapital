@@ -3,7 +3,7 @@ import { type FormEvent, useState } from "react";
 import { Check, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ensurePortalRole, formatPortalAuthError, resolvePortalRedirect } from "@/lib/portal-auth";
-import { getPublicAppOrigin } from "@/lib/site-origin";
+import { getMarketingWebsiteHomeUrl, getPublicAppOrigin } from "@/lib/site-origin";
 import { isValidE164 } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
@@ -257,9 +257,13 @@ function InvestorSignupPage() {
         {/* Left — IC-style value panel */}
         <aside className="relative flex flex-col justify-between border-b border-border bg-gradient-to-br from-brand/25 via-background to-background p-8 lg:w-[42%] lg:border-b-0 lg:border-r lg:p-10">
           <div>
-            <Link to="/" className="inline-flex items-center gap-2">
+            <a
+              href={getMarketingWebsiteHomeUrl()}
+              className="inline-flex items-center gap-2"
+              rel="noreferrer"
+            >
               <img src={logo} alt="Hudson Crest Capital" className="h-10 w-auto" />
-            </Link>
+            </a>
             <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-brand">
               Investor signup
             </p>
@@ -532,9 +536,13 @@ function InvestorSignupPage() {
             <Link to="/portal/login/investor" className="block hover:text-foreground">
               Already have an account? Sign in →
             </Link>
-            <Link to="/" className="mt-2 block hover:text-foreground">
+            <a
+              href={getMarketingWebsiteHomeUrl()}
+              className="mt-2 block hover:text-foreground"
+              rel="noreferrer"
+            >
               ← Back to website
-            </Link>
+            </a>
           </div>
         </div>
       </div>

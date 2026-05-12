@@ -66,7 +66,7 @@ function TradingPage() {
       setRows(Array.isArray(data.orders) ? data.orders : []);
       setStatusCounts(data.statusCounts ?? {});
       setSelectedOrderId((cur) =>
-        cur && data.orders.some((o: any) => o.id === cur) ? cur : data.orders?.[0]?.id ?? "",
+        cur && data.orders.some((o: any) => o.id === cur) ? cur : (data.orders?.[0]?.id ?? ""),
       );
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to load execution workspace");
@@ -75,7 +75,11 @@ function TradingPage() {
     }
   };
 
-  const runOrderAction = async (action: string, payload: Record<string, unknown>, success: string) => {
+  const runOrderAction = async (
+    action: string,
+    payload: Record<string, unknown>,
+    success: string,
+  ) => {
     setExecBusy(true);
     try {
       await apiJson("/api/portal/order-execution", {
@@ -96,17 +100,43 @@ function TradingPage() {
     void (async () => {
       try {
         const res = await fetch("/api/public/auth-health");
-        if (!res.ok) throw new Error(`Health check failed (${res.status})`);
-        setHealth(await res.json());
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setHealth({
+            ok: false,
+            diagnosticsEnabled: false,
+            error: `HTTP ${res.status}`,
+            ...(typeof body === "object" && body ? body : {}),
+          });
+        } else {
+          setHealth(body);
+        }
       } catch (e: any) {
-        setHealth({ ok: false, error: e?.message ?? "Health check failed" });
+        setHealth({
+          ok: false,
+          diagnosticsEnabled: false,
+          error: e?.message ?? "Health check failed",
+        });
       }
       try {
         const res = await fetch("/api/public/schema-readiness");
-        if (!res.ok) throw new Error(`Schema check failed (${res.status})`);
-        setSchema(await res.json());
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setSchema({
+            ok: false,
+            diagnosticsEnabled: false,
+            error: `HTTP ${res.status}`,
+            ...(typeof body === "object" && body ? body : {}),
+          });
+        } else {
+          setSchema(body);
+        }
       } catch (e: any) {
-        setSchema({ ok: false, error: e?.message ?? "Schema check failed" });
+        setSchema({
+          ok: false,
+          diagnosticsEnabled: false,
+          error: e?.message ?? "Schema check failed",
+        });
       }
     })();
     void refreshOrders();
@@ -223,8 +253,12 @@ function TradingPage() {
                         {r.account_number ?? "—"} · {new Date(r.placed_at).toLocaleString()}
                       </div>
                     </td>
-                    <td className="py-2 px-3 text-muted-foreground text-xs">{r.client_email ?? "—"}</td>
-                    <td className={`py-2 px-3 ${r.side === "buy" ? "text-success" : "text-destructive"}`}>
+                    <td className="py-2 px-3 text-muted-foreground text-xs">
+                      {r.client_email ?? "—"}
+                    </td>
+                    <td
+                      className={`py-2 px-3 ${r.side === "buy" ? "text-success" : "text-destructive"}`}
+                    >
                       {r.side}
                     </td>
                     <td className="py-2 px-3">
@@ -402,6 +436,16 @@ function TradingPage() {
         title="Auth Diagnostics"
         description="Validate Supabase env wiring and test login identifier/reset flow."
       >
+        {health?.diagnosticsEnabled === false && health?.message ? (
+          <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-100">
+            {health.message}
+          </div>
+        ) : null}
+        {schema?.diagnosticsEnabled === false && schema?.message ? (
+          <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-100">
+            {schema.message}
+          </div>
+        ) : null}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
           <div className={field}>
             Server project: {health?.env?.server?.projectRef ?? "unknown"} | URL{" "}

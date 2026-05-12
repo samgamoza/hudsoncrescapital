@@ -3,6 +3,7 @@ import { useState } from "react";
 import logo from "@/assets/logo.png";
 import { CountrySelect, IntlPhoneInput } from "@/components/portal/IntlPhoneInput";
 import { isValidE164 } from "@/lib/countries";
+import { getMarketingWebsiteHomeUrl } from "@/lib/site-origin";
 
 export const Route = createFileRoute("/portal/login/admin/create-account")({
   head: () => ({
@@ -81,9 +82,13 @@ function AdminCreateAccountPage() {
   return (
     <div className="min-h-screen bg-background grid-bg flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md surface-card p-8 shadow-elevated">
-        <Link to="/" className="flex items-center justify-center mb-6">
+        <a
+          href={getMarketingWebsiteHomeUrl()}
+          className="flex items-center justify-center mb-6"
+          rel="noreferrer"
+        >
           <img src={logo} alt="Hudson Crest Capital" className="h-12 w-auto" />
-        </Link>
+        </a>
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-destructive">
           <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
           Admin Account Creation
@@ -179,9 +184,9 @@ function AdminCreateAccountPage() {
         </div>
 
         <div className="mt-6 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-          <Link to="/" className="hover:text-foreground">
+          <a href={getMarketingWebsiteHomeUrl()} className="hover:text-foreground" rel="noreferrer">
             ← Back to website
-          </Link>
+          </a>
           <Link to="/portal/login/admin" className="hover:text-foreground">
             Admin login →
           </Link>

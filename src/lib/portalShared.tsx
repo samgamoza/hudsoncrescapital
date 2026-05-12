@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
+import { getMarketingWebsiteHomeUrl } from "@/lib/site-origin";
 
 export type NavItem = {
   to: string;
@@ -69,9 +70,9 @@ export function PortalShell({
   return (
     <div className="min-h-screen bg-background grid grid-cols-1 md:grid-cols-[260px_1fr]">
       <aside className="border-r border-border bg-surface/40 p-5 flex flex-col gap-2 md:min-h-screen">
-        <Link to="/" className="flex items-center gap-2 mb-6">
+        <a href={getMarketingWebsiteHomeUrl()} className="flex items-center gap-2 mb-6" rel="noreferrer">
           <img src={logo} alt="Hudson Crest" className="h-9 w-auto" />
-        </Link>
+        </a>
         <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">{title}</div>
         {nav
           .filter((item) => !item.pinBelow)
