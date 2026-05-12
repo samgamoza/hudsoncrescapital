@@ -1,41 +1,83 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { DataTable, PageHeader, SectionCard } from "@/lib/portalShared";
 
 export const Route = createFileRoute("/portal/investor/transactions")({
   component: TransactionsPage,
 });
 
-const txns = [
-  { id: "TX-10241", type: "Deposit", amount: 500000, date: "2026-04-12" },
-  { id: "TX-10198", type: "Withdrawal", amount: -120000, date: "2026-03-30" },
-  { id: "TX-10133", type: "Deposit", amount: 250000, date: "2026-02-18" },
-  { id: "TX-10087", type: "Performance Fee", amount: -38400, date: "2026-01-31" },
-  { id: "TX-10054", type: "Deposit", amount: 1000000, date: "2026-01-04" },
-];
+type WalletPayload = {
+  transactions?: any[];
+};
+
+function fmt(n: any, c = "USD") {
+  return Number(n ?? 0).toLocaleString(undefined, { style: "currency", currency: c });
+}
 
 function TransactionsPage() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/portal/wallet-actions");
+        if (!res.ok) throw new Error(`Failed (${res.status})`);
+        const data: WalletPayload = await res.json();
+        setRows([...(data.transactions ?? [])].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)));
+      } catch (e: any) {
+        toast.error(e?.message ?? "Failed to load transactions");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
   return (
     <>
-      <PageHeader title="Transactions" subtitle="Capital movements and transaction history." />
-      <SectionCard title="Deposits & Withdrawals">
-        <DataTable
-          rows={txns}
-          columns={[
-            { key: "id", label: "ID" },
-            { key: "type", label: "Type" },
-            {
-              key: "amount",
-              label: "Amount",
-              render: (r) => (
-                <span className={r.amount >= 0 ? "text-success" : "text-danger"}>
-                  ${Math.abs(r.amount).toLocaleString()}
-                </span>
-              ),
-            },
-            { key: "date", label: "Date", render: (r) => new Date(r.date).toLocaleDateString() },
-          ]}
-        />
+      <PageHeader
+        title="Transactions"
+        subtitle="Wallet ledger activity for your accounts. Use Wallet to submit deposit or withdrawal requests."
+      />
+      <SectionCard title="Wallet transactions">
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : (
+          <DataTable
+            rows={rows}
+            columns={[
+              {
+                key: "created_at",
+                label: "Date",
+                render: (r) => new Date(r.created_at).toLocaleString(),
+              },
+              {
+                key: "txn_type",
+                label: "Type",
+                render: (r) => <span className="capitalize">{r.txn_type}</span>,
+              },
+              { key: "description", label: "Description" },
+              {
+                key: "amount",
+                label: "Amount",
+                render: (r) => (
+                  <span className={Number(r.amount) >= 0 ? "text-success" : "text-destructive"}>
+                    {fmt(r.amount, r.currency)}
+                  </span>
+                ),
+              },
+              {
+                key: "balance_after",
+                label: "Balance After",
+                render: (r) => fmt(r.balance_after, r.currency),
+              },
+            ]}
+          />
+        )}
       </SectionCard>
+      <Toaster />
     </>
   );
 }

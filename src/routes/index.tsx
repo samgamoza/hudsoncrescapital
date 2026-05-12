@@ -151,18 +151,18 @@ function HomePage() {
       <section className="border-b border-border bg-surface/40">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-px overflow-hidden md:grid-cols-5">
           {[
-            { label: "AUM", value: "$48.2B", sub: "+3.27% YTD" },
-            { label: "Daily P&L", value: "$28.63M", sub: "+0.74%" },
-            { label: "AI Confidence", value: "Bullish 62%", sub: "24H Outlook" },
-            { label: "Portfolio VaR (95%)", value: "$21.42M", sub: "-2.18%" },
-            { label: "Risk Status", value: "Low", sub: "Within Limits" },
+            { label: "AUM", value: "—", sub: "Available on request" },
+            { label: "Daily P&L", value: "—", sub: "Not shown on the public site" },
+            { label: "Model posture", value: "—", sub: "Sign in for client-relevant views" },
+            { label: "Portfolio VaR (95%)", value: "—", sub: "Authorized users only" },
+            { label: "Risk status", value: "—", sub: "Desk-by-desk, policy-driven" },
           ].map((k) => (
             <div key={k.label} className="bg-background px-6 py-6">
               <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
                 {k.label}
               </div>
               <div className="mt-2 text-2xl font-semibold text-foreground">{k.value}</div>
-              <div className="mt-1 text-xs text-success">{k.sub}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{k.sub}</div>
             </div>
           ))}
         </div>

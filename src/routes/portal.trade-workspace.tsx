@@ -6,6 +6,7 @@ import {
   Bell,
   BookOpenText,
   ChartCandlestick,
+  ChevronDown,
   Clock3,
   ExternalLink,
   Filter,
@@ -148,6 +149,31 @@ type AssetListingQuote = {
   sell: number;
   up: boolean;
 };
+
+/** Primary rail — kept in direct view. */
+const WORKSPACE_MARKET_MAIN_VISIBLE: {
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  value: string;
+}[] = [
+  { label: "Commodities", icon: Wallet, value: "commodities" },
+  { label: "Shares", icon: ChartCandlestick, value: "shares" },
+  { label: "Crypto", icon: Wallet, value: "cryptocurrency" },
+  { label: "FX", icon: Clock3, value: "fx" },
+  { label: "Options", icon: ChartCandlestick, value: "options" },
+];
+
+/** Tucked under "More asset classes" (closed by default) so the rail stays focused. */
+const WORKSPACE_MARKET_MAIN_MORE: {
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  value?: string;
+}[] = [
+  { label: "ETFs", icon: ChartCandlestick, value: "etfs" },
+  { label: "Bonds and Rates", icon: LayoutDashboard, value: "bonds_rates" },
+  { label: "Indices", icon: SlidersHorizontal, value: "indices" },
+  { label: "Knock-Outs", icon: LayoutDashboard },
+];
 
 export const Route = createFileRoute("/portal/trade-workspace")({
   head: () => ({
@@ -295,17 +321,14 @@ function TradeWorkspacePage() {
           />
           <NavGroup
             title="Market Main"
-            items={[
-              { label: "Commodities", icon: Wallet, value: "commodities" },
-              { label: "Shares", icon: ChartCandlestick, value: "shares" },
-              { label: "Crypto", icon: Wallet, value: "cryptocurrency" },
-              { label: "FX", icon: Clock3, value: "fx" },
-              { label: "Options", icon: ChartCandlestick, value: "options" },
-              { label: "ETFs", icon: ChartCandlestick, value: "etfs" },
-              { label: "Bonds and Rates", icon: LayoutDashboard, value: "bonds_rates" },
-              { label: "Indices", icon: SlidersHorizontal, value: "indices" },
-              { label: "Knock-Outs", icon: LayoutDashboard },
-            ]}
+            items={WORKSPACE_MARKET_MAIN_VISIBLE}
+            activeValue={marketClass}
+            onSelect={(value) => {
+              if (value) setMarketClass(value);
+            }}
+          />
+          <WorkspaceMoreMarketClasses
+            items={WORKSPACE_MARKET_MAIN_MORE}
             activeValue={marketClass}
             onSelect={(value) => {
               if (value) setMarketClass(value);
@@ -989,8 +1012,7 @@ function AssetBrowser({ forcedAssetClass }: { forcedAssetClass?: string }) {
                             e.stopPropagation();
                             setSelected(asset);
                             if (isDirectlyTradableAsset(asset)) setTicketAsset(asset);
-                            if (isOptionsChainAsset(asset))
-                              toast.message("Options chain view placeholder opened.");
+                            if (isOptionsChainAsset(asset)) return;
                           }}
                           className="border border-border rounded-md px-2 py-1 text-xs hover:bg-surface-elevated"
                         >
@@ -1041,7 +1063,7 @@ function AssetBrowser({ forcedAssetClass }: { forcedAssetClass?: string }) {
                     </span>
                   </div>
                   <div className="flex-1 mt-2 rounded bg-background/60 border border-border grid place-items-center text-[11px] text-muted-foreground">
-                    Price chart panel placeholder
+                    No chart
                   </div>
                 </div>
               ) : (
@@ -1338,13 +1360,13 @@ function TradeTicketCard({
               </span>
             </div>
             <div>
-              Fees: <span className="text-foreground">Broker fee placeholder</span>
+              Fees: <span className="text-foreground">—</span>
             </div>
             <div>
-              Buying power check: <span className="text-foreground">Pending integration</span>
+              Buying power check: <span className="text-foreground">—</span>
             </div>
             <div>
-              Position impact: <span className="text-foreground">Pending integration</span>
+              Position impact: <span className="text-foreground">—</span>
             </div>
           </div>
           <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-2.5 py-2 text-amber-700 dark:text-amber-300">
@@ -1547,7 +1569,7 @@ function DealTicketCard({
 
       <div className="mt-3 text-[11px] text-muted-foreground space-y-1">
         <div className="inline-flex items-center gap-1">
-          <BarChart3 className="h-3.5 w-3.5" /> Margin: placeholder
+          <BarChart3 className="h-3.5 w-3.5" /> Margin: —
         </div>
         <div>Resulting position: preview pending broker integration</div>
         <div>Fees and charges apply.</div>
@@ -1625,6 +1647,56 @@ function Tab({
         </span>
       ) : null}
     </button>
+  );
+}
+
+function WorkspaceMoreMarketClasses({
+  items,
+  activeValue,
+  onSelect,
+}: {
+  items: { label: string; icon: ComponentType<{ className?: string }>; value?: string }[];
+  activeValue: string;
+  onSelect: (value?: string) => void;
+}) {
+  const activeMoreLabel = items.find((i) => i.value === activeValue)?.label;
+  const btnClass = (active: boolean) =>
+    `inline-flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-left transition-colors ${
+      active
+        ? "bg-brand/10 text-foreground border border-brand/30"
+        : "text-muted-foreground hover:bg-surface-elevated hover:text-foreground"
+    }`;
+
+  return (
+    <div className="mb-4">
+      <details className="group rounded-md border border-border/70 bg-background/30 [&_summary::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-md px-2.5 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground hover:bg-surface-elevated hover:text-foreground">
+          <span className="flex min-w-0 flex-1 items-center gap-2">
+            <span className="truncate">More asset classes</span>
+            {activeMoreLabel ? (
+              <span className="truncate normal-case font-normal text-brand">· {activeMoreLabel}</span>
+            ) : null}
+          </span>
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="mt-1 flex flex-col gap-1 border-t border-border/60 pt-1.5">
+          {items.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              disabled={!item.value}
+              onClick={() => onSelect(item.value)}
+              className={`${btnClass(!!item.value && item.value === activeValue)} ${
+                !item.value ? "cursor-not-allowed opacity-50 hover:bg-transparent" : ""
+              }`}
+            >
+              <item.icon className="h-4 w-4 shrink-0" />
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </details>
+    </div>
   );
 }
 

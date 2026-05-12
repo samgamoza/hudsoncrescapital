@@ -55,8 +55,8 @@ const DESKS = [
     tz: "EST | UTC -5",
     desc: "Our New York desk leads equity, options and cross asset execution for the Americas, leveraging deep liquidity and market microstructure expertise.",
     focus: ["Equities & Options", "Fixed Income", "Derivatives", "Algorithmic Execution"],
-    pros: "50+",
-    aum: "$6.2B",
+    pros: "—",
+    aum: "—",
     hours: "8:00am – 5:00pm",
   },
   {
@@ -66,8 +66,8 @@ const DESKS = [
     tz: "GMT | UTC +0",
     desc: "Our London desk drives global macro, FX and rates strategies with a strong focus on risk management and capital efficiency.",
     focus: ["Global Macro", "FX & Rates", "Commodities", "Risk Management"],
-    pros: "40+",
-    aum: "$4.1B",
+    pros: "—",
+    aum: "—",
     hours: "7:00am – 4:00pm",
   },
   {
@@ -77,8 +77,8 @@ const DESKS = [
     tz: "SGT | UTC +8",
     desc: "Our Singapore desk covers Asia Pacific markets, sourcing alpha from regional equities, credit and emerging markets.",
     focus: ["Asia Equities", "Credit & EM", "Quant Strategies", "Market Analytics"],
-    pros: "60+",
-    aum: "$2.4B",
+    pros: "—",
+    aum: "—",
     hours: "9:00am – 6:00pm",
   },
 ];
@@ -107,15 +107,7 @@ const SESSIONS = [
   },
 ];
 
-const ACTIVITY = [
-  {
-    time: "09:15 AM",
-    city: "SINGAPORE",
-    text: "Asian equity momentum signal detected in technology sector",
-  },
-  { time: "02:32 AM", city: "LONDON", text: "Macro model update: EUR/USD volatility spike" },
-  { time: "09:47 AM", city: "NEW YORK", text: "Large options flow detected in S&P 500 index" },
-];
+const ACTIVITY: { time: string; city: string; text: string }[] = [];
 
 function GlobalDesksPage() {
   return (
@@ -130,10 +122,10 @@ function GlobalDesksPage() {
         side={
           <StatRow
             items={[
-              { icon: TrendingUp, value: "$12.74B", label: "Assets Under Management" },
-              { icon: Users, value: "60+", label: "Investment Professionals" },
-              { icon: Globe, value: "20+", label: "Countries Covered" },
-              { icon: Award, value: "10+ Years", label: "Track Record" },
+              { icon: TrendingUp, value: "—", label: "Assets Under Management" },
+              { icon: Users, value: "—", label: "Investment Professionals" },
+              { icon: Globe, value: "—", label: "Countries Covered" },
+              { icon: Award, value: "—", label: "Track Record" },
               { icon: Shield, value: "Institutional", label: "Client Focused" },
             ]}
           />
@@ -143,10 +135,10 @@ function GlobalDesksPage() {
       <Section>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {[
-            { icon: Globe, v: "3", l: "Global Trading Desks" },
+            { icon: Globe, v: "—", l: "Global Trading Desks" },
             { icon: Clock, v: "24/5", l: "Market Coverage Follow-the-Sun" },
-            { icon: Users, v: "150+", l: "Investment Professionals" },
-            { icon: Activity, v: "Real time", l: "Global Collaboration & Execution" },
+            { icon: Users, v: "—", l: "Investment Professionals" },
+            { icon: Activity, v: "—", l: "Global Collaboration & Execution" },
           ].map((m) => (
             <div key={m.l} className="surface-card p-5">
               <m.icon className="h-6 w-6 text-brand" />
@@ -313,17 +305,23 @@ function GlobalDesksPage() {
                 </span>
               </div>
               <ul className="mt-3 space-y-3">
-                {ACTIVITY.map((a) => (
-                  <li key={a.time} className="text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-muted-foreground">{a.time}</span>
-                      <span className="rounded bg-brand/10 px-1.5 text-[10px] font-bold uppercase text-brand">
-                        {a.city}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-muted-foreground">{a.text}</div>
+                {ACTIVITY.length === 0 ? (
+                  <li className="text-xs text-muted-foreground">
+                    Desk-level activity is not published on the public site.
                   </li>
-                ))}
+                ) : (
+                  ACTIVITY.map((a) => (
+                    <li key={a.time} className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-muted-foreground">{a.time}</span>
+                        <span className="rounded bg-brand/10 px-1.5 text-[10px] font-bold uppercase text-brand">
+                          {a.city}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-muted-foreground">{a.text}</div>
+                    </li>
+                  ))
+                )}
               </ul>
               <Link
                 to="/contact"
@@ -344,32 +342,32 @@ function GlobalDesksPage() {
                 {
                   icon: Layers,
                   l: "Markets Monitored",
-                  v: "150+",
+                  v: "—",
                   d: "Across Equities, Fixed Income, FX, Commodities & Derivatives",
                 },
                 {
                   icon: Activity,
                   l: "Daily Signals Processed",
-                  v: "10,000+",
+                  v: "—",
                   d: "Generated by AI & Quant Models",
                 },
                 {
                   icon: TrendingUp,
                   l: "Trades Executed Daily",
-                  v: "5,000+",
-                  d: "Across 200+ Venues Globally",
+                  v: "—",
+                  d: "Across global venues",
                 },
                 {
                   icon: Eye,
                   l: "Average Execution Speed",
-                  v: "< 2.5ms",
-                  d: "For Electronic Strategies",
+                  v: "—",
+                  d: "For electronic strategies",
                 },
                 {
                   icon: ShieldCheck,
                   l: "Risk Events Monitored",
-                  v: "24/7",
-                  d: "Across All Portfolios",
+                  v: "—",
+                  d: "Across all portfolios",
                 },
               ].map((g) => (
                 <li key={g.l} className="flex items-start gap-3">

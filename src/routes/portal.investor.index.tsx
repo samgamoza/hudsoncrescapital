@@ -1,18 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
-import {
   ArrowDownToLine,
   ArrowUpFromLine,
   Wallet,
@@ -27,28 +15,6 @@ import { MetricCard, PageHeader, SectionCard, DataTable } from "@/lib/portalShar
 export const Route = createFileRoute("/portal/investor/")({
   component: InvestorDashboard,
 });
-
-const perfFallback = [
-  { date: "Jan", equity: 9.8 },
-  { date: "Feb", equity: 10.2 },
-  { date: "Mar", equity: 10.6 },
-  { date: "Apr", equity: 11.1 },
-  { date: "May", equity: 11.5 },
-];
-
-const allocation = [
-  { name: "Equity", value: 42 },
-  { name: "Crypto", value: 28 },
-  { name: "FX", value: 18 },
-  { name: "Commodity", value: 12 },
-];
-
-const COLORS = [
-  "oklch(0.65 0.22 255)",
-  "oklch(0.72 0.18 150)",
-  "oklch(0.78 0.15 70)",
-  "oklch(0.55 0.05 260)",
-];
 
 const fmt = (n: any, c = "USD") =>
   Number(n ?? 0).toLocaleString(undefined, {
@@ -235,51 +201,33 @@ function InvestorDashboard() {
         />
       </div>
 
-      {/* Charts */}
+      {/* Portfolio views — populated from positions when wired */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
-          <SectionCard title="Portfolio Performance" description="Equity growth, last 5 months">
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={perfFallback}>
-                  <CartesianGrid stroke="oklch(0.30 0.025 260 / 0.4)" />
-                  <XAxis dataKey="date" stroke="oklch(0.68 0.02 250)" />
-                  <YAxis stroke="oklch(0.68 0.02 250)" />
-                  <Tooltip
-                    contentStyle={{
-                      background: "oklch(0.20 0.028 260)",
-                      border: "1px solid oklch(0.30 0.025 260)",
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="equity"
-                    stroke="oklch(0.65 0.22 255)"
-                    fill="oklch(0.65 0.22 255 / 0.25)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+          <SectionCard
+            title="Portfolio performance"
+            description="NAV and return series when reporting is connected for your account"
+          >
+            <p className="text-sm text-muted-foreground py-8 text-center">
+              No performance curve is configured yet. See{" "}
+              <Link to="/portal/investor/performance" className="text-brand hover:underline">
+                Performance
+              </Link>{" "}
+              for updates.
+            </p>
           </SectionCard>
         </div>
-        <SectionCard title="Allocation" description="Across asset classes">
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={allocation} dataKey="value" nameKey="name" outerRadius={88}>
-                  {allocation.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: "oklch(0.20 0.028 260)",
-                    border: "1px solid oklch(0.30 0.025 260)",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+        <SectionCard
+          title="Allocation"
+          description="Targets and weights from your portfolio models"
+        >
+          <p className="text-sm text-muted-foreground py-8 text-center">
+            No allocation snapshot yet. Manage models on{" "}
+            <Link to="/portal/investor/portfolio" className="text-brand hover:underline">
+              Portfolio
+            </Link>
+            .
+          </p>
         </SectionCard>
       </div>
 

@@ -98,31 +98,31 @@ const CAPS = [
   {
     t: "Natural Language Processing",
     d: "Extract insights from news, research, filings and social media in real time.",
-    score: "0.87",
+    score: "—",
     scoreLabel: "Sentiment Score",
   },
   {
     t: "Anomaly Detection",
     d: "Identify market inefficiencies and unusual patterns before the market reacts.",
-    score: "0.94",
+    score: "—",
     scoreLabel: "Anomaly Score",
   },
   {
     t: "Predictive Modeling",
     d: "Forecast price movements, volatility and correlations across multiple horizons.",
-    score: "0.82",
+    score: "—",
     scoreLabel: "Prediction Confidence",
   },
   {
     t: "Reinforcement Learning",
     d: "Continuously optimize trading strategies through self learning systems.",
-    score: "+18.6%",
+    score: "—",
     scoreLabel: "Reward (YTD)",
   },
   {
     t: "Causal Inference",
     d: "Understand what drives market outcomes to make better, more robust decisions.",
-    score: "High",
+    score: "—",
     scoreLabel: "Causal Impact",
   },
 ];
@@ -140,10 +140,10 @@ function TechnologyPage() {
         side={
           <StatRow
             items={[
-              { icon: Database, value: "4.7PB+", label: "Data Processed Daily" },
-              { icon: Cloud, value: "350K+", label: "Models Trained Annually" },
-              { icon: Zap, value: "< 2.3ms", label: "Average Execution Latency" },
-              { icon: CheckCircle2, value: "99.99%", label: "Platform Uptime (Last 12 Months)" },
+              { icon: Database, value: "—", label: "Data at institutional scale" },
+              { icon: Cloud, value: "—", label: "Model development cadence" },
+              { icon: Zap, value: "—", label: "Execution latency (environment-specific)" },
+              { icon: CheckCircle2, value: "—", label: "Operational availability" },
             ]}
           />
         }
@@ -303,7 +303,7 @@ function TechnologyPage() {
                   <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
                     {c.scoreLabel}
                   </span>
-                  <span className="font-mono text-sm text-success">{c.score}</span>
+                  <span className="font-mono text-sm text-muted-foreground">{c.score}</span>
                 </div>
               </div>
             ))}
@@ -360,13 +360,13 @@ function TechnologyPage() {
             />
             <div className="absolute bottom-4 right-4 grid grid-cols-2 gap-4 rounded-lg bg-background/70 p-4 text-center backdrop-blur">
               <div>
-                <div className="text-2xl font-bold text-foreground">28</div>
+                <div className="text-2xl font-bold text-foreground">—</div>
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
                   Data Centers Worldwide
                 </div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-foreground">6</div>
+                <div className="text-2xl font-bold text-foreground">—</div>
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
                   Regions Covered
                 </div>

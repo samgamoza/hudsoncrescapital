@@ -5,11 +5,6 @@ import {
   Brain,
   Globe,
   Download,
-  TrendingUp,
-  BarChart3,
-  Activity,
-  Coins,
-  Calendar,
   Mail,
 } from "lucide-react";
 import { SiteLayout, Section } from "@/components/site/SiteLayout";
@@ -46,110 +41,37 @@ const CATEGORIES = [
   "Event-Driven",
 ];
 
-const INSIGHTS = [
-  {
-    tag: "Macro Outlook",
-    img: neural,
-    t: "Inflation Revisited: Divergence Across Developed Markets",
-    d: "Disinflation is not uniform. We explore why the inflation path is diverging between the U.S., Europe, and Asia, and what it means for portfolios.",
-    date: "May 13, 2024",
-    read: "6 min",
-  },
-  {
-    tag: "AI Intelligence",
-    img: neural,
-    t: "AI Signal Update: Momentum Recovery in Global Equities",
-    d: "Our proprietary AI models detect a regime shift in momentum patterns across global equity markets.",
-    date: "May 10, 2024",
-    read: "5 min",
-  },
-  {
-    tag: "Equity Markets",
-    img: cityNY,
-    t: "Earnings Season Takeaways: Quality Beats Growth",
-    d: "A deep dive into Q1 earnings and where we see resilient business models outperforming high-growth narratives.",
-    date: "May 8, 2024",
-    read: "7 min",
-  },
-  {
-    tag: "FX & Commodities",
-    img: cityLDN,
-    t: "Commodity Cycle in Focus: What Comes Next?",
-    d: "We analyze supply dynamics, China demand, and geopolitics to map the next phase of the commodity cycle.",
-    date: "May 6, 2024",
-    read: "6 min",
-  },
-];
+const INSIGHTS: {
+  tag: string;
+  img: string;
+  t: string;
+  d: string;
+  date: string;
+  read: string;
+}[] = [];
 
-const FEED = [
-  {
-    time: "09:42 AM",
-    tag: "MACRO",
-    icon: Globe,
-    text: "AI model detects rising inflation risk in Eurozone over next 3 months. Confidence: 78%",
-  },
-  {
-    time: "09:31 AM",
-    tag: "EQUITIES",
-    icon: BarChart3,
-    text: "Momentum shift detected in U.S. mid-cap technology sector. Confidence: 82%",
-  },
-  {
-    time: "09:18 AM",
-    tag: "FX",
-    icon: Activity,
-    text: "USD weakening trend likely to continue against JPY based on yield differentials. Confidence: 75%",
-  },
-  {
-    time: "09:05 AM",
-    tag: "COMMODITIES",
-    icon: Coins,
-    text: "Crude oil inventory drawdown accelerating. Bullish signal strength increasing. Confidence: 81%",
-  },
-  {
-    time: "08:51 AM",
-    tag: "EVENT-DRIVEN",
-    icon: Calendar,
-    text: "Merger arbitrage opportunity identified in healthcare sector. Risk adjusted return attractive.",
-  },
-];
+const FEED: { time: string; tag: string; icon: typeof Globe; text: string }[] = [];
 
-const PUBS = [
-  {
-    t: "Monthly Market Outlook, May 2024",
-    d: "Our comprehensive take on global markets, key themes, and portfolio positioning.",
-    img: neural,
-  },
-  {
-    t: "AI in Asset Management: From Hype to Edge",
-    d: "A deep dive into how artificial intelligence creates sustainable advantages in investing.",
-    img: neural,
-  },
-  {
-    t: "Quarterly Investment Review, Q1 2024",
-    d: "Performance review, key trades, and lessons learned from the quarter.",
-    img: cityNY,
-  },
-];
+const PUBS: { t: string; d: string; img: string }[] = [];
 
 const PERSPECTIVES = [
   {
     city: "NEW YORK",
     role: "Execution Hub",
     img: cityNY,
-    d: "U.S. growth remains resilient, but breadth is narrowing. We focus on quality, balance sheet strength, and secular themes.",
+    d: "Americas-focused execution and cross-asset coverage. Commentary is shared with clients directly.",
   },
   {
     city: "LONDON",
     role: "Macro & FX Hub",
     img: cityLDN,
-    d: "European growth is improving, but ECB policy remains data-dependent. FX volatility presents selective opportunities.",
+    d: "Macro, FX, and rates coverage for European and overlapping sessions. Views are not published as a live feed here.",
   },
   {
     city: "SINGAPORE",
     role: "Asia Markets Hub",
     img: citySG,
-    d: "Asia ex-Japan is seeing earnings upgrades. China policy support and AI adoption are key upside drivers.",
+    d: "Asia-Pacific coverage and regional liquidity. Reach out for current desk notes relevant to you.",
   },
 ];
 
@@ -185,35 +107,19 @@ function InsightsPage() {
           <div className="surface-card overflow-hidden">
             <img
               src={neural}
-              alt="AI & Liquidity"
+              alt=""
               className="h-48 w-full object-cover"
               loading="lazy"
             />
             <div className="p-6">
               <div className="eyebrow">Featured Insight</div>
-              <h2 className="mt-3 text-2xl font-bold leading-snug text-foreground">
-                AI & Liquidity: The New Market Regime
-              </h2>
               <p className="mt-3 text-sm text-muted-foreground">
-                How AI driven market structure analysis is reshaping liquidity dynamics and creating
-                opportunities across asset classes.
+                Long-form research and letters will appear here when published. Subscribe via{" "}
+                <Link to="/contact" className="text-brand hover:underline">
+                  Contact
+                </Link>{" "}
+                to hear when new pieces are released.
               </p>
-              <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                <span className="font-semibold text-foreground">Dr. Michael Zhang</span>
-                <span>Chief Investment Officer</span>
-                <span>·</span>
-                <span>May 15, 2024</span>
-                <span>·</span>
-                <span>8 min read</span>
-                <span>·</span>
-                <span className="rounded bg-brand/10 px-2 py-0.5 text-brand">Macro Outlook</span>
-              </div>
-              <Link
-                to="/contact"
-                className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-brand hover:opacity-80"
-              >
-                Read More <ArrowRight className="h-4 w-4" />
-              </Link>
             </div>
           </div>
         </div>
@@ -240,29 +146,35 @@ function InsightsPage() {
           ))}
         </div>
         <div className="mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {INSIGHTS.map((i) => (
-            <article
-              key={i.t}
-              className="surface-card flex flex-col overflow-hidden transition-all hover:border-brand/40"
-            >
-              <div className="relative h-36">
-                <img src={i.img} alt={i.t} className="h-full w-full object-cover" loading="lazy" />
-                <span className="absolute left-3 top-3 rounded-md bg-background/80 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-brand backdrop-blur">
-                  {i.tag}
-                </span>
-              </div>
-              <div className="flex flex-1 flex-col p-5">
-                <h3 className="text-base font-semibold leading-snug text-foreground">{i.t}</h3>
-                <p className="mt-2 flex-1 text-xs text-muted-foreground">{i.d}</p>
-                <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
-                  <span>
-                    {i.date} · {i.read}
+          {INSIGHTS.length === 0 ? (
+            <p className="text-sm text-muted-foreground sm:col-span-2 xl:col-span-4">
+              No published articles yet.
+            </p>
+          ) : (
+            INSIGHTS.map((i) => (
+              <article
+                key={i.t}
+                className="surface-card flex flex-col overflow-hidden transition-all hover:border-brand/40"
+              >
+                <div className="relative h-36">
+                  <img src={i.img} alt={i.t} className="h-full w-full object-cover" loading="lazy" />
+                  <span className="absolute left-3 top-3 rounded-md bg-background/80 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-brand backdrop-blur">
+                    {i.tag}
                   </span>
-                  <ArrowRight className="h-4 w-4 text-brand" />
                 </div>
-              </div>
-            </article>
-          ))}
+                <div className="flex flex-1 flex-col p-5">
+                  <h3 className="text-base font-semibold leading-snug text-foreground">{i.t}</h3>
+                  <p className="mt-2 flex-1 text-xs text-muted-foreground">{i.d}</p>
+                  <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
+                    <span>
+                      {i.date} · {i.read}
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-brand" />
+                  </div>
+                </div>
+              </article>
+            ))
+          )}
         </div>
       </Section>
 
@@ -281,27 +193,33 @@ function InsightsPage() {
               </span>
             </div>
             <ul className="mt-5 space-y-4">
-              {FEED.map((f) => (
-                <li
-                  key={f.text}
-                  className="grid grid-cols-[auto_auto_1fr_auto] items-start gap-3 border-b border-border/40 pb-4 text-xs last:border-0"
-                >
-                  <f.icon className="h-5 w-5 text-brand" />
-                  <div>
-                    <div className="font-mono text-[10px] text-muted-foreground">{f.time}</div>
-                    <span className="rounded bg-brand/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand">
-                      {f.tag}
-                    </span>
-                  </div>
-                  <span className="text-muted-foreground">{f.text}</span>
-                  <Link
-                    to="/contact"
-                    className="text-[10px] font-medium text-brand whitespace-nowrap hover:opacity-80"
-                  >
-                    View Analysis →
-                  </Link>
+              {FEED.length === 0 ? (
+                <li className="text-xs text-muted-foreground">
+                  Intelligence feed items are not published on the public site.
                 </li>
-              ))}
+              ) : (
+                FEED.map((f) => (
+                  <li
+                    key={f.text}
+                    className="grid grid-cols-[auto_auto_1fr_auto] items-start gap-3 border-b border-border/40 pb-4 text-xs last:border-0"
+                  >
+                    <f.icon className="h-5 w-5 text-brand" />
+                    <div>
+                      <div className="font-mono text-[10px] text-muted-foreground">{f.time}</div>
+                      <span className="rounded bg-brand/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand">
+                        {f.tag}
+                      </span>
+                    </div>
+                    <span className="text-muted-foreground">{f.text}</span>
+                    <Link
+                      to="/contact"
+                      className="text-[10px] font-medium text-brand whitespace-nowrap hover:opacity-80"
+                    >
+                      View Analysis →
+                    </Link>
+                  </li>
+                ))
+              )}
             </ul>
             <Link
               to="/contact"
@@ -319,29 +237,33 @@ function InsightsPage() {
               </h3>
             </div>
             <ul className="mt-5 space-y-4">
-              {PUBS.map((p) => (
-                <li
-                  key={p.t}
-                  className="grid grid-cols-[1fr_auto] gap-4 rounded-xl border border-border bg-background/40 p-4"
-                >
-                  <div>
-                    <div className="text-sm font-semibold text-foreground">{p.t}</div>
-                    <p className="mt-1 text-xs text-muted-foreground">{p.d}</p>
-                    <Link
-                      to="/contact"
-                      className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-brand/40 px-3 py-1.5 text-[11px] font-medium text-brand hover:bg-brand/10"
-                    >
-                      <Download className="h-3 w-3" /> Download PDF
-                    </Link>
-                  </div>
-                  <img
-                    src={p.img}
-                    alt={p.t}
-                    className="h-16 w-20 rounded-md object-cover"
-                    loading="lazy"
-                  />
-                </li>
-              ))}
+              {PUBS.length === 0 ? (
+                <li className="text-xs text-muted-foreground">No publications listed yet.</li>
+              ) : (
+                PUBS.map((p) => (
+                  <li
+                    key={p.t}
+                    className="grid grid-cols-[1fr_auto] gap-4 rounded-xl border border-border bg-background/40 p-4"
+                  >
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">{p.t}</div>
+                      <p className="mt-1 text-xs text-muted-foreground">{p.d}</p>
+                      <Link
+                        to="/contact"
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-brand/40 px-3 py-1.5 text-[11px] font-medium text-brand hover:bg-brand/10"
+                      >
+                        <Download className="h-3 w-3" /> Download PDF
+                      </Link>
+                    </div>
+                    <img
+                      src={p.img}
+                      alt={p.t}
+                      className="h-16 w-20 rounded-md object-cover"
+                      loading="lazy"
+                    />
+                  </li>
+                ))
+              )}
             </ul>
             <Link
               to="/contact"

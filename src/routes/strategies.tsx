@@ -41,15 +41,6 @@ export const Route = createFileRoute("/strategies")({
   component: StrategiesPage,
 });
 
-const PULSE = [
-  { t: "S&P 500", v: "5,325.18", c: "+0.62%", up: true },
-  { t: "NASDAQ 100", v: "18,921.73", c: "+0.81%", up: true },
-  { t: "DOW JONES", v: "39,872.99", c: "+0.45%", up: true },
-  { t: "EUR / USD", v: "1.0887", c: "-0.12%", up: false },
-  { t: "BTC / USD", v: "67,143.25", c: "+1.35%", up: true },
-  { t: "VIX", v: "14.28", c: "-2.11%", up: false },
-];
-
 const STRATEGIES = [
   {
     icon: Globe,
@@ -62,7 +53,6 @@ const STRATEGIES = [
       "Cross asset allocation",
       "Risk-on / Risk-off rotation",
     ],
-    perf: { ytd: "6.21%", y1: "11.34%", si: "8.72%" },
   },
   {
     icon: Brain,
@@ -75,7 +65,6 @@ const STRATEGIES = [
       "Cross-sectional & time-series models",
       "Dynamic factor investing",
     ],
-    perf: { ytd: "8.93%", y1: "16.87%", si: "12.65%" },
   },
   {
     icon: Calendar,
@@ -88,7 +77,6 @@ const STRATEGIES = [
       "Corporate restructurings",
       "Special situations",
     ],
-    perf: { ytd: "5.47%", y1: "9.12%", si: "7.10%" },
   },
   {
     icon: Repeat,
@@ -101,7 +89,6 @@ const STRATEGIES = [
       "Convertible arbitrage",
       "FX & rates arbitrage",
     ],
-    perf: { ytd: "4.68%", y1: "7.89%", si: "6.23%" },
   },
 ];
 
@@ -147,18 +134,6 @@ const AI_PIPELINE = [
   },
 ];
 
-function MiniSpark({ up }: { up: boolean }) {
-  const stroke = up ? "oklch(0.72 0.18 150)" : "oklch(0.65 0.22 25)";
-  const path = up
-    ? "M0,18 L8,15 L16,17 L24,12 L32,13 L40,8 L48,10 L56,4"
-    : "M0,4 L8,7 L16,5 L24,10 L32,9 L40,14 L48,12 L56,18";
-  return (
-    <svg viewBox="0 0 56 22" className="h-5 w-14">
-      <path d={path} fill="none" stroke={stroke} strokeWidth="1.5" />
-    </svg>
-  );
-}
-
 function StrategiesPage() {
   return (
     <SiteLayout>
@@ -170,27 +145,12 @@ function StrategiesPage() {
         image={worldMap}
         imageAlt="Global trading network"
         side={
-          <div className="surface-card p-5">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <div className="text-xs font-bold uppercase tracking-widest text-foreground">
-                Market Pulse
-              </div>
-              <span className="inline-flex items-center gap-1.5 text-[10px] text-success">
-                <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" /> LIVE
-              </span>
-            </div>
-            <ul className="mt-3 space-y-2.5 text-sm">
-              {PULSE.map((p) => (
-                <li key={p.t} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3">
-                  <span className="text-xs font-semibold text-foreground">{p.t}</span>
-                  <span className="font-mono text-xs text-muted-foreground">{p.v}</span>
-                  <span className={`font-mono text-xs ${p.up ? "text-success" : "text-danger"}`}>
-                    {p.c}
-                  </span>
-                  <MiniSpark up={p.up} />
-                </li>
-              ))}
-            </ul>
+          <div className="surface-card p-5 text-sm leading-relaxed text-muted-foreground">
+            Live quotes and tape-style views are not simulated on this page. Use{" "}
+            <Link to="/markets" className="text-brand hover:underline">
+              Markets
+            </Link>{" "}
+            for streaming public-market widgets where configured.
           </div>
         }
       />
@@ -225,30 +185,11 @@ function StrategiesPage() {
                   ))}
                 </ul>
               </div>
-              <div className="mt-5 border-t border-border pt-4">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-brand">
-                  Strategy Performance (Net)
-                </div>
-                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                  {[
-                    ["YTD", s.perf.ytd],
-                    ["1Y", s.perf.y1],
-                    ["SI (Ann.)", s.perf.si],
-                  ].map(([k, v]) => (
-                    <div key={k}>
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                        {k}
-                      </div>
-                      <div className="text-sm font-mono text-success">{v}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           ))}
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Performance illustrative. Net of fees. Past performance is not indicative of future
+          Strategy-level returns are not published here. Past performance is not indicative of future
           results.
         </p>
       </Section>
@@ -335,30 +276,15 @@ function StrategiesPage() {
           </div>
 
           <div className="surface-card p-6">
-            <div className="eyebrow">Portfolio Snapshot (Firm Level)</div>
-            <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-              {[
-                ["YTD Return (Net)", "7.28%", "success"],
-                ["1Y Return (Net)", "13.92%", "success"],
-                ["Sharpe Ratio (1Y)", "1.81", "fg"],
-                ["Max Drawdown (1Y)", "-6.21%", "danger"],
-                ["Volatility (1Y)", "8.76%", "fg"],
-                ["Win Rate", "62.3%", "success"],
-                ["Calmar Ratio (1Y)", "2.24", "fg"],
-                ["Sortino Ratio (1Y)", "2.95", "success"],
-              ].map(([l, v, tone]) => (
-                <div key={l}>
-                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                    {l}
-                  </div>
-                  <div
-                    className={`mt-1 font-mono text-base ${tone === "success" ? "text-success" : tone === "danger" ? "text-danger" : "text-foreground"}`}
-                  >
-                    {v}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <div className="eyebrow">Firm-level metrics</div>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Aggregate portfolio statistics are not displayed on the public site. Prospective
+              institutional clients can request materials through{" "}
+              <Link to="/contact" className="text-brand hover:underline">
+                Contact
+              </Link>
+              .
+            </p>
           </div>
         </div>
       </Section>

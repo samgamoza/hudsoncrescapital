@@ -97,11 +97,11 @@ function AboutPage() {
         side={
           <StatRow
             items={[
-              { icon: TrendingUp, value: "$12.74B", label: "Assets Under Management" },
-              { icon: Users, value: "60+", label: "Investment Professionals" },
-              { icon: Globe, value: "3", label: "Global Trading Desks" },
-              { icon: Briefcase, value: "20+", label: "Countries Covered" },
-              { icon: Award, value: "10+ Years", label: "Track Record" },
+              { icon: TrendingUp, value: "—", label: "Assets Under Management" },
+              { icon: Users, value: "—", label: "Investment Professionals" },
+              { icon: Globe, value: "—", label: "Global Trading Desks" },
+              { icon: Briefcase, value: "—", label: "Countries Covered" },
+              { icon: Award, value: "—", label: "Track Record" },
               { icon: Shield, value: "Institutional", label: "Client Focused" },
             ]}
           />
