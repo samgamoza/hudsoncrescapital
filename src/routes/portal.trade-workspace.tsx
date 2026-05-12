@@ -772,14 +772,40 @@ function AssetBrowser({ forcedAssetClass }: { forcedAssetClass?: string }) {
 
   return (
     <div className="h-full rounded-xl border border-border bg-surface/40 overflow-hidden">
-      <div className="border-b border-border px-3 py-2 flex items-center gap-2 text-xs">
-        <Tab label="Asset Browser" active count={rows.length} />
-        <Tab label="Watchlist" count={watchlist.length} />
-        <Tab label="Trade Ticket" count={ticketAsset ? 1 : 0} />
-        <div className="ml-auto text-muted-foreground">Catalog: asset_listings</div>
+      <div className="border-b border-border px-3 py-2 flex flex-col gap-2.5 text-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          <Tab label="Asset Browser" active count={rows.length} />
+          <Tab label="Watchlist" count={watchlist.length} />
+          <div className="ml-auto text-muted-foreground">Catalog: asset_listings</div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/portal/trade-workspace"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground shadow-glow transition-opacity hover:opacity-95 border border-brand/40"
+          >
+            <ExternalLink className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+            Open Platform
+            {ticketAsset ? (
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-foreground/20 px-1 text-[10px] font-bold">
+                1
+              </span>
+            ) : null}
+          </Link>
+          <span className="text-[11px] text-muted-foreground max-w-[14rem] sm:max-w-none">
+            Opens workspace in a new tab
+          </span>
+        </div>
       </div>
 
-      <div className="border-b border-border bg-background/40 p-3 flex flex-col gap-3">
+      <details className="group border-b border-border bg-background/40 open:bg-background/50">
+        <summary className="cursor-pointer list-none px-3 py-2.5 text-xs text-muted-foreground transition-colors hover:text-foreground flex items-center gap-2 select-none [&::-webkit-details-marker]:hidden">
+          <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 text-brand" aria-hidden />
+          <span className="font-medium uppercase tracking-wide">Search & filters</span>
+          <span className="normal-case font-normal opacity-80">(optional)</span>
+        </summary>
+        <div className="border-t border-border/60 p-3 flex flex-col gap-3">
         <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-2">
           <input
             className="bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground md:col-span-2"
@@ -911,7 +937,8 @@ function AssetBrowser({ forcedAssetClass }: { forcedAssetClass?: string }) {
             Reset
           </button>
         </div>
-      </div>
+        </div>
+      </details>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] min-h-[600px]">
         <section className="overflow-auto">

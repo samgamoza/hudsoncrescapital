@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   ArrowRight,
   ChartCandlestick,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
@@ -128,12 +129,6 @@ function InvestorDashboard() {
       {/* Quick actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <QuickAction
-          to="/portal/trade-workspace"
-          icon={ChartCandlestick}
-          label="Trade"
-          hint="Open dedicated workspace"
-        />
-        <QuickAction
           to="/portal/investor/wallet"
           icon={ArrowDownToLine}
           label="Deposit Funds"
@@ -157,6 +152,33 @@ function InvestorDashboard() {
           label="Verification"
           hint="KYC & documents"
         />
+      </div>
+
+      <div className="mt-4">
+        <Link
+          to="/portal/trade-workspace"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex w-full flex-col items-stretch gap-2 rounded-xl border-2 border-brand/50 bg-gradient-to-br from-brand/25 via-brand to-brand/80 p-4 text-brand-foreground shadow-glow transition-[transform,opacity] hover:opacity-[0.97] hover:-translate-y-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-foreground/15 text-brand-foreground ring-2 ring-brand-foreground/25">
+              <ChartCandlestick className="h-6 w-6" aria-hidden />
+            </div>
+            <div className="text-left">
+              <div className="text-base font-semibold tracking-tight text-brand-foreground">
+                Open Platform
+              </div>
+              <div className="mt-0.5 text-xs text-brand-foreground/85">
+                Trading workspace opens in a new browser tab.
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-2 text-sm font-semibold text-brand-foreground sm:shrink-0">
+            <span className="hidden sm:inline">Open in new window</span>
+            <ExternalLink className="h-5 w-5 opacity-90 transition-transform group-hover:translate-x-0.5" aria-hidden />
+          </div>
+        </Link>
       </div>
 
       {/* Real metrics */}

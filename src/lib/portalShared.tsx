@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Globe, LogOut } from "lucide-react";
+import { Globe, LogOut, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 
@@ -46,6 +46,8 @@ export type NavItem = {
   to: string;
   label: string;
   openInNewWindow?: boolean;
+  /** Render below other links with CTA styling (e.g. Open Platform). */
+  pinBelow?: boolean;
 };
 
 export function PortalShell({
@@ -69,41 +71,61 @@ export function PortalShell({
 
   return (
     <div className="min-h-screen bg-background grid grid-cols-1 md:grid-cols-[260px_1fr]">
-      <aside className="border-r border-border bg-surface/40 p-5 flex flex-col gap-2">
+      <aside className="border-r border-border bg-surface/40 p-5 flex flex-col gap-2 md:min-h-screen">
         <Link to="/" className="flex items-center gap-2 mb-6">
           <img src={logo} alt="Hudson Crest" className="h-9 w-auto" />
         </Link>
         <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">{title}</div>
-        {nav.map((item) => {
-          const isRoot = item.to === "/portal/investor" || item.to === "/portal/admin";
-          if (item.openInNewWindow) {
+        {nav
+          .filter((item) => !item.pinBelow)
+          .map((item) => {
+            const isRoot = item.to === "/portal/investor" || item.to === "/portal/admin";
+            if (item.openInNewWindow) {
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2 rounded-lg text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-surface-elevated"
+                >
+                  {item.label}
+                </Link>
+              );
+            }
+            const active = pathname === item.to || (!isRoot && pathname.startsWith(item.to + "/"));
             return (
               <Link
                 key={item.to}
                 to={item.to}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-2 rounded-lg text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-surface-elevated"
+                className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                  active
+                    ? "bg-brand/15 text-foreground border border-brand/30"
+                    : "text-muted-foreground hover:text-foreground hover:bg-surface-elevated"
+                }`}
               >
                 {item.label}
               </Link>
             );
-          }
-          const active = pathname === item.to || (!isRoot && pathname.startsWith(item.to + "/"));
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`px-3 py-2 rounded-lg text-sm transition-colors ${
-                active
-                  ? "bg-brand/15 text-foreground border border-brand/30"
-                  : "text-muted-foreground hover:text-foreground hover:bg-surface-elevated"
-              }`}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
+          })}
+        {nav.some((i) => i.pinBelow) ? (
+          <div className="mt-auto pt-6 border-t border-border space-y-2">
+            {nav
+              .filter((item) => item.pinBelow)
+              .map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  target={item.openInNewWindow ? "_blank" : undefined}
+                  rel={item.openInNewWindow ? "noopener noreferrer" : undefined}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-brand px-4 py-3 text-sm font-semibold text-brand-foreground shadow-glow transition-opacity hover:opacity-95 border border-brand/30"
+                >
+                  <ExternalLink className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+                  {item.label}
+                </Link>
+              ))}
+          </div>
+        ) : null}
       </aside>
 
       <div className="flex flex-col">
@@ -227,7 +249,6 @@ export function DataTable<T extends Record<string, any>>({
 
 export const NAV_INVESTOR: NavItem[] = [
   { to: "/portal/investor", label: "Dashboard" },
-  { to: "/portal/trade-workspace", label: "Trade", openInNewWindow: true },
   { to: "/portal/investor/portfolio", label: "Portfolio" },
   { to: "/portal/investor/performance", label: "Performance" },
   { to: "/portal/investor/trade-history", label: "Trade history" },
@@ -237,6 +258,12 @@ export const NAV_INVESTOR: NavItem[] = [
   { to: "/portal/investor/profile", label: "Profile" },
   { to: "/portal/investor/support", label: "Support" },
   { to: "/portal/investor/settings", label: "Settings" },
+  {
+    to: "/portal/trade-workspace",
+    label: "Open Platform",
+    openInNewWindow: true,
+    pinBelow: true,
+  },
 ];
 
 export const NAV_ADMIN: NavItem[] = [
