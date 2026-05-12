@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -7,7 +7,6 @@ import {
   Banknote,
   ChartCandlestick,
   ExternalLink,
-  Globe,
   Globe2,
   History,
   LayoutDashboard,
@@ -27,44 +26,6 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
-
-const LANGS = [
-  { code: "en", label: "English" },
-  { code: "es", label: "Español" },
-  { code: "fr", label: "Français" },
-  { code: "de", label: "Deutsch" },
-  { code: "zh", label: "中文" },
-  { code: "ja", label: "日本語" },
-  { code: "ar", label: "العربية" },
-];
-
-function LanguageSwitcher() {
-  const [lang, setLang] = useState<string>(
-    () => (typeof window !== "undefined" && window.localStorage.getItem("portal:lang")) || "en",
-  );
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem("portal:lang", lang);
-    document.documentElement.lang = lang;
-  }, [lang]);
-  return (
-    <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground border border-border rounded-md px-2 py-1.5">
-      <Globe className="h-3.5 w-3.5" />
-      <select
-        value={lang}
-        onChange={(e) => setLang(e.target.value)}
-        className="bg-transparent text-foreground focus:outline-none"
-        aria-label="Language"
-      >
-        {LANGS.map((l) => (
-          <option key={l.code} value={l.code}>
-            {l.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
 
 export type NavItem = {
   to: string;
@@ -89,6 +50,16 @@ export function PortalShell({
 }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    document.documentElement.lang = "en";
+    try {
+      window.localStorage.removeItem("portal:lang");
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -179,7 +150,6 @@ export function PortalShell({
             {badge.label}
           </span>
           <div className="flex items-center gap-2">
-            <LanguageSwitcher />
             <button
               onClick={logout}
               className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground border border-border rounded-md px-3 py-1.5"

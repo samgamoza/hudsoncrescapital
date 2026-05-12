@@ -36,6 +36,7 @@ import {
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { DiscoverAIPanel } from "@/components/workspace/DiscoverAIPanel";
+import { WorkspaceFundsPanel } from "@/components/workspace/WorkspaceFundsPanel";
 import { usePortalAuth } from "@/hooks/usePortalAuth";
 import type { AssetListing, AssetListingsResponse } from "@/lib/asset-listings.types";
 
@@ -216,7 +217,8 @@ type WorkspaceMainPanel =
   | "positions"
   | "orders"
   | "history"
-  | "alerts";
+  | "alerts"
+  | "funds";
 
 function WorkspacePortfolioOrdersPanel({
   workspace,
@@ -429,6 +431,79 @@ function railRowClass(active: boolean) {
   );
 }
 
+/** Right-rail tabs (IG-style deal strip): quick deal, staged order, alerts, listing info. */
+type TradeRailTab = "deal" | "order" | "alert" | "info";
+
+function TradeRailTabBar({
+  value,
+  onChange,
+}: {
+  value: TradeRailTab;
+  onChange: (t: TradeRailTab) => void;
+}) {
+  const items: { id: TradeRailTab; label: string }[] = [
+    { id: "deal", label: "Deal" },
+    { id: "order", label: "Order" },
+    { id: "alert", label: "Alert" },
+    { id: "info", label: "Info" },
+  ];
+  return (
+    <div
+      role="tablist"
+      aria-label="Trading panel"
+      className="flex w-full min-w-0 gap-0.5 rounded-md border border-border bg-muted/15 p-0.5 dark:bg-muted/10"
+    >
+      {items.map((item) => {
+        const active = value === item.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            className={cn(
+              "min-w-0 flex-1 truncate rounded px-1.5 py-1.5 text-center text-[11px] font-semibold uppercase tracking-wide transition-colors sm:text-xs sm:normal-case sm:tracking-normal",
+              active
+                ? "bg-background text-foreground shadow-sm ring-1 ring-border/80"
+                : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
+            )}
+            onClick={() => onChange(item.id)}
+          >
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function MiniQuoteStrip({ asset }: { asset: AssetListing | null }) {
+  return (
+    <div className="mt-3 h-36 rounded-md border border-border bg-surface/50 p-2">
+      {asset ? (
+        <div className="flex h-full flex-col">
+          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+            <span className="truncate font-medium text-foreground">
+              {displaySymbolOfAsset(asset)}
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-1">
+              <TrendingUp className="h-3 w-3 shrink-0" aria-hidden />
+              <span className="hidden sm:inline">Live chart</span>
+            </span>
+          </div>
+          <div className="mt-2 grid min-h-0 flex-1 place-items-center rounded border border-border bg-background/60 text-[11px] text-muted-foreground">
+            Chart loading…
+          </div>
+        </div>
+      ) : (
+        <div className="grid h-full place-items-center text-xs text-muted-foreground">
+          Select an instrument
+        </div>
+      )}
+    </div>
+  );
+}
+
 function WorkspaceTradeSidebar({
   mainPanel,
   setMainPanel,
@@ -566,6 +641,15 @@ function WorkspaceTradeSidebar({
             ))}
           </div>
         </details>
+
+        <button
+          type="button"
+          className={railRowClass(mainPanel === "funds")}
+          onClick={() => setMainPanel("funds")}
+        >
+          <Wallet className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+          <span className="truncate">Manage funds</span>
+        </button>
 
         <div className="my-2 h-px bg-border/80" />
 
@@ -834,7 +918,11 @@ function TradeWorkspacePage() {
           >
             Back to dashboard
           </button>
-          <button className="text-xs border border-border rounded px-2.5 py-1.5 hover:bg-surface-elevated">
+          <button
+            type="button"
+            className="text-xs border border-border rounded px-2.5 py-1.5 hover:bg-surface-elevated"
+            onClick={() => setMainPanel("funds")}
+          >
             Manage funds
           </button>
           <button
@@ -993,6 +1081,11 @@ function TradeWorkspacePage() {
                 Coming soon: configurable alerts will appear here and can optionally notify you by
                 email.
               </p>
+            </div>
+          ) : null}
+          {mainPanel === "funds" ? (
+            <div className="h-full overflow-y-auto p-4 md:p-6">
+              <WorkspaceFundsPanel />
             </div>
           ) : null}
         </main>
@@ -1261,7 +1354,7 @@ function AssetBrowser({
   const [selected, setSelected] = useState<AssetListing | null>(null);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [ticketAsset, setTicketAsset] = useState<AssetListing | null>(null);
-  const [dealTab, setDealTab] = useState<"deal" | "order" | "info">("deal");
+  const [tradeRailTab, setTradeRailTab] = useState<TradeRailTab>("deal");
   const [liveQuotes, setLiveQuotes] = useState<Record<string, AssetListingQuote>>({});
   const [quoteFeedHint, setQuoteFeedHint] = useState<string | null>(null);
   const [tradeWs, setTradeWs] = useState<InvestorTradingWorkspace | null>(null);
@@ -1663,7 +1756,7 @@ function AssetBrowser({
                       className="border-b border-border/50 hover:bg-surface-elevated/30 cursor-pointer"
                       onClick={() => {
                         setSelected(asset);
-                        setDealTab("deal");
+                        setTradeRailTab("deal");
                         if (isDirectlyTradableAsset(asset)) setTicketAsset(asset);
                       }}
                     >
@@ -1731,55 +1824,13 @@ function AssetBrowser({
 
         <aside className="border-l border-border bg-background/50 p-3 space-y-3">
           <section className="rounded-lg border border-border bg-background p-3">
-            <div className="inline-flex items-center gap-1 rounded-md border border-border p-1 text-xs">
-              <button
-                type="button"
-                onClick={() => setDealTab("deal")}
-                className={`px-2 py-1 rounded ${dealTab === "deal" ? "bg-brand/10 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                Deal
-              </button>
-              <button
-                type="button"
-                onClick={() => setDealTab("order")}
-                className={`px-2 py-1 rounded ${dealTab === "order" ? "bg-brand/10 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                Order
-              </button>
-              <button
-                type="button"
-                onClick={() => setDealTab("info")}
-                className={`px-2 py-1 rounded ${dealTab === "info" ? "bg-brand/10 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                Info
-              </button>
-            </div>
-            <div className="mt-3 rounded-md border border-border bg-surface/50 h-36 p-2">
-              {selected ? (
-                <div className="h-full flex flex-col">
-                  <div className="text-xs text-muted-foreground flex items-center justify-between">
-                    <span>{displaySymbolOfAsset(selected)}</span>
-                    <span className="inline-flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" />
-                      Live chart
-                    </span>
-                  </div>
-                  <div className="flex-1 mt-2 rounded bg-background/60 border border-border grid place-items-center text-[11px] text-muted-foreground">
-                    No chart
-                  </div>
-                </div>
-              ) : (
-                <div className="h-full grid place-items-center text-xs text-muted-foreground">
-                  Select an instrument
-                </div>
-              )}
-            </div>
+            <TradeRailTabBar value={tradeRailTab} onChange={setTradeRailTab} />
+            <MiniQuoteStrip asset={selected} />
           </section>
 
-          {dealTab === "deal" || dealTab === "order" ? (
+          {tradeRailTab === "deal" ? (
             <DealTicketCard
               asset={ticketAsset ?? selected}
-              mode={dealTab}
               onClose={() => setTicketAsset(null)}
               liveQuotes={liveQuotes}
               workspace={tradeWs}
@@ -1787,8 +1838,7 @@ function AssetBrowser({
             />
           ) : null}
 
-          <AssetDetailsCard asset={selected} />
-          {dealTab === "info" ? (
+          {tradeRailTab === "order" ? (
             <TradeTicketCard
               asset={ticketAsset ?? selected}
               onClose={() => setTicketAsset(null)}
@@ -1796,6 +1846,10 @@ function AssetBrowser({
               reloadWorkspace={loadTradeWs}
             />
           ) : null}
+
+          {tradeRailTab === "alert" ? <AlertTicketCard asset={ticketAsset ?? selected} /> : null}
+
+          {tradeRailTab === "info" ? <AssetDetailsCard asset={selected} /> : null}
         </aside>
       </div>
     </div>
@@ -2156,16 +2210,115 @@ function TradeTicketCard({
   );
 }
 
+function AlertTicketCard({ asset }: { asset: AssetListing | null }) {
+  const [direction, setDirection] = useState<"above" | "below">("above");
+  const [triggerPrice, setTriggerPrice] = useState("");
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    setDirection("above");
+    setTriggerPrice("");
+    setNote("");
+  }, [asset?.id]);
+
+  if (!asset) {
+    return (
+      <Panel title="Price alert" icon={Bell}>
+        Select a listing, then choose a trigger level. Delivery to email or push is not connected
+        yet—this panel is a preview of the alert flow.
+      </Panel>
+    );
+  }
+
+  return (
+    <section className="rounded-lg border border-border bg-background p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Price alert
+          </div>
+          <div className="text-sm font-semibold">{displaySymbolOfAsset(asset)}</div>
+          <div className="text-xs text-muted-foreground">{displayNameOfAsset(asset)}</div>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => setDirection("above")}
+          className={cn(
+            "rounded-md border px-2 py-1.5 text-xs",
+            direction === "above"
+              ? "border-success/50 bg-success/10 text-success"
+              : "border-border text-muted-foreground",
+          )}
+        >
+          At or above
+        </button>
+        <button
+          type="button"
+          onClick={() => setDirection("below")}
+          className={cn(
+            "rounded-md border px-2 py-1.5 text-xs",
+            direction === "below"
+              ? "border-destructive/50 bg-destructive/10 text-destructive"
+              : "border-border text-muted-foreground",
+          )}
+        >
+          At or below
+        </button>
+      </div>
+
+      <label className="mt-3 block text-[11px] font-medium text-muted-foreground">
+        Trigger price
+        <input
+          className="mt-1 w-full rounded-md border border-border bg-surface px-2 py-2 text-sm text-foreground"
+          inputMode="decimal"
+          placeholder="e.g. 2,450.50"
+          value={triggerPrice}
+          onChange={(e) => setTriggerPrice(e.target.value)}
+        />
+      </label>
+
+      <label className="mt-2 block text-[11px] font-medium text-muted-foreground">
+        Note (optional)
+        <input
+          className="mt-1 w-full rounded-md border border-border bg-surface px-2 py-2 text-sm text-foreground"
+          placeholder="Reminder label"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+      </label>
+
+      <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+        When live routing is enabled, this alert will be evaluated against the consolidated quote
+        for <span className="font-medium text-foreground">{displaySymbolOfAsset(asset)}</span>.
+      </p>
+
+      <button
+        type="button"
+        className="mt-3 w-full rounded-md border border-brand/40 px-3 py-2 text-sm font-medium text-brand hover:bg-brand/10"
+        onClick={() => {
+          toast.message("Alert preview", {
+            description:
+              "Price alerts are not persisted yet. Broker notification hooks will save triggers here.",
+          });
+        }}
+      >
+        Save alert (preview)
+      </button>
+    </section>
+  );
+}
+
 function DealTicketCard({
   asset,
-  mode,
   onClose,
   liveQuotes,
   workspace,
   reloadWorkspace,
 }: {
   asset: AssetListing | null;
-  mode: "deal" | "order";
   onClose: () => void;
   liveQuotes: Record<string, AssetListingQuote>;
   workspace: InvestorTradingWorkspace | null;
@@ -2185,7 +2338,7 @@ function DealTicketCard({
     setStop("");
     setLimit("");
     setDealBusy(false);
-  }, [asset?.id, mode]);
+  }, [asset?.id]);
 
   if (!asset) {
     return (
@@ -2212,9 +2365,7 @@ function DealTicketCard({
     <section className="rounded-lg border border-border bg-background p-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-xs text-muted-foreground uppercase tracking-wide">
-            {mode === "deal" ? "Deal Ticket" : "Order Ticket"}
-          </div>
+          <div className="text-xs text-muted-foreground uppercase tracking-wide">Deal Ticket</div>
           <div className="text-sm font-semibold">{displayNameOfAsset(asset)}</div>
           <div className="text-xs text-muted-foreground">
             {displaySymbolOfAsset(asset)} · {asset.asset_class}
@@ -2329,7 +2480,7 @@ function DealTicketCard({
         }
         className="mt-3 w-full border border-brand/40 text-brand rounded-md px-3 py-2 text-sm hover:bg-brand/10 disabled:opacity-50"
       >
-        {dealBusy ? "Placing…" : mode === "deal" ? "Place Deal" : "Place Order"}
+        {dealBusy ? "Placing…" : "Place Deal"}
       </button>
     </section>
   );
@@ -2345,7 +2496,12 @@ function DiscoverWorkspaceSplit({
   reloadHdrWs: () => void;
 }) {
   const [pick, setPick] = useState<AssetListing | null>(null);
+  const [tradeRailTab, setTradeRailTab] = useState<TradeRailTab>("deal");
   const [liveQuotes, setLiveQuotes] = useState<Record<string, AssetListingQuote>>({});
+
+  useEffect(() => {
+    setTradeRailTab("deal");
+  }, [pick?.id]);
 
   useEffect(() => {
     if (!pick) {
@@ -2386,14 +2542,35 @@ function DiscoverWorkspaceSplit({
         />
       </div>
       <aside className="max-h-[46vh] shrink-0 overflow-y-auto border-t border-border bg-surface/25 p-3 dark:bg-surface/10 xl:max-h-none xl:w-[380px] xl:border-l xl:border-t-0">
-        <DealTicketCard
-          asset={pick}
-          mode="deal"
-          onClose={() => setPick(null)}
-          liveQuotes={liveQuotes}
-          workspace={workspace}
-          reloadWorkspace={reloadHdrWs}
-        />
+        <div className="space-y-3">
+          <section className="rounded-lg border border-border bg-background p-3">
+            <TradeRailTabBar value={tradeRailTab} onChange={setTradeRailTab} />
+            <MiniQuoteStrip asset={pick} />
+          </section>
+
+          {tradeRailTab === "deal" ? (
+            <DealTicketCard
+              asset={pick}
+              onClose={() => setPick(null)}
+              liveQuotes={liveQuotes}
+              workspace={workspace}
+              reloadWorkspace={reloadHdrWs}
+            />
+          ) : null}
+
+          {tradeRailTab === "order" ? (
+            <TradeTicketCard
+              asset={pick}
+              onClose={() => setPick(null)}
+              workspace={workspace}
+              reloadWorkspace={reloadHdrWs}
+            />
+          ) : null}
+
+          {tradeRailTab === "alert" ? <AlertTicketCard asset={pick} /> : null}
+
+          {tradeRailTab === "info" ? <AssetDetailsCard asset={pick} /> : null}
+        </div>
       </aside>
     </div>
   );
