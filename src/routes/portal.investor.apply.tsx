@@ -39,7 +39,7 @@ function ApplyPage() {
               ← Back to dashboard
             </Link>
             <Link to="/portal/signup/investor" className="hover:text-foreground">
-              New to Hudson Crest? Self-serve signup
+              New investor? Start at signup (same full application)
             </Link>
             <a href="mailto:onboarding@hudsoncrestcapital.com" className="hover:text-foreground">
               Email onboarding desk
@@ -112,15 +112,11 @@ function ApplyPage() {
             <div className="flex items-start gap-2">
               <ShieldCheck className="h-4 w-4 shrink-0 text-brand mt-0.5" aria-hidden />
               <p>
-                Need a shorter path? Use{" "}
-                <Link to="/portal/investor/onboarding" className="text-brand hover:underline">
-                  Complete your profile
-                </Link>{" "}
-                for the streamlined investor questionnaire, or{" "}
+                Already in the portal? You are in the right place. Not registered yet? Use{" "}
                 <Link to="/portal/signup/investor" className="inline-flex items-center gap-1 text-brand hover:underline">
-                  <UserPlus className="h-3 w-3" /> Signup wizard
+                  <UserPlus className="h-3 w-3" /> Investor signup
                 </Link>{" "}
-                if you are not yet registered.
+                — it runs this same wizard, then you sign in here to update or add documents.
               </p>
             </div>
             <div className="mt-3 flex items-center gap-2">

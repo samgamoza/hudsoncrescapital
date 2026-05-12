@@ -49,6 +49,8 @@ function InvestorLayout() {
     setInvestorGateReady(false);
     void (async () => {
       try {
+        const { flushPendingAccountApplication } = await import("@/lib/flush-pending-account-application");
+        await flushPendingAccountApplication();
         const res = await fetch("/api/portal/investor-onboarding");
         if (res.ok) {
           const j = (await res.json()) as { needsOnboarding?: boolean };

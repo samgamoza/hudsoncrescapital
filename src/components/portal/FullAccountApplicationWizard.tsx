@@ -6,6 +6,15 @@ import { cn } from "@/lib/utils";
 import { CountrySelect, IntlPhoneInput } from "@/components/portal/IntlPhoneInput";
 import { isValidE164 } from "@/lib/countries";
 import { INVESTOR_GOAL_OPTIONS } from "@/lib/investor-lite-goals";
+import { supabase } from "@/integrations/supabase/client";
+import { ensurePortalRole, formatPortalAuthError, resolvePortalRedirect } from "@/lib/portal-auth";
+import { getPublicAppOrigin } from "@/lib/site-origin";
+import {
+  getEmailDomain,
+  getReservedStaffDomains,
+  isStrictAccountSeparationEnabled,
+} from "@/lib/portal-signup-email-guard";
+import { PENDING_ACCOUNT_APPLICATION_STORAGE_KEY } from "@/lib/flush-pending-account-application";
 import type { AccountApplicationPayload } from "@/server/applications.functions";
 
 const field =
@@ -165,6 +174,8 @@ type FormState = {
   nationality: string;
   phone: string;
   email: string;
+  signupPassword: string;
+  signupPasswordConfirm: string;
   employerName: string;
   employerAddress: string;
   portalSecurityAck: boolean;
@@ -222,6 +233,8 @@ function defaultForm(email: string): FormState {
     nationality: "US",
     phone: "",
     email,
+    signupPassword: "",
+    signupPasswordConfirm: "",
     employerName: "",
     employerAddress: "",
     portalSecurityAck: false,
@@ -279,7 +292,7 @@ const STEPS = [
   { key: "review", title: "Supporting materials & declarations", subtitle: "Optional documents and legal acknowledgements." },
 ] as const;
 
-function validateStep(step: number, f: FormState): string | null {
+function validateStep(step: number, f: FormState, mode: "apply" | "signup"): string | null {
   if (step === 0) {
     if (!f.rep) return "Please select a representative or desk assignment.";
     if (!f.firstName.trim() || !f.lastName.trim()) return "First and last name are required.";
@@ -290,6 +303,10 @@ function validateStep(step: number, f: FormState): string | null {
       return "Employer name and address are required for suitability.";
   }
   if (step === 1) {
+    if (mode === "signup") {
+      if (f.signupPassword.length < 6) return "Password must be at least 6 characters.";
+      if (f.signupPassword !== f.signupPasswordConfirm) return "Passwords do not match.";
+    }
     if (!f.portalSecurityAck) return "Please acknowledge portal security information.";
   }
   if (step === 2) {
@@ -385,14 +402,20 @@ function buildPayload(f: FormState): AccountApplicationPayload {
   };
 }
 
-export function FullAccountApplicationWizard() {
+export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply" | "signup" }) {
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(mode !== "signup");
   const [accounts, setAccounts] = useState<Array<{ status: string }>>([]);
   const [f, setF] = useState<FormState>(() => defaultForm(""));
 
   const load = useCallback(async () => {
+    if (mode === "signup") {
+      setAccounts([]);
+      setF(defaultForm(""));
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [profRes, appRes] = await Promise.all([
@@ -422,7 +445,7 @@ export function FullAccountApplicationWizard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     void load();
@@ -431,10 +454,20 @@ export function FullAccountApplicationWizard() {
   const hasActive = useMemo(() => accounts.some((a) => a.status === "active"), [accounts]);
 
   const next = () => {
-    const err = validateStep(step, f);
+    const err = validateStep(step, f, mode);
     if (err) {
       toast.error(err);
       return;
+    }
+    if (mode === "signup" && step === 0 && isStrictAccountSeparationEnabled()) {
+      const reserved = getReservedStaffDomains();
+      const domain = getEmailDomain(f.email.trim());
+      if (domain && reserved.includes(domain)) {
+        toast.error(
+          "This email domain is reserved for staff/admin accounts. Please use a personal investor email instead.",
+        );
+        return;
+      }
     }
     setStep((s) => Math.min(STEPS.length - 1, s + 1));
   };
@@ -442,17 +475,81 @@ export function FullAccountApplicationWizard() {
   const prev = () => setStep((s) => Math.max(0, s - 1));
 
   const submit = async () => {
-    const err = validateStep(5, f);
-    if (err) {
-      toast.error(err);
-      return;
+    for (let i = 0; i < STEPS.length; i++) {
+      const err = validateStep(i, f, mode);
+      if (err) {
+        toast.error(err);
+        return;
+      }
     }
+    const payload = buildPayload(f);
     setBusy(true);
     try {
+      if (mode === "signup") {
+        const loginEmail = f.email.trim();
+        const appOrigin = getPublicAppOrigin();
+        const { data: signUpData, error: signErr } = await supabase.auth.signUp({
+          email: loginEmail,
+          password: f.signupPassword,
+          options: {
+            emailRedirectTo: `${appOrigin}/auth/confirm?next=${encodeURIComponent("/portal/login/investor")}`,
+            data: {
+              legal_first_name: f.firstName.trim(),
+              legal_last_name: f.lastName.trim(),
+              display_name: `${f.firstName.trim()} ${f.lastName.trim()}`,
+              phone: f.phone.trim(),
+              country_of_residence: f.country.toUpperCase().slice(0, 2),
+              nationality: f.nationality.toUpperCase().slice(0, 2),
+            },
+          },
+        });
+        if (signErr) throw signErr;
+
+        if (!signUpData.session) {
+          try {
+            sessionStorage.setItem(
+              PENDING_ACCOUNT_APPLICATION_STORAGE_KEY,
+              JSON.stringify({ email: loginEmail.toLowerCase(), payload }),
+            );
+          } catch {
+            /* ignore quota */
+          }
+          toast.success(
+            "Account created. After you confirm your email and sign in, your application will finish submitting automatically.",
+          );
+          const verifyPath = `/portal/login/investor?verify=required&email=${encodeURIComponent(loginEmail)}`;
+          window.setTimeout(() => window.location.replace(verifyPath), 700);
+          return;
+        }
+
+        const res = await fetch("/api/portal/account-application", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body?.error ?? body?.details ?? `Submit failed (${res.status})`);
+
+        const { data: sess } = await supabase.auth.getSession();
+        if (!sess.session?.user) {
+          toast.error("Signed up but session missing. Please sign in to complete your application.");
+          return;
+        }
+        const role = await ensurePortalRole(supabase as never, sess.session.user.id);
+        const target = resolvePortalRedirect(role, "/portal/investor");
+        toast.success(
+          body.merged
+            ? "Application saved. Our desk will review your submission."
+            : "Welcome — your application is submitted for desk review.",
+        );
+        window.setTimeout(() => window.location.replace(target), 600);
+        return;
+      }
+
       const res = await fetch("/api/portal/account-application", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildPayload(f)),
+        body: JSON.stringify(payload),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body?.error ?? body?.details ?? `Submit failed (${res.status})`);
@@ -466,7 +563,7 @@ export function FullAccountApplicationWizard() {
         window.location.assign("/portal/investor");
       }, 900);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(formatPortalAuthError(e instanceof Error ? e.message : String(e)));
     } finally {
       setBusy(false);
     }
@@ -533,7 +630,11 @@ export function FullAccountApplicationWizard() {
 
       <div>
         <h2 className="text-lg font-semibold text-foreground">{STEPS[step].title}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{STEPS[step].subtitle}</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {step === 1 && mode === "signup"
+            ? "Choose a secure password for the email you entered. You can add MFA after sign-in from Settings."
+            : STEPS[step].subtitle}
+        </p>
       </div>
 
       {step === 0 && (
@@ -631,7 +732,50 @@ export function FullAccountApplicationWizard() {
         </div>
       )}
 
-      {step === 1 && (
+      {step === 1 && mode === "signup" && (
+        <div className="space-y-4 text-sm">
+          <h3 className={sectionTitle}>Portal password</h3>
+          <p className="text-muted-foreground">
+            Use at least six characters. This password signs you into the Hudson Crest investor portal.
+          </p>
+          <div>
+            <label className={label}>Password{req}</label>
+            <input
+              type="password"
+              autoComplete="new-password"
+              className={cn("mt-1", field)}
+              value={f.signupPassword}
+              onChange={(e) => setF({ ...f, signupPassword: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={label}>Confirm password{req}</label>
+            <input
+              type="password"
+              autoComplete="new-password"
+              className={cn("mt-1", field)}
+              value={f.signupPasswordConfirm}
+              onChange={(e) => setF({ ...f, signupPasswordConfirm: e.target.value })}
+            />
+          </div>
+          <h3 className={cn(sectionTitle, "mt-6")}>Security practices</h3>
+          <p className="text-muted-foreground">
+            We use email-based sign-in with optional MFA. Legacy in-browser security questions are not collected; use
+            Settings after sign-in for recovery options.
+          </p>
+          <label className="flex items-start gap-2 text-foreground">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={f.portalSecurityAck}
+              onChange={(e) => setF({ ...f, portalSecurityAck: e.target.checked })}
+            />
+            <span>I understand how to manage my portal password and security settings.{req}</span>
+          </label>
+        </div>
+      )}
+
+      {step === 1 && mode === "apply" && (
         <div className="space-y-4 text-sm text-muted-foreground">
           <h3 className={sectionTitle}>Provide username and password</h3>
           <p>
@@ -1203,7 +1347,8 @@ export function FullAccountApplicationWizard() {
             disabled={busy}
             className="inline-flex items-center gap-2 rounded-md bg-gradient-brand px-5 py-2 text-sm font-medium text-brand-foreground shadow-glow hover:opacity-90 disabled:opacity-50"
           >
-            {busy ? "Submitting…" : "Submit application"} <Check className="h-4 w-4" />
+            {busy ? (mode === "signup" ? "Creating account…" : "Submitting…") : mode === "signup" ? "Create account" : "Submit application"}{" "}
+            <Check className="h-4 w-4" />
           </button>
         )}
       </div>
