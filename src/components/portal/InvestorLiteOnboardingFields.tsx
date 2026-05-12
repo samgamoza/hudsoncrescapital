@@ -1,6 +1,10 @@
 import type { FormEvent, ReactNode } from "react";
 import { CountrySelect, IntlPhoneInput } from "@/components/portal/IntlPhoneInput";
-import { INVESTOR_GOAL_OPTIONS } from "@/lib/investor-lite-goals";
+import {
+  INVESTOR_BACKGROUND_OPTIONS,
+  INVESTMENT_OUTCOME_OPTIONS,
+  INVESTOR_GOAL_OPTIONS,
+} from "@/lib/investor-lite-goals";
 
 export type InvestorLitePayload = {
   legal_first_name: string;
@@ -17,8 +21,10 @@ export type InvestorLitePayload = {
     | "unemployed"
     | "other";
   investment_experience: "" | "none" | "limited" | "moderate" | "extensive";
-  investor_background: string;
-  investment_goals: string;
+  /** Selected option ids; serialized to API `investor_background` on submit. */
+  investor_background_tag_ids: string[];
+  /** Selected option ids; serialized to API `investment_goals` on submit (distinct from goal focus). */
+  investment_outcomes_tag_ids: string[];
   investment_goal_tags: string[];
   base_currency: "USD" | "EUR" | "GBP";
 };
@@ -69,6 +75,20 @@ export function InvestorLiteOnboardingFields({
     if (setTags.has(tag)) setTags.delete(tag);
     else setTags.add(tag);
     set("investment_goal_tags", [...setTags]);
+  };
+
+  const toggleBackgroundTag = (id: string) => {
+    const next = new Set(values.investor_background_tag_ids);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    set("investor_background_tag_ids", [...next]);
+  };
+
+  const toggleOutcomeTag = (id: string) => {
+    const next = new Set(values.investment_outcomes_tag_ids);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    set("investment_outcomes_tag_ids", [...next]);
   };
 
   const showIdentity = sections === "all" || sections === "identity";
@@ -218,31 +238,55 @@ export function InvestorLiteOnboardingFields({
           </div>
 
           <div>
-            <label className="text-xs uppercase tracking-wider text-muted-foreground">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
               Investor background <span className="normal-case font-normal">(optional)</span>
-            </label>
-            <textarea
-              disabled={disabled}
-              value={values.investor_background}
-              onChange={(e) => set("investor_background", e.target.value)}
-              rows={4}
-              className={`mt-1 resize-y min-h-[96px] ${inputClass}`}
-              placeholder="Brief context on your professional background or investing history."
-            />
+            </div>
+            <p className="mb-2 text-[11px] leading-snug text-muted-foreground">
+              Select all that describe your situation. You can choose more than one.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {INVESTOR_BACKGROUND_OPTIONS.map((o) => (
+                <label
+                  key={o.id}
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs"
+                >
+                  <input
+                    type="checkbox"
+                    disabled={disabled}
+                    checked={values.investor_background_tag_ids.includes(o.id)}
+                    onChange={() => toggleBackgroundTag(o.id)}
+                    className="rounded border-border"
+                  />
+                  {o.label}
+                </label>
+              ))}
+            </div>
           </div>
 
           <div>
-            <label className="text-xs uppercase tracking-wider text-muted-foreground">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
               Investment goals <span className="normal-case font-normal">(optional)</span>
-            </label>
-            <textarea
-              disabled={disabled}
-              value={values.investment_goals}
-              onChange={(e) => set("investment_goals", e.target.value)}
-              rows={5}
-              className={`mt-1 resize-y min-h-[120px] ${inputClass}`}
-              placeholder="Optional: describe what you want to achieve with your investments."
-            />
+            </div>
+            <p className="mb-2 text-[11px] leading-snug text-muted-foreground">
+              Select what you want to achieve. This is separate from goal focus below.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {INVESTMENT_OUTCOME_OPTIONS.map((o) => (
+                <label
+                  key={o.id}
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs"
+                >
+                  <input
+                    type="checkbox"
+                    disabled={disabled}
+                    checked={values.investment_outcomes_tag_ids.includes(o.id)}
+                    onChange={() => toggleOutcomeTag(o.id)}
+                    className="rounded border-border"
+                  />
+                  {o.label}
+                </label>
+              ))}
+            </div>
           </div>
 
           <div>
@@ -302,8 +346,8 @@ export const defaultInvestorLiteValues = (): InvestorLitePayload => ({
   nationality: "",
   employment_status: "",
   investment_experience: "",
-  investor_background: "",
-  investment_goals: "",
+  investor_background_tag_ids: [],
+  investment_outcomes_tag_ids: [],
   investment_goal_tags: [],
   base_currency: "USD",
 });

@@ -12,7 +12,12 @@ import {
   InvestorLiteOnboardingFields,
   type InvestorLitePayload,
 } from "@/components/portal/InvestorLiteOnboardingFields";
-import { INVESTOR_GOAL_OPTIONS } from "@/lib/investor-lite-goals";
+import {
+  INVESTOR_BACKGROUND_OPTIONS,
+  INVESTMENT_OUTCOME_OPTIONS,
+  INVESTOR_GOAL_OPTIONS,
+  serializeInvestorLiteSelections,
+} from "@/lib/investor-lite-goals";
 
 const FORM_ID = "investor-signup-wizard";
 
@@ -195,8 +200,16 @@ function InvestorSignupPage() {
         nationality: lite.nationality,
         employment_status: lite.employment_status || undefined,
         investment_experience: lite.investment_experience || undefined,
-        investor_background: lite.investor_background.trim() || undefined,
-        investment_goals: lite.investment_goals.trim() || undefined,
+        investor_background:
+          serializeInvestorLiteSelections(
+            lite.investor_background_tag_ids,
+            INVESTOR_BACKGROUND_OPTIONS,
+          ).trim() || undefined,
+        investment_goals:
+          serializeInvestorLiteSelections(
+            lite.investment_outcomes_tag_ids,
+            INVESTMENT_OUTCOME_OPTIONS,
+          ).trim() || undefined,
         investment_goal_tags:
           lite.investment_goal_tags.length > 0 ? lite.investment_goal_tags : undefined,
         base_currency: lite.base_currency,
@@ -229,6 +242,14 @@ function InvestorSignupPage() {
   const goalLabels = INVESTOR_GOAL_OPTIONS.filter((g) =>
     lite.investment_goal_tags.includes(g.id),
   ).map((g) => g.label);
+
+  const backgroundLabels = INVESTOR_BACKGROUND_OPTIONS.filter((o) =>
+    lite.investor_background_tag_ids.includes(o.id),
+  ).map((o) => o.label);
+
+  const outcomeLabels = INVESTMENT_OUTCOME_OPTIONS.filter((o) =>
+    lite.investment_outcomes_tag_ids.includes(o.id),
+  ).map((o) => o.label);
 
   return (
     <div className="min-h-screen bg-background grid-bg flex items-center justify-center px-4 py-10 sm:px-6">
@@ -430,17 +451,21 @@ function InvestorSignupPage() {
                     {EMPLOYMENT_LABELS[lite.employment_status]} ·{" "}
                     {EXPERIENCE_LABELS[lite.investment_experience]}
                   </p>
-                  {lite.investor_background.trim() ? (
-                    <p className="mt-2 whitespace-pre-wrap text-muted-foreground">
-                      {lite.investor_background.trim()}
+                  {backgroundLabels.length > 0 ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">Background: </span>
+                      {backgroundLabels.join(", ")}
                     </p>
                   ) : null}
-                  {lite.investment_goals.trim() ? (
-                    <p className="mt-2 whitespace-pre-wrap text-foreground">
-                      {lite.investment_goals}
+                  {outcomeLabels.length > 0 ? (
+                    <p className="mt-2 text-xs text-foreground">
+                      <span className="font-medium">Investment goals: </span>
+                      {outcomeLabels.join(", ")}
                     </p>
                   ) : (
-                    <p className="mt-2 text-muted-foreground">Goals not specified</p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      No investment goal selections (optional).
+                    </p>
                   )}
                   {goalLabels.length > 0 ? (
                     <p className="mt-2 text-xs text-muted-foreground">

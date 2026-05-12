@@ -8,6 +8,12 @@ import {
   InvestorLiteOnboardingFields,
   type InvestorLitePayload,
 } from "@/components/portal/InvestorLiteOnboardingFields";
+import {
+  hydrateInvestorLiteSelections,
+  INVESTOR_BACKGROUND_OPTIONS,
+  INVESTMENT_OUTCOME_OPTIONS,
+  serializeInvestorLiteSelections,
+} from "@/lib/investor-lite-goals";
 import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/portal/investor/onboarding")({
@@ -63,8 +69,14 @@ function InvestorOnboardingPage() {
             "") as InvestorLitePayload["employment_status"],
           investment_experience: (ol?.investment_experience ??
             "") as InvestorLitePayload["investment_experience"],
-          investor_background: ol?.investor_background ?? "",
-          investment_goals: ol?.investment_goals ?? "",
+          investor_background_tag_ids: hydrateInvestorLiteSelections(
+            ol?.investor_background,
+            INVESTOR_BACKGROUND_OPTIONS,
+          ),
+          investment_outcomes_tag_ids: hydrateInvestorLiteSelections(
+            ol?.investment_goals,
+            INVESTMENT_OUTCOME_OPTIONS,
+          ),
           investment_goal_tags: Array.isArray(ol?.investment_goal_tags)
             ? ol!.investment_goal_tags!
             : [],
@@ -94,8 +106,16 @@ function InvestorOnboardingPage() {
         nationality: lite.nationality,
         employment_status: lite.employment_status || undefined,
         investment_experience: lite.investment_experience || undefined,
-        investor_background: lite.investor_background.trim() || undefined,
-        investment_goals: lite.investment_goals.trim() || undefined,
+        investor_background:
+          serializeInvestorLiteSelections(
+            lite.investor_background_tag_ids,
+            INVESTOR_BACKGROUND_OPTIONS,
+          ).trim() || undefined,
+        investment_goals:
+          serializeInvestorLiteSelections(
+            lite.investment_outcomes_tag_ids,
+            INVESTMENT_OUTCOME_OPTIONS,
+          ).trim() || undefined,
         investment_goal_tags:
           lite.investment_goal_tags.length > 0 ? lite.investment_goal_tags : undefined,
         base_currency: lite.base_currency,
