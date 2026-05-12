@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { useCallback, useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -69,6 +69,114 @@ export function Dashboard2Main({ tab }: { tab: Dashboard2Tab }) {
       {tab === "funding-transfer" && <FundingTransferTab />}
       {tab === "help-desk" && <HelpDeskTab />}
     </div>
+  );
+}
+
+function ProfileSection({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-border/55 bg-card/35 p-4 shadow-sm ring-1 ring-black/[0.03] sm:p-5 dark:ring-white/[0.05]">
+      <header className="mb-4 border-b border-border/50 pb-3">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand">{title}</h3>
+        {subtitle ? <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{subtitle}</p> : null}
+      </header>
+      {children}
+    </section>
+  );
+}
+
+const EXP_OPTIONS = (
+  <>
+    <option value="none">None</option>
+    <option value="u1">Under 1 year</option>
+    <option value="1_3">1–3 years</option>
+    <option value="4p">4+ years</option>
+  </>
+);
+
+function ExperienceMatrix<T extends Record<string, string | number | boolean>>({
+  f,
+  setF,
+}: {
+  f: T;
+  setF: Dispatch<SetStateAction<T>>;
+}) {
+  const assets = ["stocks", "options", "funds", "futures", "forex"] as const;
+  const labels: Record<(typeof assets)[number], string> = {
+    stocks: "Stocks",
+    options: "Options",
+    funds: "Mutual funds",
+    futures: "Futures",
+    forex: "Forex",
+  };
+  const cols = [
+    { prefix: "p" as const, label: "Years experience", optional: false },
+    { prefix: "m" as const, label: "Avg trades / mo.", optional: true },
+    { prefix: "k" as const, label: "Knowledge", optional: true },
+  ];
+
+  return (
+    <section className="rounded-xl border border-border/55 bg-card/35 p-4 shadow-sm ring-1 ring-black/[0.03] sm:p-5 dark:ring-white/[0.05]">
+      <header className="mb-4 border-b border-border/50 pb-3">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand">Trading & suitability</h3>
+        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+          One row per asset class. Values are used for desk review only unless separately attested in onboarding.
+        </p>
+      </header>
+      <div className="overflow-x-auto rounded-lg border border-border/50">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead>
+            <tr className="border-b border-border/70 bg-muted/30 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              <th className="whitespace-nowrap px-3 py-2.5 pr-4">Asset</th>
+              {cols.map((c) => (
+                <th key={c.prefix} className="min-w-[140px] px-2 py-2.5">
+                  {c.label}
+                  {!c.optional && <span className="text-destructive"> *</span>}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/40">
+            {assets.map((asset) => (
+              <tr key={asset} className="bg-background/30 transition-colors hover:bg-muted/15">
+                <td className="whitespace-nowrap px-3 py-2 pr-4 text-xs font-semibold text-foreground">
+                  {labels[asset]}
+                </td>
+                {cols.map((c) => {
+                  const key = `${c.prefix}_${asset}` as keyof T;
+                  const raw = (f as Record<string, string | undefined>)[key as string] ?? "";
+                  return (
+                    <td key={c.prefix} className="p-2 align-middle">
+                      <select
+                        className={cn(
+                          field,
+                          "h-9 min-w-0 w-full text-xs",
+                          "border-border/60 bg-surface/90",
+                        )}
+                        value={String(raw)}
+                        onChange={(e) =>
+                          setF((prev) => ({ ...prev, [key as string]: e.target.value } as T))
+                        }
+                      >
+                        <option value="">{c.optional ? "None" : "— Choose one —"}</option>
+                        {EXP_OPTIONS}
+                      </select>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -190,7 +298,7 @@ function ProfileTab() {
     <div className="space-y-8">
       <SectionCard className="shadow-md ring-1 ring-border/40"
         title="Account profile"
-        description="Individual and joint holder details, contact information, experience, and financial disclosures."
+        description="Balanced layout: identity & mailing on the left; contact, filing, joint holder, and financial disclosures on the right. Trading suitability is a single matrix below."
         right={
           <Button
             type="button"
@@ -209,331 +317,296 @@ function ProfileTab() {
           </Button>
         }
       >
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-4 border-b border-border pb-6 lg:border-b-0 lg:border-r lg:pr-6 lg:pb-0">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <label className={label}>Select type of account{req}</label>
-                <select
-                  className={field}
-                  value={f.accountType}
-                  onChange={(e) => setF({ ...f, accountType: e.target.value })}
-                >
-                  <option value="individual">Individual</option>
-                  <option value="joint">Joint</option>
-                  <option value="corporate">Corporate</option>
-                </select>
-              </div>
-              <div className="sm:col-span-2">
-                <label className={label}>Sales / coverage rep</label>
-                <input
-                  className={field}
-                  placeholder="Relationship manager or desk"
-                  value={f.salesRep}
-                  onChange={(e) => setF({ ...f, salesRep: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className={label}>First name{req}</label>
-                <input className={field} value={f.first} onChange={(e) => setF({ ...f, first: e.target.value })} />
-              </div>
-              <div>
-                <label className={label}>Middle name</label>
-                <input className={field} value={f.middle} onChange={(e) => setF({ ...f, middle: e.target.value })} />
-              </div>
-              <div>
-                <label className={label}>Last name{req}</label>
-                <input className={field} value={f.last} onChange={(e) => setF({ ...f, last: e.target.value })} />
-              </div>
-              <div>
-                <label className={label}>Date of birth{req}</label>
-                <input type="date" className={field} value={f.dob} onChange={(e) => setF({ ...f, dob: e.target.value })} />
-              </div>
-              <div className="sm:col-span-2">
-                <span className={label}>Citizenship{req}</span>
-                <div className="mt-2 flex flex-wrap gap-4 text-sm">
-                  <label className="flex items-center gap-2">
-                    <input type="radio" checked={f.ukCitizen} onChange={() => setF({ ...f, ukCitizen: true })} />
-                    U.S. / UK citizen (simplified)
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input type="radio" checked={!f.ukCitizen} onChange={() => setF({ ...f, ukCitizen: false })} />
-                    Other nationality
-                  </label>
+        <div className="space-y-8">
+          <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+            <div className="space-y-6">
+              <ProfileSection title="Account">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label className={label}>Select type of account{req}</label>
+                    <select
+                      className={field}
+                      value={f.accountType}
+                      onChange={(e) => setF({ ...f, accountType: e.target.value })}
+                    >
+                      <option value="individual">Individual</option>
+                      <option value="joint">Joint</option>
+                      <option value="corporate">Corporate</option>
+                    </select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={label}>Sales / coverage rep</label>
+                    <input
+                      className={field}
+                      placeholder="Relationship manager or desk"
+                      value={f.salesRep}
+                      onChange={(e) => setF({ ...f, salesRep: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className={label}>First name{req}</label>
+                    <input className={field} value={f.first} onChange={(e) => setF({ ...f, first: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>Middle name</label>
+                    <input className={field} value={f.middle} onChange={(e) => setF({ ...f, middle: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>Last name{req}</label>
+                    <input className={field} value={f.last} onChange={(e) => setF({ ...f, last: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>Date of birth{req}</label>
+                    <input type="date" className={field} value={f.dob} onChange={(e) => setF({ ...f, dob: e.target.value })} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <span className={label}>Citizenship{req}</span>
+                    <div className="mt-2 flex flex-wrap gap-4 text-sm">
+                      <label className="flex items-center gap-2">
+                        <input type="radio" checked={f.ukCitizen} onChange={() => setF({ ...f, ukCitizen: true })} />
+                        U.S. / UK citizen (simplified)
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input type="radio" checked={!f.ukCitizen} onChange={() => setF({ ...f, ukCitizen: false })} />
+                        Other nationality
+                      </label>
+                    </div>
+                    {!f.ukCitizen && (
+                      <input
+                        className={cn("mt-2", field)}
+                        placeholder="Country of citizenship"
+                        value={f.citizenCountry}
+                        onChange={(e) => setF({ ...f, citizenCountry: e.target.value })}
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label className={label}>Type of ID{req}</label>
+                    <select className={field} value={f.idType} onChange={(e) => setF({ ...f, idType: e.target.value })}>
+                      <option value="">— Select —</option>
+                      <option value="drivers_license">Driver&apos;s license</option>
+                      <option value="passport">Passport</option>
+                      <option value="national_id">National ID</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={label}>ID number{req}</label>
+                    <input className={field} value={f.idNumber} onChange={(e) => setF({ ...f, idNumber: e.target.value })} />
+                  </div>
                 </div>
-                {!f.ukCitizen && (
+              </ProfileSection>
+
+              <ProfileSection title="Mailing address">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label className={label}>Address line 1{req}</label>
+                    <input className={field} value={f.addr1} onChange={(e) => setF({ ...f, addr1: e.target.value })} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={label}>Address line 2</label>
+                    <input className={field} value={f.addr2} onChange={(e) => setF({ ...f, addr2: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>City{req}</label>
+                    <input className={field} value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>State / region{req}</label>
+                    <input className={field} value={f.state} onChange={(e) => setF({ ...f, state: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>Country{req}</label>
+                    <CountrySelect value={f.country} onChange={(c) => setF({ ...f, country: c })} />
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      <span className="text-brand">What&apos;s this?</span> Country of record for statements and tax reporting.
+                    </p>
+                  </div>
+                  <div>
+                    <label className={label}>Postal code{req}</label>
+                    <input className={field} value={f.postal} onChange={(e) => setF({ ...f, postal: e.target.value })} />
+                  </div>
+                </div>
+              </ProfileSection>
+            </div>
+
+            <div className="space-y-6">
+              <ProfileSection title="Contact">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className={label}>Primary / daytime phone{req}</label>
+                    <input className={field} value={f.phoneDay} onChange={(e) => setF({ ...f, phoneDay: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>Home / evening phone</label>
+                    <input className={field} value={f.phoneEve} onChange={(e) => setF({ ...f, phoneEve: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>Mobile phone</label>
+                    <input className={field} value={f.phoneCell} onChange={(e) => setF({ ...f, phoneCell: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>Fax</label>
+                    <input className={field} value={f.fax} onChange={(e) => setF({ ...f, fax: e.target.value })} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={label}>Email address{req}</label>
+                    <input
+                      type="email"
+                      className={field}
+                      value={f.mailEmail || email}
+                      onChange={(e) => setF({ ...f, mailEmail: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </ProfileSection>
+
+              <ProfileSection title="Filing & household">
+                <div className="flex flex-wrap gap-4 text-sm">
+                  {["Single", "Married", "Other"].map((x) => (
+                    <label key={x} className="flex items-center gap-2">
+                      <input type="radio" name="fil" checked={f.filing === x} onChange={() => setF({ ...f, filing: x })} />
+                      {x}
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-4">
+                  <label className={label}>Number of dependents{req}</label>
                   <input
-                    className={cn("mt-2", field)}
-                    placeholder="Country of citizenship"
-                    value={f.citizenCountry}
-                    onChange={(e) => setF({ ...f, citizenCountry: e.target.value })}
+                    className={cn("mt-1 max-w-[140px]", field)}
+                    value={f.dependents}
+                    onChange={(e) => setF({ ...f, dependents: e.target.value })}
                   />
-                )}
-              </div>
-              <div>
-                <label className={label}>Type of ID{req}</label>
-                <select className={field} value={f.idType} onChange={(e) => setF({ ...f, idType: e.target.value })}>
-                  <option value="">— Select —</option>
-                  <option value="drivers_license">Driver&apos;s license</option>
-                  <option value="passport">Passport</option>
-                  <option value="national_id">National ID</option>
-                </select>
-              </div>
-              <div>
-                <label className={label}>ID number{req}</label>
-                <input className={field} value={f.idNumber} onChange={(e) => setF({ ...f, idNumber: e.target.value })} />
-              </div>
+                </div>
+              </ProfileSection>
+
+              <ProfileSection
+                title="Joint account owner"
+                subtitle="Optional — complete when opening a joint profile. Desk review may request additional signatures."
+              >
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className={label}>First name</label>
+                    <input className={field} value={f.jFirst} onChange={(e) => setF({ ...f, jFirst: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>Last name</label>
+                    <input className={field} value={f.jLast} onChange={(e) => setF({ ...f, jLast: e.target.value })} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={label}>Mailing address line 1</label>
+                    <input className={field} value={f.jAddr1} onChange={(e) => setF({ ...f, jAddr1: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>City</label>
+                    <input className={field} value={f.jCity} onChange={(e) => setF({ ...f, jCity: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>Country</label>
+                    <CountrySelect value={f.jCountry} onChange={(c) => setF({ ...f, jCountry: c })} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={label}>Email</label>
+                    <input className={field} value={f.jEmail} onChange={(e) => setF({ ...f, jEmail: e.target.value })} />
+                  </div>
+                </div>
+              </ProfileSection>
+
+              <ProfileSection title="Financial disclosures">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-1">
+                    <label className={label}>Approximate annual income</label>
+                    <select className={field} value={f.income} onChange={(e) => setF({ ...f, income: e.target.value })}>
+                      <option value="">— Choose one —</option>
+                      <option value="under50">Under USD 50,000</option>
+                      <option value="50_100">USD 50,000 – 99,999</option>
+                      <option value="100_250">USD 100,000 – 249,999</option>
+                      <option value="250p">USD 250,000+</option>
+                    </select>
+                  </div>
+                  <div className="sm:col-span-1">
+                    <label className={label}>Nested marginal bracket</label>
+                    <select className={field} value={f.bracket} onChange={(e) => setF({ ...f, bracket: e.target.value })}>
+                      <option value="">— Choose one —</option>
+                      <option value="10">10%</option>
+                      <option value="12">12%</option>
+                      <option value="22">22%</option>
+                      <option value="24">24%</option>
+                      <option value="32">32%</option>
+                      <option value="35">35%</option>
+                      <option value="37">37%</option>
+                    </select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={label}>Approximate total net worth</label>
+                    <select className={field} value={f.netWorth} onChange={(e) => setF({ ...f, netWorth: e.target.value })}>
+                      <option value="">— Choose one —</option>
+                      <option value="u50">Under USD 50,000</option>
+                      <option value="50_250">USD 50,000 – 249,999</option>
+                      <option value="250_1m">USD 250,000 – 999,999</option>
+                      <option value="1m">USD 1,000,000+</option>
+                    </select>
+                    <p className="mt-1 text-[10px] text-muted-foreground leading-snug">
+                      Total net worth includes investments, cash, property, and other assets minus liabilities (primary
+                      residence rules vary).
+                    </p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={label}>Approximate liquid net worth</label>
+                    <select className={field} value={f.liquidNet} onChange={(e) => setF({ ...f, liquidNet: e.target.value })}>
+                      <option value="">— Choose one —</option>
+                      <option value="u50">Under USD 50,000</option>
+                      <option value="50_250">USD 50,000 – 249,999</option>
+                      <option value="250p">USD 250,000+</option>
+                    </select>
+                    <p className="mt-1 text-[10px] text-muted-foreground leading-snug">
+                      Liquid net worth is cash and readily marketable securities minus short-term obligations.
+                    </p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={label}>What is your source of income?</label>
+                    <select className={field} value={f.incomeSource} onChange={(e) => setF({ ...f, incomeSource: e.target.value })}>
+                      <option value="">— Choose one —</option>
+                      <option value="employment">Employment</option>
+                      <option value="inheritance">Inheritance</option>
+                      <option value="business">Business / sale</option>
+                      <option value="investments">Investments</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={label}>Number of contracts</label>
+                    <input className={field} value={f.contractN} onChange={(e) => setF({ ...f, contractN: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>Name of contract(s)</label>
+                    <input className={field} value={f.contractNames} onChange={(e) => setF({ ...f, contractNames: e.target.value })} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={label}>Application monies</label>
+                    <input className={field} value={f.appMonies} onChange={(e) => setF({ ...f, appMonies: e.target.value })} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={label}>Source of assets to be deposited</label>
+                    <select className={field} value={f.fundSource} onChange={(e) => setF({ ...f, fundSource: e.target.value })}>
+                      <option value="">— Choose one —</option>
+                      <option value="savings">Savings</option>
+                      <option value="securities">Sale of securities</option>
+                      <option value="business">Business cash flow</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </ProfileSection>
             </div>
-            <h3 className="text-sm font-semibold text-brand border-b border-border pb-1">Mailing address</h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <label className={label}>Address line 1{req}</label>
-                <input className={field} value={f.addr1} onChange={(e) => setF({ ...f, addr1: e.target.value })} />
-              </div>
-              <div className="sm:col-span-2">
-                <label className={label}>Address line 2</label>
-                <input className={field} value={f.addr2} onChange={(e) => setF({ ...f, addr2: e.target.value })} />
-              </div>
-              <div>
-                <label className={label}>City{req}</label>
-                <input className={field} value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} />
-              </div>
-              <div>
-                <label className={label}>State / region{req}</label>
-                <input className={field} value={f.state} onChange={(e) => setF({ ...f, state: e.target.value })} />
-              </div>
-              <div>
-                <label className={label}>Country{req}</label>
-                <CountrySelect value={f.country} onChange={(c) => setF({ ...f, country: c })} />
-                <p className="mt-1 text-[10px] text-muted-foreground">
-                  <span className="text-brand">What&apos;s this?</span> Country of record for statements and tax reporting.
-                </p>
-              </div>
-              <div>
-                <label className={label}>Postal code{req}</label>
-                <input className={field} value={f.postal} onChange={(e) => setF({ ...f, postal: e.target.value })} />
-              </div>
-            </div>
-            <h3 className="text-sm font-semibold text-brand border-b border-border pb-1">Contact information</h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className={label}>Primary / daytime phone{req}</label>
-                <input className={field} value={f.phoneDay} onChange={(e) => setF({ ...f, phoneDay: e.target.value })} />
-              </div>
-              <div>
-                <label className={label}>Home / evening phone</label>
-                <input className={field} value={f.phoneEve} onChange={(e) => setF({ ...f, phoneEve: e.target.value })} />
-              </div>
-              <div>
-                <label className={label}>Mobile phone</label>
-                <input className={field} value={f.phoneCell} onChange={(e) => setF({ ...f, phoneCell: e.target.value })} />
-              </div>
-              <div>
-                <label className={label}>Fax</label>
-                <input className={field} value={f.fax} onChange={(e) => setF({ ...f, fax: e.target.value })} />
-              </div>
-              <div className="sm:col-span-2">
-                <label className={label}>Email address{req}</label>
-                <input type="email" className={field} value={f.mailEmail || email} onChange={(e) => setF({ ...f, mailEmail: e.target.value })} />
-              </div>
-            </div>
-            <h3 className="text-sm font-semibold text-brand border-b border-border pb-1">Filing status</h3>
-            <div className="flex flex-wrap gap-4 text-sm">
-              {["Single", "Married", "Other"].map((x) => (
-                <label key={x} className="flex items-center gap-2">
-                  <input type="radio" name="fil" checked={f.filing === x} onChange={() => setF({ ...f, filing: x })} />
-                  {x}
-                </label>
-              ))}
-            </div>
-            <div>
-              <label className={label}>Number of dependents{req}</label>
-              <input className={cn("max-w-[120px]", field)} value={f.dependents} onChange={(e) => setF({ ...f, dependents: e.target.value })} />
-            </div>
-            <ExperienceBlock title="Account owner — years of experience" f={f} setF={setF} prefix="p" />
-            <ExperienceBlock title="Average trades executed in a month" f={f} setF={setF} prefix="m" optional />
-            <ExperienceBlock title="Rate your trading knowledge" f={f} setF={setF} prefix="k" optional />
           </div>
 
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-muted-foreground">Joint account owner (optional)</h3>
-            <p className="text-xs text-muted-foreground">
-              Complete only when opening a joint profile. Desk review may request additional signatures.
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className={label}>First name</label>
-                <input className={field} value={f.jFirst} onChange={(e) => setF({ ...f, jFirst: e.target.value })} />
-              </div>
-              <div>
-                <label className={label}>Last name</label>
-                <input className={field} value={f.jLast} onChange={(e) => setF({ ...f, jLast: e.target.value })} />
-              </div>
-              <div className="sm:col-span-2">
-                <label className={label}>Mailing address line 1</label>
-                <input className={field} value={f.jAddr1} onChange={(e) => setF({ ...f, jAddr1: e.target.value })} />
-              </div>
-              <div>
-                <label className={label}>City</label>
-                <input className={field} value={f.jCity} onChange={(e) => setF({ ...f, jCity: e.target.value })} />
-              </div>
-              <div>
-                <label className={label}>Country</label>
-                <CountrySelect value={f.jCountry} onChange={(c) => setF({ ...f, jCountry: c })} />
-              </div>
-              <div>
-                <label className={label}>Email</label>
-                <input className={field} value={f.jEmail} onChange={(e) => setF({ ...f, jEmail: e.target.value })} />
-              </div>
-            </div>
-
-            <h3 className="text-sm font-semibold text-brand border-b border-border pb-1 pt-4">Financial information</h3>
-            <div className="grid gap-3">
-              <div>
-                <label className={label}>Approximate annual income</label>
-                <select className={field} value={f.income} onChange={(e) => setF({ ...f, income: e.target.value })}>
-                  <option value="">— Choose one —</option>
-                  <option value="under50">Under USD 50,000</option>
-                  <option value="50_100">USD 50,000 – 99,999</option>
-                  <option value="100_250">USD 100,000 – 249,999</option>
-                  <option value="250p">USD 250,000+</option>
-                </select>
-              </div>
-              <div>
-                <label className={label}>Nested marginal bracket</label>
-                <select className={field} value={f.bracket} onChange={(e) => setF({ ...f, bracket: e.target.value })}>
-                  <option value="">— Choose one —</option>
-                  <option value="10">10%</option>
-                  <option value="12">12%</option>
-                  <option value="22">22%</option>
-                  <option value="24">24%</option>
-                  <option value="32">32%</option>
-                  <option value="35">35%</option>
-                  <option value="37">37%</option>
-                </select>
-              </div>
-              <div>
-                <label className={label}>Approximate total net worth</label>
-                <select className={field} value={f.netWorth} onChange={(e) => setF({ ...f, netWorth: e.target.value })}>
-                  <option value="">— Choose one —</option>
-                  <option value="u50">Under USD 50,000</option>
-                  <option value="50_250">USD 50,000 – 249,999</option>
-                  <option value="250_1m">USD 250,000 – 999,999</option>
-                  <option value="1m">USD 1,000,000+</option>
-                </select>
-                <p className="mt-1 text-[10px] text-muted-foreground leading-snug">
-                  Total net worth includes investments, cash, property, and other assets minus liabilities (primary
-                  residence rules vary).
-                </p>
-              </div>
-              <div>
-                <label className={label}>Approximate liquid net worth</label>
-                <select className={field} value={f.liquidNet} onChange={(e) => setF({ ...f, liquidNet: e.target.value })}>
-                  <option value="">— Choose one —</option>
-                  <option value="u50">Under USD 50,000</option>
-                  <option value="50_250">USD 50,000 – 249,999</option>
-                  <option value="250p">USD 250,000+</option>
-                </select>
-                <p className="mt-1 text-[10px] text-muted-foreground leading-snug">
-                  Liquid net worth is cash and readily marketable securities minus short-term obligations.
-                </p>
-              </div>
-              <div>
-                <label className={label}>What is your source of income?</label>
-                <select className={field} value={f.incomeSource} onChange={(e) => setF({ ...f, incomeSource: e.target.value })}>
-                  <option value="">— Choose one —</option>
-                  <option value="employment">Employment</option>
-                  <option value="inheritance">Inheritance</option>
-                  <option value="business">Business / sale</option>
-                  <option value="investments">Investments</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className={label}>Number of contracts</label>
-                  <input className={field} value={f.contractN} onChange={(e) => setF({ ...f, contractN: e.target.value })} />
-                </div>
-                <div>
-                  <label className={label}>Name of contract(s)</label>
-                  <input className={field} value={f.contractNames} onChange={(e) => setF({ ...f, contractNames: e.target.value })} />
-                </div>
-              </div>
-              <div>
-                <label className={label}>Application monies</label>
-                <input className={field} value={f.appMonies} onChange={(e) => setF({ ...f, appMonies: e.target.value })} />
-              </div>
-              <div>
-                <label className={label}>Source of assets to be deposited</label>
-                <select className={field} value={f.fundSource} onChange={(e) => setF({ ...f, fundSource: e.target.value })}>
-                  <option value="">— Choose one —</option>
-                  <option value="savings">Savings</option>
-                  <option value="securities">Sale of securities</option>
-                  <option value="business">Business cash flow</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-            </div>
-          </div>
+          <ExperienceMatrix f={f} setF={setF} />
         </div>
       </SectionCard>
     </div>
   );
 }
 
-function ExperienceBlock<T extends Record<string, string | number | boolean>>({
-  title,
-  f,
-  setF,
-  prefix,
-  optional,
-}: {
-  title: string;
-  f: T;
-  setF: Dispatch<SetStateAction<T>>;
-  prefix: "p" | "m" | "k";
-  optional?: boolean;
-}) {
-  const keys = ["stocks", "options", "funds", "futures", "forex"] as const;
-  const labels: Record<(typeof keys)[number], string> = {
-    stocks: "Stocks",
-    options: "Options",
-    funds: "Mutual funds",
-    futures: "Futures",
-    forex: "Forex",
-  };
-  return (
-    <div>
-      <h3 className="text-sm font-semibold text-brand border-b border-border pb-1 mb-3">
-        {title}
-        {!optional && req}
-      </h3>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {keys.map((k) => {
-          const key = `${prefix}_${k}` as keyof T;
-          return (
-            <div key={k}>
-              <label className={label}>{labels[k]}</label>
-              <select
-                className={cn("mt-1", field)}
-                value={String((f as Record<string, string | undefined>)[key as string] ?? "")}
-                onChange={(e) =>
-                  setF((prev) => ({ ...prev, [key as string]: e.target.value } as T))
-                }
-              >
-                <option value="">{optional ? "None" : "— Choose one —"}</option>
-                <option value="none">None</option>
-                <option value="u1">Under 1 year</option>
-                <option value="1_3">1–3 years</option>
-                <option value="4p">4+ years</option>
-              </select>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 function TradesTab({ mode }: { mode: "buy" | "sell" }) {
   const [rows, setRows] = useState<TradeHistoryRow[] | null>(null);
