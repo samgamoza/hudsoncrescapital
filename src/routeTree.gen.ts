@@ -46,9 +46,11 @@ import { Route as PortalInvestorPortfolioRouteImport } from './routes/portal.inv
 import { Route as PortalInvestorPerformanceRouteImport } from './routes/portal.investor.performance'
 import { Route as PortalInvestorOnboardingRouteImport } from './routes/portal.investor.onboarding'
 import { Route as PortalInvestorKycRouteImport } from './routes/portal.investor.kyc'
+import { Route as PortalInvestorDashboard2RouteImport } from './routes/portal.investor.dashboard2'
 import { Route as PortalInvestorApplyRouteImport } from './routes/portal.investor.apply'
 import { Route as PortalAdminTradeHistoryRouteImport } from './routes/portal.admin.trade-history'
 import { Route as PortalAdminStrategiesRouteImport } from './routes/portal.admin.strategies'
+import { Route as PortalAdminSettingsRouteImport } from './routes/portal.admin.settings'
 import { Route as PortalAdminRiskRouteImport } from './routes/portal.admin.risk'
 import { Route as PortalAdminOnboardingRouteImport } from './routes/portal.admin.onboarding'
 import { Route as PortalAdminGlobalDeskRouteImport } from './routes/portal.admin.global-desk'
@@ -75,6 +77,7 @@ import { Route as ApiPortalSubPortfoliosRouteImport } from './routes/api/portal/
 import { Route as ApiPortalSubPortfolioHoldingsRouteImport } from './routes/api/portal/sub-portfolio-holdings'
 import { Route as ApiPortalStaffTradeHistoryRouteImport } from './routes/api/portal/staff-trade-history'
 import { Route as ApiPortalProfileRouteImport } from './routes/api/portal/profile'
+import { Route as ApiPortalPortalSettingsRouteImport } from './routes/api/portal/portal-settings'
 import { Route as ApiPortalOrderExecutionRouteImport } from './routes/api/portal/order-execution'
 import { Route as ApiPortalOnboardClientRouteImport } from './routes/api/portal/onboard-client'
 import { Route as ApiPortalMyWalletsRouteImport } from './routes/api/portal/my-wallets'
@@ -279,6 +282,12 @@ const PortalInvestorKycRoute = PortalInvestorKycRouteImport.update({
   path: '/kyc',
   getParentRoute: () => PortalInvestorRoute,
 } as any)
+const PortalInvestorDashboard2Route =
+  PortalInvestorDashboard2RouteImport.update({
+    id: '/dashboard2',
+    path: '/dashboard2',
+    getParentRoute: () => PortalInvestorRoute,
+  } as any)
 const PortalInvestorApplyRoute = PortalInvestorApplyRouteImport.update({
   id: '/apply',
   path: '/apply',
@@ -292,6 +301,11 @@ const PortalAdminTradeHistoryRoute = PortalAdminTradeHistoryRouteImport.update({
 const PortalAdminStrategiesRoute = PortalAdminStrategiesRouteImport.update({
   id: '/strategies',
   path: '/strategies',
+  getParentRoute: () => PortalAdminRoute,
+} as any)
+const PortalAdminSettingsRoute = PortalAdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => PortalAdminRoute,
 } as any)
 const PortalAdminRiskRoute = PortalAdminRiskRouteImport.update({
@@ -430,6 +444,11 @@ const ApiPortalProfileRoute = ApiPortalProfileRouteImport.update({
   path: '/api/portal/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPortalPortalSettingsRoute = ApiPortalPortalSettingsRouteImport.update({
+  id: '/api/portal/portal-settings',
+  path: '/api/portal/portal-settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPortalOrderExecutionRoute = ApiPortalOrderExecutionRouteImport.update({
   id: '/api/portal/order-execution',
   path: '/api/portal/order-execution',
@@ -541,6 +560,7 @@ export interface FileRoutesByFullPath {
   '/api/portal/my-wallets': typeof ApiPortalMyWalletsRoute
   '/api/portal/onboard-client': typeof ApiPortalOnboardClientRoute
   '/api/portal/order-execution': typeof ApiPortalOrderExecutionRoute
+  '/api/portal/portal-settings': typeof ApiPortalPortalSettingsRoute
   '/api/portal/profile': typeof ApiPortalProfileRoute
   '/api/portal/staff-trade-history': typeof ApiPortalStaffTradeHistoryRoute
   '/api/portal/sub-portfolio-holdings': typeof ApiPortalSubPortfolioHoldingsRoute
@@ -567,9 +587,11 @@ export interface FileRoutesByFullPath {
   '/portal/admin/global-desk': typeof PortalAdminGlobalDeskRoute
   '/portal/admin/onboarding': typeof PortalAdminOnboardingRoute
   '/portal/admin/risk': typeof PortalAdminRiskRoute
+  '/portal/admin/settings': typeof PortalAdminSettingsRoute
   '/portal/admin/strategies': typeof PortalAdminStrategiesRoute
   '/portal/admin/trade-history': typeof PortalAdminTradeHistoryRoute
   '/portal/investor/apply': typeof PortalInvestorApplyRoute
+  '/portal/investor/dashboard2': typeof PortalInvestorDashboard2Route
   '/portal/investor/kyc': typeof PortalInvestorKycRoute
   '/portal/investor/onboarding': typeof PortalInvestorOnboardingRoute
   '/portal/investor/performance': typeof PortalInvestorPerformanceRoute
@@ -621,6 +643,7 @@ export interface FileRoutesByTo {
   '/api/portal/my-wallets': typeof ApiPortalMyWalletsRoute
   '/api/portal/onboard-client': typeof ApiPortalOnboardClientRoute
   '/api/portal/order-execution': typeof ApiPortalOrderExecutionRoute
+  '/api/portal/portal-settings': typeof ApiPortalPortalSettingsRoute
   '/api/portal/profile': typeof ApiPortalProfileRoute
   '/api/portal/staff-trade-history': typeof ApiPortalStaffTradeHistoryRoute
   '/api/portal/sub-portfolio-holdings': typeof ApiPortalSubPortfolioHoldingsRoute
@@ -647,9 +670,11 @@ export interface FileRoutesByTo {
   '/portal/admin/global-desk': typeof PortalAdminGlobalDeskRoute
   '/portal/admin/onboarding': typeof PortalAdminOnboardingRoute
   '/portal/admin/risk': typeof PortalAdminRiskRoute
+  '/portal/admin/settings': typeof PortalAdminSettingsRoute
   '/portal/admin/strategies': typeof PortalAdminStrategiesRoute
   '/portal/admin/trade-history': typeof PortalAdminTradeHistoryRoute
   '/portal/investor/apply': typeof PortalInvestorApplyRoute
+  '/portal/investor/dashboard2': typeof PortalInvestorDashboard2Route
   '/portal/investor/kyc': typeof PortalInvestorKycRoute
   '/portal/investor/onboarding': typeof PortalInvestorOnboardingRoute
   '/portal/investor/performance': typeof PortalInvestorPerformanceRoute
@@ -704,6 +729,7 @@ export interface FileRoutesById {
   '/api/portal/my-wallets': typeof ApiPortalMyWalletsRoute
   '/api/portal/onboard-client': typeof ApiPortalOnboardClientRoute
   '/api/portal/order-execution': typeof ApiPortalOrderExecutionRoute
+  '/api/portal/portal-settings': typeof ApiPortalPortalSettingsRoute
   '/api/portal/profile': typeof ApiPortalProfileRoute
   '/api/portal/staff-trade-history': typeof ApiPortalStaffTradeHistoryRoute
   '/api/portal/sub-portfolio-holdings': typeof ApiPortalSubPortfolioHoldingsRoute
@@ -730,9 +756,11 @@ export interface FileRoutesById {
   '/portal/admin/global-desk': typeof PortalAdminGlobalDeskRoute
   '/portal/admin/onboarding': typeof PortalAdminOnboardingRoute
   '/portal/admin/risk': typeof PortalAdminRiskRoute
+  '/portal/admin/settings': typeof PortalAdminSettingsRoute
   '/portal/admin/strategies': typeof PortalAdminStrategiesRoute
   '/portal/admin/trade-history': typeof PortalAdminTradeHistoryRoute
   '/portal/investor/apply': typeof PortalInvestorApplyRoute
+  '/portal/investor/dashboard2': typeof PortalInvestorDashboard2Route
   '/portal/investor/kyc': typeof PortalInvestorKycRoute
   '/portal/investor/onboarding': typeof PortalInvestorOnboardingRoute
   '/portal/investor/performance': typeof PortalInvestorPerformanceRoute
@@ -788,6 +816,7 @@ export interface FileRouteTypes {
     | '/api/portal/my-wallets'
     | '/api/portal/onboard-client'
     | '/api/portal/order-execution'
+    | '/api/portal/portal-settings'
     | '/api/portal/profile'
     | '/api/portal/staff-trade-history'
     | '/api/portal/sub-portfolio-holdings'
@@ -814,9 +843,11 @@ export interface FileRouteTypes {
     | '/portal/admin/global-desk'
     | '/portal/admin/onboarding'
     | '/portal/admin/risk'
+    | '/portal/admin/settings'
     | '/portal/admin/strategies'
     | '/portal/admin/trade-history'
     | '/portal/investor/apply'
+    | '/portal/investor/dashboard2'
     | '/portal/investor/kyc'
     | '/portal/investor/onboarding'
     | '/portal/investor/performance'
@@ -868,6 +899,7 @@ export interface FileRouteTypes {
     | '/api/portal/my-wallets'
     | '/api/portal/onboard-client'
     | '/api/portal/order-execution'
+    | '/api/portal/portal-settings'
     | '/api/portal/profile'
     | '/api/portal/staff-trade-history'
     | '/api/portal/sub-portfolio-holdings'
@@ -894,9 +926,11 @@ export interface FileRouteTypes {
     | '/portal/admin/global-desk'
     | '/portal/admin/onboarding'
     | '/portal/admin/risk'
+    | '/portal/admin/settings'
     | '/portal/admin/strategies'
     | '/portal/admin/trade-history'
     | '/portal/investor/apply'
+    | '/portal/investor/dashboard2'
     | '/portal/investor/kyc'
     | '/portal/investor/onboarding'
     | '/portal/investor/performance'
@@ -950,6 +984,7 @@ export interface FileRouteTypes {
     | '/api/portal/my-wallets'
     | '/api/portal/onboard-client'
     | '/api/portal/order-execution'
+    | '/api/portal/portal-settings'
     | '/api/portal/profile'
     | '/api/portal/staff-trade-history'
     | '/api/portal/sub-portfolio-holdings'
@@ -976,9 +1011,11 @@ export interface FileRouteTypes {
     | '/portal/admin/global-desk'
     | '/portal/admin/onboarding'
     | '/portal/admin/risk'
+    | '/portal/admin/settings'
     | '/portal/admin/strategies'
     | '/portal/admin/trade-history'
     | '/portal/investor/apply'
+    | '/portal/investor/dashboard2'
     | '/portal/investor/kyc'
     | '/portal/investor/onboarding'
     | '/portal/investor/performance'
@@ -1033,6 +1070,7 @@ export interface RootRouteChildren {
   ApiPortalMyWalletsRoute: typeof ApiPortalMyWalletsRoute
   ApiPortalOnboardClientRoute: typeof ApiPortalOnboardClientRoute
   ApiPortalOrderExecutionRoute: typeof ApiPortalOrderExecutionRoute
+  ApiPortalPortalSettingsRoute: typeof ApiPortalPortalSettingsRoute
   ApiPortalProfileRoute: typeof ApiPortalProfileRoute
   ApiPortalStaffTradeHistoryRoute: typeof ApiPortalStaffTradeHistoryRoute
   ApiPortalSubPortfolioHoldingsRoute: typeof ApiPortalSubPortfolioHoldingsRoute
@@ -1318,6 +1356,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalInvestorKycRouteImport
       parentRoute: typeof PortalInvestorRoute
     }
+    '/portal/investor/dashboard2': {
+      id: '/portal/investor/dashboard2'
+      path: '/dashboard2'
+      fullPath: '/portal/investor/dashboard2'
+      preLoaderRoute: typeof PortalInvestorDashboard2RouteImport
+      parentRoute: typeof PortalInvestorRoute
+    }
     '/portal/investor/apply': {
       id: '/portal/investor/apply'
       path: '/apply'
@@ -1337,6 +1382,13 @@ declare module '@tanstack/react-router' {
       path: '/strategies'
       fullPath: '/portal/admin/strategies'
       preLoaderRoute: typeof PortalAdminStrategiesRouteImport
+      parentRoute: typeof PortalAdminRoute
+    }
+    '/portal/admin/settings': {
+      id: '/portal/admin/settings'
+      path: '/settings'
+      fullPath: '/portal/admin/settings'
+      preLoaderRoute: typeof PortalAdminSettingsRouteImport
       parentRoute: typeof PortalAdminRoute
     }
     '/portal/admin/risk': {
@@ -1521,6 +1573,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPortalProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/portal/portal-settings': {
+      id: '/api/portal/portal-settings'
+      path: '/api/portal/portal-settings'
+      fullPath: '/api/portal/portal-settings'
+      preLoaderRoute: typeof ApiPortalPortalSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/portal/order-execution': {
       id: '/api/portal/order-execution'
       path: '/api/portal/order-execution'
@@ -1630,6 +1689,7 @@ interface PortalAdminRouteChildren {
   PortalAdminGlobalDeskRoute: typeof PortalAdminGlobalDeskRoute
   PortalAdminOnboardingRoute: typeof PortalAdminOnboardingRoute
   PortalAdminRiskRoute: typeof PortalAdminRiskRoute
+  PortalAdminSettingsRoute: typeof PortalAdminSettingsRoute
   PortalAdminStrategiesRoute: typeof PortalAdminStrategiesRoute
   PortalAdminTradeHistoryRoute: typeof PortalAdminTradeHistoryRoute
   PortalAdminIndexRoute: typeof PortalAdminIndexRoute
@@ -1643,6 +1703,7 @@ const PortalAdminRouteChildren: PortalAdminRouteChildren = {
   PortalAdminGlobalDeskRoute: PortalAdminGlobalDeskRoute,
   PortalAdminOnboardingRoute: PortalAdminOnboardingRoute,
   PortalAdminRiskRoute: PortalAdminRiskRoute,
+  PortalAdminSettingsRoute: PortalAdminSettingsRoute,
   PortalAdminStrategiesRoute: PortalAdminStrategiesRoute,
   PortalAdminTradeHistoryRoute: PortalAdminTradeHistoryRoute,
   PortalAdminIndexRoute: PortalAdminIndexRoute,
@@ -1654,6 +1715,7 @@ const PortalAdminRouteWithChildren = PortalAdminRoute._addFileChildren(
 
 interface PortalInvestorRouteChildren {
   PortalInvestorApplyRoute: typeof PortalInvestorApplyRoute
+  PortalInvestorDashboard2Route: typeof PortalInvestorDashboard2Route
   PortalInvestorKycRoute: typeof PortalInvestorKycRoute
   PortalInvestorOnboardingRoute: typeof PortalInvestorOnboardingRoute
   PortalInvestorPerformanceRoute: typeof PortalInvestorPerformanceRoute
@@ -1670,6 +1732,7 @@ interface PortalInvestorRouteChildren {
 
 const PortalInvestorRouteChildren: PortalInvestorRouteChildren = {
   PortalInvestorApplyRoute: PortalInvestorApplyRoute,
+  PortalInvestorDashboard2Route: PortalInvestorDashboard2Route,
   PortalInvestorKycRoute: PortalInvestorKycRoute,
   PortalInvestorOnboardingRoute: PortalInvestorOnboardingRoute,
   PortalInvestorPerformanceRoute: PortalInvestorPerformanceRoute,
@@ -1735,6 +1798,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPortalMyWalletsRoute: ApiPortalMyWalletsRoute,
   ApiPortalOnboardClientRoute: ApiPortalOnboardClientRoute,
   ApiPortalOrderExecutionRoute: ApiPortalOrderExecutionRoute,
+  ApiPortalPortalSettingsRoute: ApiPortalPortalSettingsRoute,
   ApiPortalProfileRoute: ApiPortalProfileRoute,
   ApiPortalStaffTradeHistoryRoute: ApiPortalStaffTradeHistoryRoute,
   ApiPortalSubPortfolioHoldingsRoute: ApiPortalSubPortfolioHoldingsRoute,

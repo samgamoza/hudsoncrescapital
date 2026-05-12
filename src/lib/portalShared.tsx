@@ -280,6 +280,7 @@ export const NAV_INVESTOR: NavItem[] = [
 
 export const NAV_ADMIN: NavItem[] = [
   { to: "/portal/admin", label: "Trading", icon: LayoutDashboard },
+  { to: "/portal/admin/settings", label: "Settings", icon: Settings },
   { to: "/portal/admin/clients", label: "Clients", icon: Users },
   { to: "/portal/admin/trade-history", label: "Trade history", icon: History },
   { to: "/portal/admin/onboarding", label: "Open Account", icon: UserPlus },
