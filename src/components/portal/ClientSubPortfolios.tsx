@@ -148,6 +148,35 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+/** Primary label for the position: prefer full display name, then symbol. */
+function holdingPrimaryLabel(h: { symbol: string; display_name?: string | null }) {
+  const d = h.display_name?.trim();
+  return d || h.symbol;
+}
+
+/**
+ * Map "Name of contract" into API fields. Symbol is capped at 40 chars (schema); full text stays in display_name.
+ * Commodities: mirror full name into details.contract_name for table Contract column.
+ */
+function buildHoldingNames(trimmed: string, assetClass: AssetClass) {
+  const sym = trimmed.slice(0, 40).toUpperCase();
+  const detailsExtra: Record<string, string> =
+    assetClass === "commodities" && trimmed ? { contract_name: trimmed } : {};
+  return {
+    symbol: sym,
+    display_name: trimmed || undefined,
+    detailsExtra,
+  };
+}
+
+function parseNum(v: string): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+const lbl =
+  "block text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5";
+
 export function ClientSubPortfolios({
   userId,
   accounts,
@@ -487,13 +516,19 @@ function NewHoldingRow({
   onSave: (payload: HoldingPayload) => Promise<void>;
 }) {
   const meta = ASSET_CLASSES[assetClass];
-  const [f, setF, clearF] = usePersistedState(`sp:newHolding:${subId}`, {
-    symbol: "",
-    display_name: "",
-    quantity: 0,
-    avg_cost: 0,
-    mark_price: 0,
-    unit_label: meta.defaultUnit,
+  const qtyLabel =
+    assetClass === "commodities"
+      ? "No. of contracts"
+      : assetClass === "crypto"
+        ? "Units"
+        : assetClass === "managed_strategy"
+          ? "Units"
+          : "Shares";
+  const [f, setF, clearF] = usePersistedState(`sp:newHolding:v2:${subId}`, {
+    nameOfContract: "",
+    quantity: "",
+    avg_cost: "",
+    mark_price: "",
     currency,
     details: Object.fromEntries(meta.detailFields.map((d) => [d.key, ""])) as Record<
       string,
@@ -503,60 +538,71 @@ function NewHoldingRow({
   const [saving, setSaving] = useState(false);
 
   return (
-    <div className="mt-3 p-3 rounded-md border border-brand/40 bg-surface-elevated/40 space-y-2">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <input
-          className={field}
-          placeholder={meta.symbolHint}
-          value={f.symbol}
-          onChange={(e) => setF({ ...f, symbol: e.target.value })}
-        />
-        <input
-          className={field}
-          placeholder="Display name (optional)"
-          value={f.display_name}
-          onChange={(e) => setF({ ...f, display_name: e.target.value })}
-        />
-        <input
-          className={field}
-          type="number"
-          step="any"
-          placeholder="Quantity"
-          value={f.quantity}
-          onChange={(e) => setF({ ...f, quantity: Number(e.target.value) })}
-        />
-        <input
-          className={field}
-          type="number"
-          step="any"
-          placeholder="Avg cost"
-          value={f.avg_cost}
-          onChange={(e) => setF({ ...f, avg_cost: Number(e.target.value) })}
-        />
-        <input
-          className={field}
-          type="number"
-          step="any"
-          placeholder="Mark / NAV"
-          value={f.mark_price}
-          onChange={(e) => setF({ ...f, mark_price: Number(e.target.value) })}
-        />
-        <input
-          className={field}
-          placeholder="Unit (shares/coins/oz)"
-          value={f.unit_label}
-          onChange={(e) => setF({ ...f, unit_label: e.target.value })}
-        />
-        <input
-          className={field}
-          maxLength={3}
-          placeholder="Currency"
-          value={f.currency}
-          onChange={(e) => setF({ ...f, currency: e.target.value.toUpperCase() })}
-        />
+    <div className="mt-3 p-3 rounded-md border border-brand/40 bg-surface-elevated/40 space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="md:col-span-2">
+          <label className={lbl}>Name of contract</label>
+          <input
+            className={field}
+            placeholder={meta.symbolHint}
+            value={f.nameOfContract}
+            onChange={(e) => setF({ ...f, nameOfContract: e.target.value })}
+            autoComplete="off"
+          />
+        </div>
+        <div>
+          <label className={lbl}>{qtyLabel}</label>
+          <input
+            className={field}
+            type="number"
+            step="any"
+            min={0}
+            placeholder="0"
+            value={f.quantity}
+            onChange={(e) => setF({ ...f, quantity: e.target.value })}
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label className={lbl}>
+            {assetClass === "commodities" ? "Premium / avg price" : "Avg cost"}
+          </label>
+          <input
+            className={field}
+            type="number"
+            step="any"
+            min={0}
+            placeholder="0.00"
+            value={f.avg_cost}
+            onChange={(e) => setF({ ...f, avg_cost: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className={lbl}>Mark (optional)</label>
+          <input
+            className={field}
+            type="number"
+            step="any"
+            min={0}
+            placeholder="—"
+            value={f.mark_price}
+            onChange={(e) => setF({ ...f, mark_price: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className={lbl}>Currency</label>
+          <input
+            className={field}
+            maxLength={3}
+            placeholder="USD"
+            value={f.currency}
+            onChange={(e) => setF({ ...f, currency: e.target.value.toUpperCase() })}
+          />
+        </div>
       </div>
       {meta.detailFields.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-1 border-t border-border/50">
           {meta.detailFields.map((d) => (
             <DetailFieldInput
               key={d.key}
@@ -573,19 +619,27 @@ function NewHoldingRow({
         </button>
         <button
           className={btnPrimary}
-          disabled={saving || !f.symbol.trim()}
+          disabled={saving || !f.nameOfContract.trim()}
           onClick={async () => {
             setSaving(true);
             try {
-              const cleanedDetails = cleanDetails(meta, f.details);
+              const trimmed = f.nameOfContract.trim();
+              const { symbol, display_name, detailsExtra } = buildHoldingNames(trimmed, assetClass);
+              const cleanedDetails = {
+                ...cleanDetails(meta, f.details),
+                ...detailsExtra,
+              };
+              const qty = parseNum(f.quantity);
+              const avg = parseNum(f.avg_cost);
+              const mark = parseNum(f.mark_price);
               await onSave({
                 sub_portfolio_id: subId,
-                symbol: f.symbol.trim(),
-                display_name: f.display_name.trim() || undefined,
-                quantity: f.quantity,
-                avg_cost: f.avg_cost,
-                mark_price: f.mark_price > 0 ? f.mark_price : undefined,
-                unit_label: f.unit_label || meta.defaultUnit,
+                symbol,
+                display_name,
+                quantity: qty,
+                avg_cost: avg,
+                mark_price: mark > 0 ? mark : undefined,
+                unit_label: meta.defaultUnit,
                 currency: (f.currency || "USD").toUpperCase(),
                 details: cleanedDetails,
               });
@@ -615,77 +669,131 @@ function EditHoldingRow({
   onSave: (patch: HoldingPatch) => Promise<void>;
 }) {
   const meta = ASSET_CLASSES[assetClass];
+  const qtyLabel =
+    assetClass === "commodities"
+      ? "No. of contracts"
+      : assetClass === "crypto"
+        ? "Units"
+        : assetClass === "managed_strategy"
+          ? "Units"
+          : "Shares";
+
+  const detailKeys = new Set(meta.detailFields.map((d) => d.key));
+  const initialDetails = { ...(holding.details ?? {}) } as Record<string, unknown>;
+  for (const k of Object.keys(initialDetails)) {
+    if (!detailKeys.has(k)) delete initialDetails[k];
+  }
+
   const [f, setF] = useState({
-    symbol: holding.symbol,
-    display_name: holding.display_name ?? "",
-    quantity: holding.quantity,
-    avg_cost: holding.avg_cost,
-    mark_price: holding.mark_price ?? 0,
-    details: { ...(holding.details ?? {}) } as Record<string, unknown>,
+    nameOfContract: holdingPrimaryLabel(holding),
+    quantity: String(holding.quantity),
+    avg_cost: String(holding.avg_cost),
+    mark_price: holding.mark_price != null && holding.mark_price > 0 ? String(holding.mark_price) : "",
+    currency: holding.currency ?? "USD",
+    details: initialDetails as Record<string, unknown>,
   });
   const [saving, setSaving] = useState(false);
 
   return (
     <tr className="border-b border-border/40 bg-surface-elevated/40">
       <td colSpan={meta.columns.length + 1} className="p-3">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <input
-            className={field}
-            value={f.symbol}
-            onChange={(e) => setF({ ...f, symbol: e.target.value })}
-          />
-          <input
-            className={field}
-            value={f.display_name}
-            onChange={(e) => setF({ ...f, display_name: e.target.value })}
-          />
-          <input
-            className={field}
-            type="number"
-            step="any"
-            value={f.quantity}
-            onChange={(e) => setF({ ...f, quantity: Number(e.target.value) })}
-          />
-          <input
-            className={field}
-            type="number"
-            step="any"
-            value={f.avg_cost}
-            onChange={(e) => setF({ ...f, avg_cost: Number(e.target.value) })}
-          />
-          <input
-            className={field}
-            type="number"
-            step="any"
-            value={f.mark_price}
-            onChange={(e) => setF({ ...f, mark_price: Number(e.target.value) })}
-          />
-          {meta.detailFields.map((d) => (
-            <DetailFieldInput
-              key={d.key}
-              field={d}
-              value={String(f.details[d.key] ?? "")}
-              onChange={(v) => setF({ ...f, details: { ...f.details, [d.key]: v } })}
-            />
-          ))}
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="md:col-span-2">
+              <label className={lbl}>Name of contract</label>
+              <input
+                className={field}
+                placeholder={meta.symbolHint}
+                value={f.nameOfContract}
+                onChange={(e) => setF({ ...f, nameOfContract: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className={lbl}>{qtyLabel}</label>
+              <input
+                className={field}
+                type="number"
+                step="any"
+                min={0}
+                value={f.quantity}
+                onChange={(e) => setF({ ...f, quantity: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className={lbl}>
+                {assetClass === "commodities" ? "Premium / avg price" : "Avg cost"}
+              </label>
+              <input
+                className={field}
+                type="number"
+                step="any"
+                min={0}
+                value={f.avg_cost}
+                onChange={(e) => setF({ ...f, avg_cost: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className={lbl}>Mark (optional)</label>
+              <input
+                className={field}
+                type="number"
+                step="any"
+                min={0}
+                placeholder="—"
+                value={f.mark_price}
+                onChange={(e) => setF({ ...f, mark_price: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className={lbl}>Currency</label>
+              <input
+                className={field}
+                maxLength={3}
+                value={f.currency}
+                onChange={(e) => setF({ ...f, currency: e.target.value.toUpperCase() })}
+              />
+            </div>
+          </div>
+          {meta.detailFields.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-1 border-t border-border/50">
+              {meta.detailFields.map((d) => (
+                <DetailFieldInput
+                  key={d.key}
+                  field={d}
+                  value={String(f.details[d.key] ?? "")}
+                  onChange={(v) => setF({ ...f, details: { ...f.details, [d.key]: v } })}
+                />
+              ))}
+            </div>
+          )}
         </div>
-        <div className="mt-2 flex gap-2 justify-end">
+        <div className="mt-3 flex gap-2 justify-end">
           <button className={btnGhost} onClick={onCancel}>
             <X className="h-3 w-3" /> Cancel
           </button>
           <button
             className={btnPrimary}
-            disabled={saving}
+            disabled={saving || !f.nameOfContract.trim()}
             onClick={async () => {
               setSaving(true);
               try {
+                const trimmed = f.nameOfContract.trim();
+                const { symbol, display_name, detailsExtra } = buildHoldingNames(trimmed, assetClass);
+                const mergedDetails = {
+                  ...cleanDetails(meta, f.details),
+                  ...detailsExtra,
+                };
+                const mark = parseNum(f.mark_price);
                 await onSave({
-                  symbol: f.symbol.trim(),
-                  display_name: f.display_name.trim() || undefined,
-                  quantity: f.quantity,
-                  avg_cost: f.avg_cost,
-                  mark_price: f.mark_price > 0 ? f.mark_price : undefined,
-                  details: cleanDetails(meta, f.details),
+                  symbol,
+                  display_name,
+                  quantity: parseNum(f.quantity),
+                  avg_cost: parseNum(f.avg_cost),
+                  mark_price: mark > 0 ? mark : undefined,
+                  currency: (f.currency || "USD").toUpperCase(),
+                  details: mergedDetails,
                 });
               } finally {
                 setSaving(false);

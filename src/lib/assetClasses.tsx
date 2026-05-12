@@ -72,12 +72,18 @@ const baseCols = [
   {
     key: "symbol",
     label: "Asset",
-    render: (h: HoldingRow) => (
-      <div>
-        <div className="font-medium text-foreground">{h.symbol}</div>
-        {h.display_name && <div className="text-xs text-muted-foreground">{h.display_name}</div>}
-      </div>
-    ),
+    render: (h: HoldingRow) => {
+      const title = (h.display_name ?? "").trim() || h.symbol;
+      const sym = (h.symbol ?? "").trim();
+      const showSym =
+        sym.length > 0 && sym.toUpperCase() !== title.toUpperCase() && !title.toUpperCase().startsWith(sym);
+      return (
+        <div>
+          <div className="font-medium text-foreground">{title}</div>
+          {showSym ? <div className="text-xs text-muted-foreground">{sym}</div> : null}
+        </div>
+      );
+    },
   },
 ] as const;
 
@@ -305,12 +311,6 @@ export const ASSET_CLASSES: Record<AssetClass, AssetClassMeta> = {
         ],
       },
       {
-        key: "contract_name",
-        label: "Contract / Symbol",
-        type: "text",
-        placeholder: "e.g. Gold Dec '25 (GCZ25)",
-      },
-      {
         key: "instrument_kind",
         label: "Instrument",
         type: "select",
@@ -343,15 +343,7 @@ export const ASSET_CLASSES: Record<AssetClass, AssetClassMeta> = {
         ],
       },
       { key: "strike", label: "Strike price", type: "number", placeholder: "2050.00", step: 0.01 },
-      {
-        key: "contract_size",
-        label: "Contract size",
-        type: "text",
-        placeholder: "100 oz, 1,000 bbl, 5,000 bu",
-      },
-      { key: "tick_value", label: "Tick value", type: "number", placeholder: "10.00", step: 0.01 },
       { key: "expiry", label: "Expiry (YYYY-MM-DD)", type: "text", placeholder: "2025-12-26" },
-      { key: "trade_date", label: "Trade date", type: "text", placeholder: "YYYY-MM-DD" },
       {
         key: "broker",
         label: "Broker / Clearer",
