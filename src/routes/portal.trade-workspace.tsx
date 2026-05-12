@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import { DiscoverAIPanel } from "@/components/workspace/DiscoverAIPanel";
 import { usePortalAuth } from "@/hooks/usePortalAuth";
 import type { AssetListing, AssetListingsResponse } from "@/lib/asset-listings.types";
 
@@ -404,6 +405,7 @@ function TradeWorkspacePage() {
   /** No catalog until user picks an asset class (IG-style empty first view). */
   const [marketClass, setMarketClass] = useState<string | null>(null);
   const [mainPanel, setMainPanel] = useState<WorkspaceMainPanel>("catalog");
+  const [searchFiltersPulse, setSearchFiltersPulse] = useState(0);
   const [hdrWs, setHdrWs] = useState<InvestorTradingWorkspace | null>(null);
 
   const reloadHdrWs = useCallback(async () => {
@@ -548,7 +550,11 @@ function TradeWorkspacePage() {
             ]}
             activeValue={WORKSPACE_RAIL_VALUES.has(mainPanel) ? mainPanel : undefined}
             onSelect={(value) => {
-              if (value === "search" || value === "discover") setMainPanel(value);
+              if (value === "discover") setMainPanel("discover");
+              else if (value === "search") {
+                setMainPanel("search");
+                setSearchFiltersPulse((n) => n + 1);
+              }
             }}
           />
           <NavGroup
@@ -598,28 +604,12 @@ function TradeWorkspacePage() {
           ) : null}
           {mainPanel === "search" ? (
             <div className="h-full p-4 md:p-6">
-              <div className="mb-3">
-                <h2 className="text-sm font-semibold tracking-tight">Search</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Search and filter listings across all asset classes. Pick a class under{" "}
-                  <span className="text-foreground/90">Market Main</span> for a focused catalog view.
-                </p>
-              </div>
-              <AssetBrowser />
+              <AssetBrowser expandSearchFilters searchFiltersPulse={searchFiltersPulse} />
             </div>
           ) : null}
           {mainPanel === "discover" ? (
-            <div className="h-full space-y-3 overflow-auto p-4 md:p-6">
-              <div>
-                <h2 className="text-sm font-semibold tracking-tight">DiscoverAI</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  AI-assisted discovery and thematic screens are not connected to this workspace yet.
-                </p>
-              </div>
-              <p className="text-sm text-muted-foreground border border-border rounded-lg p-4 bg-surface/30">
-                Coming soon: ask in natural language for ideas, compare sectors, and surface instruments
-                that match your goals — with clear disclosures and human oversight where required.
-              </p>
+            <div className="flex h-full min-h-0 flex-col">
+              <DiscoverAIPanel onClose={() => setMainPanel("catalog")} />
             </div>
           ) : null}
           {mainPanel === "positions" ? (
@@ -961,7 +951,16 @@ function WorkspaceBlotter() {
   );
 }
 
-function AssetBrowser({ forcedAssetClass }: { forcedAssetClass?: string }) {
+function AssetBrowser({
+  forcedAssetClass,
+  expandSearchFilters,
+  searchFiltersPulse = 0,
+}: {
+  forcedAssetClass?: string;
+  /** When true (Search tab), open the Search & filters panel; pulse bumps reopen it if already on Search. */
+  expandSearchFilters?: boolean;
+  searchFiltersPulse?: number;
+}) {
   const [query, setQuery] = useState("");
   const [activeClass, setActiveClass] = useState<string>(forcedAssetClass ?? "all");
   const [assetType, setAssetType] = useState("");
@@ -981,6 +980,12 @@ function AssetBrowser({ forcedAssetClass }: { forcedAssetClass?: string }) {
   const [liveQuotes, setLiveQuotes] = useState<Record<string, AssetListingQuote>>({});
   const [quoteFeedHint, setQuoteFeedHint] = useState<string | null>(null);
   const [tradeWs, setTradeWs] = useState<InvestorTradingWorkspace | null>(null);
+  const [searchFiltersOpen, setSearchFiltersOpen] = useState(() => Boolean(expandSearchFilters));
+
+  useEffect(() => {
+    if (!expandSearchFilters) return;
+    setSearchFiltersOpen(true);
+  }, [expandSearchFilters, searchFiltersPulse]);
 
   const loadTradeWs = useCallback(async () => {
     try {
@@ -1169,7 +1174,11 @@ function AssetBrowser({ forcedAssetClass }: { forcedAssetClass?: string }) {
         <div className="ml-auto text-muted-foreground">Catalog: asset_listings</div>
       </div>
 
-      <details className="group border-b border-border bg-background/40 open:bg-background/50">
+      <details
+        className="group border-b border-border bg-background/40 open:bg-background/50"
+        open={searchFiltersOpen}
+        onToggle={(e) => setSearchFiltersOpen((e.target as HTMLDetailsElement).open)}
+      >
         <summary className="cursor-pointer list-none px-3 py-2.5 text-xs text-muted-foreground transition-colors hover:text-foreground flex items-center gap-2 select-none [&::-webkit-details-marker]:hidden">
           <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 text-brand" aria-hidden />
           <span className="font-medium uppercase tracking-wide">Search & filters</span>

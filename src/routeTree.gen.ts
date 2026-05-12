@@ -64,6 +64,7 @@ import { Route as ApiPublicResolveLoginEmailRouteImport } from './routes/api/pub
 import { Route as ApiPublicPaypalWebhookRouteImport } from './routes/api/public/paypal-webhook'
 import { Route as ApiPublicLiveMarketQuotesRouteImport } from './routes/api/public/live-market-quotes'
 import { Route as ApiPublicLiveMarketNewsRouteImport } from './routes/api/public/live-market-news'
+import { Route as ApiPublicDiscoverAiFeedRouteImport } from './routes/api/public/discover-ai-feed'
 import { Route as ApiPublicAuthHealthRouteImport } from './routes/api/public/auth-health'
 import { Route as ApiPublicAssetListingQuotesRouteImport } from './routes/api/public/asset-listing-quotes'
 import { Route as ApiPublicAdminSignupRouteImport } from './routes/api/public/admin-signup'
@@ -370,6 +371,11 @@ const ApiPublicLiveMarketNewsRoute = ApiPublicLiveMarketNewsRouteImport.update({
   path: '/api/public/live-market-news',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDiscoverAiFeedRoute = ApiPublicDiscoverAiFeedRouteImport.update({
+  id: '/api/public/discover-ai-feed',
+  path: '/api/public/discover-ai-feed',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAuthHealthRoute = ApiPublicAuthHealthRouteImport.update({
   id: '/api/public/auth-health',
   path: '/api/public/auth-health',
@@ -537,6 +543,7 @@ export interface FileRoutesByFullPath {
   '/api/public/admin-signup': typeof ApiPublicAdminSignupRoute
   '/api/public/asset-listing-quotes': typeof ApiPublicAssetListingQuotesRoute
   '/api/public/auth-health': typeof ApiPublicAuthHealthRoute
+  '/api/public/discover-ai-feed': typeof ApiPublicDiscoverAiFeedRoute
   '/api/public/live-market-news': typeof ApiPublicLiveMarketNewsRoute
   '/api/public/live-market-quotes': typeof ApiPublicLiveMarketQuotesRoute
   '/api/public/paypal-webhook': typeof ApiPublicPaypalWebhookRoute
@@ -615,6 +622,7 @@ export interface FileRoutesByTo {
   '/api/public/admin-signup': typeof ApiPublicAdminSignupRoute
   '/api/public/asset-listing-quotes': typeof ApiPublicAssetListingQuotesRoute
   '/api/public/auth-health': typeof ApiPublicAuthHealthRoute
+  '/api/public/discover-ai-feed': typeof ApiPublicDiscoverAiFeedRoute
   '/api/public/live-market-news': typeof ApiPublicLiveMarketNewsRoute
   '/api/public/live-market-quotes': typeof ApiPublicLiveMarketQuotesRoute
   '/api/public/paypal-webhook': typeof ApiPublicPaypalWebhookRoute
@@ -696,6 +704,7 @@ export interface FileRoutesById {
   '/api/public/admin-signup': typeof ApiPublicAdminSignupRoute
   '/api/public/asset-listing-quotes': typeof ApiPublicAssetListingQuotesRoute
   '/api/public/auth-health': typeof ApiPublicAuthHealthRoute
+  '/api/public/discover-ai-feed': typeof ApiPublicDiscoverAiFeedRoute
   '/api/public/live-market-news': typeof ApiPublicLiveMarketNewsRoute
   '/api/public/live-market-quotes': typeof ApiPublicLiveMarketQuotesRoute
   '/api/public/paypal-webhook': typeof ApiPublicPaypalWebhookRoute
@@ -778,6 +787,7 @@ export interface FileRouteTypes {
     | '/api/public/admin-signup'
     | '/api/public/asset-listing-quotes'
     | '/api/public/auth-health'
+    | '/api/public/discover-ai-feed'
     | '/api/public/live-market-news'
     | '/api/public/live-market-quotes'
     | '/api/public/paypal-webhook'
@@ -856,6 +866,7 @@ export interface FileRouteTypes {
     | '/api/public/admin-signup'
     | '/api/public/asset-listing-quotes'
     | '/api/public/auth-health'
+    | '/api/public/discover-ai-feed'
     | '/api/public/live-market-news'
     | '/api/public/live-market-quotes'
     | '/api/public/paypal-webhook'
@@ -936,6 +947,7 @@ export interface FileRouteTypes {
     | '/api/public/admin-signup'
     | '/api/public/asset-listing-quotes'
     | '/api/public/auth-health'
+    | '/api/public/discover-ai-feed'
     | '/api/public/live-market-news'
     | '/api/public/live-market-quotes'
     | '/api/public/paypal-webhook'
@@ -1017,6 +1029,7 @@ export interface RootRouteChildren {
   ApiPublicAdminSignupRoute: typeof ApiPublicAdminSignupRoute
   ApiPublicAssetListingQuotesRoute: typeof ApiPublicAssetListingQuotesRoute
   ApiPublicAuthHealthRoute: typeof ApiPublicAuthHealthRoute
+  ApiPublicDiscoverAiFeedRoute: typeof ApiPublicDiscoverAiFeedRoute
   ApiPublicLiveMarketNewsRoute: typeof ApiPublicLiveMarketNewsRoute
   ApiPublicLiveMarketQuotesRoute: typeof ApiPublicLiveMarketQuotesRoute
   ApiPublicPaypalWebhookRoute: typeof ApiPublicPaypalWebhookRoute
@@ -1417,6 +1430,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicLiveMarketNewsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/discover-ai-feed': {
+      id: '/api/public/discover-ai-feed'
+      path: '/api/public/discover-ai-feed'
+      fullPath: '/api/public/discover-ai-feed'
+      preLoaderRoute: typeof ApiPublicDiscoverAiFeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/auth-health': {
       id: '/api/public/auth-health'
       path: '/api/public/auth-health'
@@ -1703,6 +1723,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAdminSignupRoute: ApiPublicAdminSignupRoute,
   ApiPublicAssetListingQuotesRoute: ApiPublicAssetListingQuotesRoute,
   ApiPublicAuthHealthRoute: ApiPublicAuthHealthRoute,
+  ApiPublicDiscoverAiFeedRoute: ApiPublicDiscoverAiFeedRoute,
   ApiPublicLiveMarketNewsRoute: ApiPublicLiveMarketNewsRoute,
   ApiPublicLiveMarketQuotesRoute: ApiPublicLiveMarketQuotesRoute,
   ApiPublicPaypalWebhookRoute: ApiPublicPaypalWebhookRoute,
