@@ -131,12 +131,14 @@ function ExperienceMatrix<T extends Record<string, string | number | boolean>>({
         </p>
       </header>
       <div className="overflow-x-auto rounded-lg border border-border/50">
-        <table className="w-full min-w-[640px] text-sm">
+        <table className="w-full min-w-[560px] text-sm md:min-w-[600px]">
           <thead>
             <tr className="border-b border-border/70 bg-muted/30 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              <th className="whitespace-nowrap px-3 py-2.5 pr-4">Asset</th>
+              <th className="sticky left-0 z-20 whitespace-nowrap border-r border-border/50 bg-muted/95 px-3 py-2.5 pr-4 backdrop-blur-sm dark:bg-muted/90">
+                Asset
+              </th>
               {cols.map((c) => (
-                <th key={c.prefix} className="min-w-[140px] px-2 py-2.5">
+                <th key={c.prefix} className="min-w-[132px] px-2 py-2.5 md:min-w-[140px]">
                   {c.label}
                   {!c.optional && <span className="text-destructive"> *</span>}
                 </th>
@@ -144,9 +146,20 @@ function ExperienceMatrix<T extends Record<string, string | number | boolean>>({
             </tr>
           </thead>
           <tbody className="divide-y divide-border/40">
-            {assets.map((asset) => (
-              <tr key={asset} className="bg-background/30 transition-colors hover:bg-muted/15">
-                <td className="whitespace-nowrap px-3 py-2 pr-4 text-xs font-semibold text-foreground">
+            {assets.map((asset, row) => (
+              <tr
+                key={asset}
+                className={cn(
+                  "group/row transition-colors hover:bg-muted/12",
+                  row % 2 === 1 && "bg-muted/[0.04]",
+                )}
+              >
+                <td
+                  className={cn(
+                    "sticky left-0 z-10 whitespace-nowrap border-r border-border/50 px-3 py-2 pr-4 text-xs font-semibold text-foreground shadow-[3px_0_10px_-4px_rgba(0,0,0,0.12)] dark:shadow-[3px_0_10px_-4px_rgba(0,0,0,0.35)]",
+                    row % 2 === 1 ? "bg-muted/50 group-hover/row:bg-muted/55" : "bg-card group-hover/row:bg-muted/20",
+                  )}
+                >
                   {labels[asset]}
                 </td>
                 {cols.map((c) => {
@@ -298,7 +311,7 @@ function ProfileTab() {
     <div className="space-y-8">
       <SectionCard className="shadow-md ring-1 ring-border/40"
         title="Account profile"
-        description="Balanced layout: identity & mailing on the left; contact, filing, joint holder, and financial disclosures on the right. Trading suitability is a single matrix below."
+        description="Identity, mailing, and filing on the left; contact, joint holder, and funding details on the right. Income and net worth sit with the left column; trading suitability is below."
         right={
           <Button
             type="button"
@@ -318,8 +331,12 @@ function ProfileTab() {
         }
       >
         <div className="space-y-8">
-          <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-            <div className="space-y-6">
+          <div className="mb-1 hidden gap-x-10 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/90 xl:grid xl:grid-cols-12">
+            <div className="xl:col-span-5">Holder, address & wealth</div>
+            <div className="xl:col-span-7 xl:border-l xl:border-border/40 xl:pl-10">Contact, joint & funding</div>
+          </div>
+          <div className="grid gap-8 lg:grid-cols-2 lg:items-start xl:grid-cols-12 xl:gap-x-10">
+            <div className="space-y-6 xl:col-span-5">
               <ProfileSection title="Account">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="sm:col-span-2">
@@ -427,91 +444,32 @@ function ProfileTab() {
                   </div>
                 </div>
               </ProfileSection>
-            </div>
 
-            <div className="space-y-6">
-              <ProfileSection title="Contact">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className={label}>Primary / daytime phone{req}</label>
-                    <input className={field} value={f.phoneDay} onChange={(e) => setF({ ...f, phoneDay: e.target.value })} />
+              <ProfileSection title="Filing & household">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+                  <div className="min-w-0 flex-1">
+                    <span className={label}>Filing status{req}</span>
+                    <div className="mt-2 flex flex-wrap gap-4 text-sm">
+                      {["Single", "Married", "Other"].map((x) => (
+                        <label key={x} className="flex items-center gap-2">
+                          <input type="radio" name="fil" checked={f.filing === x} onChange={() => setF({ ...f, filing: x })} />
+                          {x}
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                  <div>
-                    <label className={label}>Home / evening phone</label>
-                    <input className={field} value={f.phoneEve} onChange={(e) => setF({ ...f, phoneEve: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className={label}>Mobile phone</label>
-                    <input className={field} value={f.phoneCell} onChange={(e) => setF({ ...f, phoneCell: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className={label}>Fax</label>
-                    <input className={field} value={f.fax} onChange={(e) => setF({ ...f, fax: e.target.value })} />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className={label}>Email address{req}</label>
+                  <div className="shrink-0 sm:w-[min(100%,9.5rem)]">
+                    <label className={label}>Dependents{req}</label>
                     <input
-                      type="email"
-                      className={field}
-                      value={f.mailEmail || email}
-                      onChange={(e) => setF({ ...f, mailEmail: e.target.value })}
+                      className={cn("mt-1 w-full", field)}
+                      value={f.dependents}
+                      onChange={(e) => setF({ ...f, dependents: e.target.value })}
                     />
                   </div>
                 </div>
               </ProfileSection>
 
-              <ProfileSection title="Filing & household">
-                <div className="flex flex-wrap gap-4 text-sm">
-                  {["Single", "Married", "Other"].map((x) => (
-                    <label key={x} className="flex items-center gap-2">
-                      <input type="radio" name="fil" checked={f.filing === x} onChange={() => setF({ ...f, filing: x })} />
-                      {x}
-                    </label>
-                  ))}
-                </div>
-                <div className="mt-4">
-                  <label className={label}>Number of dependents{req}</label>
-                  <input
-                    className={cn("mt-1 max-w-[140px]", field)}
-                    value={f.dependents}
-                    onChange={(e) => setF({ ...f, dependents: e.target.value })}
-                  />
-                </div>
-              </ProfileSection>
-
-              <ProfileSection
-                title="Joint account owner"
-                subtitle="Optional — complete when opening a joint profile. Desk review may request additional signatures."
-              >
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className={label}>First name</label>
-                    <input className={field} value={f.jFirst} onChange={(e) => setF({ ...f, jFirst: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className={label}>Last name</label>
-                    <input className={field} value={f.jLast} onChange={(e) => setF({ ...f, jLast: e.target.value })} />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className={label}>Mailing address line 1</label>
-                    <input className={field} value={f.jAddr1} onChange={(e) => setF({ ...f, jAddr1: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className={label}>City</label>
-                    <input className={field} value={f.jCity} onChange={(e) => setF({ ...f, jCity: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className={label}>Country</label>
-                    <CountrySelect value={f.jCountry} onChange={(c) => setF({ ...f, jCountry: c })} />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className={label}>Email</label>
-                    <input className={field} value={f.jEmail} onChange={(e) => setF({ ...f, jEmail: e.target.value })} />
-                  </div>
-                </div>
-              </ProfileSection>
-
-              <ProfileSection title="Financial disclosures">
+              <ProfileSection title="Income & net worth">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="sm:col-span-1">
                     <label className={label}>Approximate annual income</label>
@@ -562,6 +520,78 @@ function ProfileTab() {
                       Liquid net worth is cash and readily marketable securities minus short-term obligations.
                     </p>
                   </div>
+                </div>
+              </ProfileSection>
+            </div>
+
+            <div className="space-y-6 xl:col-span-7 xl:border-l xl:border-border/40 xl:pl-10">
+              <ProfileSection title="Contact">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className={label}>Primary / daytime phone{req}</label>
+                    <input className={field} value={f.phoneDay} onChange={(e) => setF({ ...f, phoneDay: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>Home / evening phone</label>
+                    <input className={field} value={f.phoneEve} onChange={(e) => setF({ ...f, phoneEve: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>Mobile phone</label>
+                    <input className={field} value={f.phoneCell} onChange={(e) => setF({ ...f, phoneCell: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>Fax</label>
+                    <input className={field} value={f.fax} onChange={(e) => setF({ ...f, fax: e.target.value })} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={label}>Email address{req}</label>
+                    <input
+                      type="email"
+                      className={field}
+                      value={f.mailEmail || email}
+                      onChange={(e) => setF({ ...f, mailEmail: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </ProfileSection>
+
+              <ProfileSection
+                title="Joint account owner"
+                subtitle="Optional — complete when opening a joint profile. Desk review may request additional signatures."
+              >
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className={label}>First name</label>
+                    <input className={field} value={f.jFirst} onChange={(e) => setF({ ...f, jFirst: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>Last name</label>
+                    <input className={field} value={f.jLast} onChange={(e) => setF({ ...f, jLast: e.target.value })} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={label}>Mailing address line 1</label>
+                    <input className={field} value={f.jAddr1} onChange={(e) => setF({ ...f, jAddr1: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>City</label>
+                    <input className={field} value={f.jCity} onChange={(e) => setF({ ...f, jCity: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className={label}>Country</label>
+                    <CountrySelect value={f.jCountry} onChange={(c) => setF({ ...f, jCountry: c })} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={label}>Email</label>
+                    <input className={field} value={f.jEmail} onChange={(e) => setF({ ...f, jEmail: e.target.value })} />
+                  </div>
+                </div>
+              </ProfileSection>
+
+              <ProfileSection
+                title="Funding & program"
+                subtitle="Contracts, application funds, and deposit sources for desk review."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div className="sm:col-span-2">
                     <label className={label}>What is your source of income?</label>
                     <select className={field} value={f.incomeSource} onChange={(e) => setF({ ...f, incomeSource: e.target.value })}>
