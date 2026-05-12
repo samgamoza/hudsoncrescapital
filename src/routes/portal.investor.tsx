@@ -34,7 +34,11 @@ function InvestorLayout() {
       return;
     }
     const path = pathname.replace(/\/+$/, "") || "/";
-    if (path.startsWith("/portal/investor/onboarding")) {
+    if (
+      path.startsWith("/portal/investor/onboarding") ||
+      path.startsWith("/portal/investor/apply") ||
+      path.startsWith("/portal/investor/kyc")
+    ) {
       setInvestorGateReady(true);
       return;
     }

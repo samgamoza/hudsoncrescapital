@@ -45,69 +45,138 @@ const applySchema = z.object({
   // Acknowledgements
   agreed_terms: z.literal(true),
   agreed_risk: z.literal(true),
+  /** Full multi-step “open account” wizard snapshot (non-core fields) for operations review. */
+  wizard_payload: z.record(z.string(), z.any()).optional(),
 });
+
+export type AccountApplicationPayload = z.infer<typeof applySchema>;
+
+/** Plain handler for `/api/portal/account-application` and `submitAccountApplication` server fn. */
+export async function submitAccountApplicationForApi(userId: string, raw: unknown) {
+  const data = applySchema.parse(raw);
+  const { audit } = await import("./_shared.server");
+
+  const { error: profErr } = await supabaseAdmin.from("profiles").upsert(
+    {
+      user_id: userId,
+      legal_first_name: data.legal_first_name,
+      legal_last_name: data.legal_last_name,
+      date_of_birth: data.date_of_birth,
+      phone: data.phone,
+      country_of_residence: data.country_of_residence.toUpperCase(),
+      nationality: data.nationality.toUpperCase(),
+      status: "submitted",
+    },
+    { onConflict: "user_id" },
+  );
+  if (profErr) throw new Error(`Profile save failed: ${profErr.message}`);
+
+  const metaBase = {
+    financial: data.financial,
+    wizard_payload: data.wizard_payload ?? {},
+    acknowledgements: {
+      agreed_terms_at: new Date().toISOString(),
+      agreed_risk_at: new Date().toISOString(),
+    },
+    submitted_at: new Date().toISOString(),
+  };
+
+  const { data: existingRows, error: listErr } = await supabaseAdmin
+    .from("accounts")
+    .select("id, account_number, status, metadata")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (listErr) throw new Error(listErr.message);
+
+  const pending = (existingRows ?? []).find((r: any) => r.status === "pending");
+
+  if (pending) {
+    const prevMeta =
+      pending.metadata && typeof pending.metadata === "object" && !Array.isArray(pending.metadata)
+        ? (pending.metadata as Record<string, unknown>)
+        : {};
+    const { error: updErr } = await (supabaseAdmin.from("accounts") as any)
+      .update({
+        account_type: data.account_type,
+        base_currency: data.base_currency,
+        metadata: {
+          ...prevMeta,
+          ...metaBase,
+          full_application_updated_at: new Date().toISOString(),
+        },
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", pending.id);
+    if (updErr) throw new Error(`Application update failed: ${updErr.message}`);
+
+    await audit({
+      actorId: userId,
+      action: "account.application.update",
+      targetType: "account",
+      targetId: pending.id,
+      targetUserId: userId,
+      payload: { account_number: pending.account_number, account_type: data.account_type },
+    });
+
+    return {
+      ok: true as const,
+      accountId: pending.id as string,
+      accountNumber: pending.account_number as string,
+      merged: true as const,
+    };
+  }
+
+  const active = (existingRows ?? []).find((r: any) => r.status === "active");
+  if (active) {
+    throw new Error(
+      "You already have an active brokerage account. For additional capacity or entities, contact onboarding@hudsoncrestcapital.com.",
+    );
+  }
+
+  const acctNumber = `HCC-${Date.now().toString(36).toUpperCase()}-${Math.random()
+    .toString(36)
+    .slice(2, 6)
+    .toUpperCase()}`;
+
+  const { data: acct, error: acctErr } = await (supabaseAdmin.from("accounts") as any)
+    .insert({
+      user_id: userId,
+      account_number: acctNumber,
+      account_type: data.account_type,
+      base_currency: data.base_currency,
+      status: "pending",
+      metadata: metaBase,
+    })
+    .select()
+    .single();
+  if (acctErr) throw new Error(`Application failed: ${acctErr.message}`);
+
+  await audit({
+    actorId: userId,
+    action: "account.application.submit",
+    targetType: "account",
+    targetId: acct.id,
+    targetUserId: userId,
+    payload: { account_number: acctNumber, account_type: data.account_type },
+  });
+
+  return { ok: true as const, accountId: acct.id, accountNumber: acctNumber, merged: false as const };
+}
 
 export const submitAccountApplication = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => applySchema.parse(d))
-  .handler(async ({ context, data }) => {
-    const { audit } = await import("./_shared.server");
-    const { userId } = context;
+  .handler(({ context, data }) => submitAccountApplicationForApi(context.userId, data));
 
-    // 1. Upsert profile fields
-    const { error: profErr } = await supabaseAdmin.from("profiles").upsert(
-      {
-        user_id: userId,
-        legal_first_name: data.legal_first_name,
-        legal_last_name: data.legal_last_name,
-        date_of_birth: data.date_of_birth,
-        phone: data.phone,
-        country_of_residence: data.country_of_residence.toUpperCase(),
-        nationality: data.nationality.toUpperCase(),
-        status: "submitted",
-      },
-      { onConflict: "user_id" },
-    );
-    if (profErr) throw new Error(`Profile save failed: ${profErr.message}`);
-
-    // 2. Generate a human-readable account number
-    const acctNumber = `HCC-${Date.now().toString(36).toUpperCase()}-${Math.random()
-      .toString(36)
-      .slice(2, 6)
-      .toUpperCase()}`;
-
-    // 3. Insert pending account
-    const { data: acct, error: acctErr } = await (supabaseAdmin.from("accounts") as any)
-      .insert({
-        user_id: userId,
-        account_number: acctNumber,
-        account_type: data.account_type,
-        base_currency: data.base_currency,
-        status: "pending",
-        metadata: {
-          financial: data.financial,
-          acknowledgements: {
-            agreed_terms_at: new Date().toISOString(),
-            agreed_risk_at: new Date().toISOString(),
-          },
-          submitted_at: new Date().toISOString(),
-        },
-      })
-      .select()
-      .single();
-    if (acctErr) throw new Error(`Application failed: ${acctErr.message}`);
-
-    await audit({
-      actorId: userId,
-      action: "account.application.submit",
-      targetType: "account",
-      targetId: acct.id,
-      targetUserId: userId,
-      payload: { account_number: acctNumber, account_type: data.account_type },
-    });
-
-    return { ok: true, accountId: acct.id, accountNumber: acctNumber };
-  });
+export async function getAccountApplicationContextForApi(userId: string) {
+  const { data: rows, error } = await supabaseAdmin
+    .from("accounts")
+    .select("id, account_number, status, account_type, base_currency, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return { accounts: rows ?? [] };
+}
 
 export const getMyApplicationStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

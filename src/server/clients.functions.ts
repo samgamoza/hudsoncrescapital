@@ -319,8 +319,9 @@ const updateClientProfileInput = z.object({
     display_name: z.string().trim().max(200).optional(),
     phone: z.string().trim().max(40).optional(),
     date_of_birth: z.string().optional(),
-    country_of_residence: z.string().trim().max(2).optional(),
-    nationality: z.string().trim().max(2).optional(),
+    /** UI may store ISO-2 codes or full country labels from CountrySelect. */
+    country_of_residence: z.string().trim().max(120).optional().nullable(),
+    nationality: z.string().trim().max(120).optional().nullable(),
     tax_id_last4: z.string().trim().max(4).optional(),
     status: z.enum(["incomplete", "submitted", "approved", "rejected"]).optional(),
   }),

@@ -373,7 +373,7 @@ function ClientDrawer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "updateProfile",
-          payload: { userId, patch: { ...profile, status: "approved" } },
+          payload: { userId, patch: { status: "approved" } },
         }),
       }),
     );

@@ -87,6 +87,7 @@ import { Route as ApiPortalAuthDiagnosticsRouteImport } from './routes/api/porta
 import { Route as ApiPortalAuditLogsRouteImport } from './routes/api/portal/audit-logs'
 import { Route as ApiPortalAssetListingsRouteImport } from './routes/api/portal/asset-listings'
 import { Route as ApiPortalAdminStaffRouteImport } from './routes/api/portal/admin-staff'
+import { Route as ApiPortalAccountApplicationRouteImport } from './routes/api/portal/account-application'
 import { Route as PortalLoginAdminCreateAccountRouteImport } from './routes/portal.login.admin.create-account'
 
 const TermsRoute = TermsRouteImport.update({
@@ -492,6 +493,12 @@ const ApiPortalAdminStaffRoute = ApiPortalAdminStaffRouteImport.update({
   path: '/api/portal/admin-staff',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPortalAccountApplicationRoute =
+  ApiPortalAccountApplicationRouteImport.update({
+    id: '/api/portal/account-application',
+    path: '/api/portal/account-application',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PortalLoginAdminCreateAccountRoute =
   PortalLoginAdminCreateAccountRouteImport.update({
     id: '/admin/create-account',
@@ -521,6 +528,7 @@ export interface FileRoutesByFullPath {
   '/portal/reset-password': typeof PortalResetPasswordRoute
   '/portal/trade-workspace': typeof PortalTradeWorkspaceRoute
   '/symbol/$slug': typeof SymbolSlugRoute
+  '/api/portal/account-application': typeof ApiPortalAccountApplicationRoute
   '/api/portal/admin-staff': typeof ApiPortalAdminStaffRoute
   '/api/portal/asset-listings': typeof ApiPortalAssetListingsRoute
   '/api/portal/audit-logs': typeof ApiPortalAuditLogsRoute
@@ -600,6 +608,7 @@ export interface FileRoutesByTo {
   '/portal/reset-password': typeof PortalResetPasswordRoute
   '/portal/trade-workspace': typeof PortalTradeWorkspaceRoute
   '/symbol/$slug': typeof SymbolSlugRoute
+  '/api/portal/account-application': typeof ApiPortalAccountApplicationRoute
   '/api/portal/admin-staff': typeof ApiPortalAdminStaffRoute
   '/api/portal/asset-listings': typeof ApiPortalAssetListingsRoute
   '/api/portal/audit-logs': typeof ApiPortalAuditLogsRoute
@@ -682,6 +691,7 @@ export interface FileRoutesById {
   '/portal/reset-password': typeof PortalResetPasswordRoute
   '/portal/trade-workspace': typeof PortalTradeWorkspaceRoute
   '/symbol/$slug': typeof SymbolSlugRoute
+  '/api/portal/account-application': typeof ApiPortalAccountApplicationRoute
   '/api/portal/admin-staff': typeof ApiPortalAdminStaffRoute
   '/api/portal/asset-listings': typeof ApiPortalAssetListingsRoute
   '/api/portal/audit-logs': typeof ApiPortalAuditLogsRoute
@@ -765,6 +775,7 @@ export interface FileRouteTypes {
     | '/portal/reset-password'
     | '/portal/trade-workspace'
     | '/symbol/$slug'
+    | '/api/portal/account-application'
     | '/api/portal/admin-staff'
     | '/api/portal/asset-listings'
     | '/api/portal/audit-logs'
@@ -844,6 +855,7 @@ export interface FileRouteTypes {
     | '/portal/reset-password'
     | '/portal/trade-workspace'
     | '/symbol/$slug'
+    | '/api/portal/account-application'
     | '/api/portal/admin-staff'
     | '/api/portal/asset-listings'
     | '/api/portal/audit-logs'
@@ -925,6 +937,7 @@ export interface FileRouteTypes {
     | '/portal/reset-password'
     | '/portal/trade-workspace'
     | '/symbol/$slug'
+    | '/api/portal/account-application'
     | '/api/portal/admin-staff'
     | '/api/portal/asset-listings'
     | '/api/portal/audit-logs'
@@ -1007,6 +1020,7 @@ export interface RootRouteChildren {
   PortalResetPasswordRoute: typeof PortalResetPasswordRoute
   PortalTradeWorkspaceRoute: typeof PortalTradeWorkspaceRoute
   SymbolSlugRoute: typeof SymbolSlugRoute
+  ApiPortalAccountApplicationRoute: typeof ApiPortalAccountApplicationRoute
   ApiPortalAdminStaffRoute: typeof ApiPortalAdminStaffRoute
   ApiPortalAssetListingsRoute: typeof ApiPortalAssetListingsRoute
   ApiPortalAuditLogsRoute: typeof ApiPortalAuditLogsRoute
@@ -1591,6 +1605,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPortalAdminStaffRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/portal/account-application': {
+      id: '/api/portal/account-application'
+      path: '/api/portal/account-application'
+      fullPath: '/api/portal/account-application'
+      preLoaderRoute: typeof ApiPortalAccountApplicationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/portal/login/admin/create-account': {
       id: '/portal/login/admin/create-account'
       path: '/admin/create-account'
@@ -1701,6 +1722,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortalResetPasswordRoute: PortalResetPasswordRoute,
   PortalTradeWorkspaceRoute: PortalTradeWorkspaceRoute,
   SymbolSlugRoute: SymbolSlugRoute,
+  ApiPortalAccountApplicationRoute: ApiPortalAccountApplicationRoute,
   ApiPortalAdminStaffRoute: ApiPortalAdminStaffRoute,
   ApiPortalAssetListingsRoute: ApiPortalAssetListingsRoute,
   ApiPortalAuditLogsRoute: ApiPortalAuditLogsRoute,
