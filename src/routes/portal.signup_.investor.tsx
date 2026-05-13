@@ -54,8 +54,8 @@ function InvestorSignupPage() {
 
         <div className="flex flex-1 flex-col overflow-y-auto bg-card p-6 sm:p-8 lg:p-10">
           <div className="mb-4">
-            <h1 className="text-xl font-semibold text-foreground sm:text-2xl">OPEN INVESTOR ACCOUNT</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Full application wizard (same as portal “Open account”)</p>
+            <h1 className="text-xl font-semibold text-foreground sm:text-2xl">ONLINE ACCOUNT OPENING FORM</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Full online account application wizard.</p>
           </div>
 
           <FullAccountApplicationWizard mode="signup" />

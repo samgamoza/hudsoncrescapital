@@ -58,9 +58,9 @@ const KNOWLEDGE_OPTS = [
 const REP_OPTIONS = [
   { value: "", label: "— Select one —" },
   { value: "unassigned", label: "Not yet assigned" },
-  { value: "desk_ny", label: "New York desk" },
-  { value: "desk_ldn", label: "London desk" },
-  { value: "desk_sg", label: "Singapore desk" },
+  { value: "desk_ny", label: "New York" },
+  { value: "desk_ldn", label: "London" },
+  { value: "desk_sg", label: "Singapore" },
 ];
 
 const ENTITY_TYPES = [
@@ -73,10 +73,20 @@ const ENTITY_TYPES = [
 ];
 
 const PRODUCT_LINES = [
-  { id: "equities", label: "Equities (stocks, ETFs and options)" },
-  { id: "dpv", label: "DPV / RPV (institutional-style sleeve)" },
-  { id: "futures", label: "Futures / options on futures" },
+  { id: "equities", label: "Equities (Stocks)" },
+  { id: "fixed_income", label: "Fixed Income (Bonds)" },
+  { id: "funds", label: "Funds (Mutual Funds / ETFs)" },
+  { id: "commodities", label: "Commodities" },
   { id: "forex", label: "Forex" },
+  { id: "crypto", label: "Crypto" },
+];
+
+const DERIVATIVE_PRODUCT_LINES = [
+  { id: "futures", label: "Futures" },
+  { id: "options", label: "Options" },
+  { id: "limited_risk_options", label: "Limited Risk Options Contracts" },
+  { id: "warrants", label: "Warrants" },
+  { id: "structured_products", label: "Structured Products" },
 ];
 
 const ID_TYPES = [
@@ -139,17 +149,6 @@ const RISK = [
   { value: "moderate", label: "Moderate" },
   { value: "aggressive", label: "Aggressive" },
 ] as const;
-
-const BRACKET_OPTS = [
-  { value: "", label: "— Choose one —" },
-  { value: "10", label: "10% or lower bracket" },
-  { value: "12", label: "12%" },
-  { value: "22", label: "22%" },
-  { value: "24", label: "24%" },
-  { value: "32", label: "32%" },
-  { value: "35", label: "35%" },
-  { value: "37", label: "37%" },
-];
 
 const LIQUID_NET_OPTS = [
   { value: "", label: "— Choose one —" },
@@ -300,42 +299,12 @@ function validateStep(step: number, f: FormState, mode: "apply" | "signup"): str
     if (!f.country) return "Country is required.";
     if (!f.phone.trim() || !isValidE164(f.phone)) return "A valid primary phone (E.164) is required.";
     if (!f.email.includes("@")) return "A valid email is required.";
-    if (!f.employerName.trim() || !f.employerAddress.trim())
-      return "Employer name and address are required for suitability.";
   }
   if (step === 1) {
     if (mode === "signup") {
       if (f.signupPassword.length < 6) return "Password must be at least 6 characters.";
       if (f.signupPassword !== f.signupPasswordConfirm) return "Passwords do not match.";
     }
-    if (!f.portalSecurityAck) return "Please acknowledge portal security information.";
-  }
-  if (step === 2) {
-    if (!f.acceptedMinimums) return "Please confirm you meet the minimum suitability thresholds described.";
-    if (!f.products.length) return "Select at least one product line you expect to trade.";
-    if (!f.entityType) return "Select an account ownership type.";
-  }
-  if (step === 3) {
-    if (!f.dob || f.dob.length < 8) return "Date of birth is required.";
-    if (!f.citizenshipUs && !f.citizenshipOther.trim())
-      return "If not a U.S. person, specify country of citizenship.";
-    if (!f.idType || !f.idNumber.trim()) return "ID type and ID number are required.";
-    if (!f.mailLine1.trim() || !f.mailCity.trim() || !f.mailState.trim() || !f.mailPostal.trim())
-      return "Complete mailing address is required.";
-    if (!f.mailCountry) return "Mailing country is required.";
-    if (!f.nationality) return "Nationality / citizenship country is required.";
-  }
-  if (step === 4) {
-    for (const k of EXPERIENCE_KEYS) {
-      if (!f.expYears[k.key]) return `Select years of experience for ${k.label}.`;
-    }
-    if (!f.employment_status) return "Employment status is required.";
-    if (!f.annual_income || !f.net_worth || !f.source_of_funds)
-      return "Annual income, approximate net worth, and source of funds are required.";
-    if (!f.investment_experience || !f.risk_tolerance) return "Trading experience and risk tolerance are required.";
-  }
-  if (step === 5) {
-    if (!f.agreedTerms || !f.agreedRisk) return "You must accept the declarations to submit.";
   }
   return null;
 }
@@ -739,7 +708,7 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
             </div>
 
             <div className="md:col-span-1 lg:col-span-6">
-              <label className={cn(label, "text-[10px]")}>Employer name{req}</label>
+              <label className={cn(label, "text-[10px]")}>Employer name</label>
               <input
                 className={cn("mt-0.5", fieldCompact)}
                 value={f.employerName}
@@ -747,7 +716,7 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
               />
             </div>
             <div className="md:col-span-1 lg:col-span-6">
-              <label className={cn(label, "text-[10px]")}>Employer address{req}</label>
+              <label className={cn(label, "text-[10px]")}>Employer address</label>
               <textarea
                 rows={2}
                 className={cn("mt-0.5 min-h-0 resize-y", fieldCompact)}
@@ -798,7 +767,7 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
               checked={f.portalSecurityAck}
               onChange={(e) => setF({ ...f, portalSecurityAck: e.target.checked })}
             />
-            <span>I understand how to manage my portal password and security settings.{req}</span>
+            <span>I understand how to manage my portal password and security settings.</span>
           </label>
         </div>
       )}
@@ -827,46 +796,14 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
               checked={f.portalSecurityAck}
               onChange={(e) => setF({ ...f, portalSecurityAck: e.target.checked })}
             />
-            <span>I understand how to manage my portal password and security settings.{req}</span>
+            <span>I understand how to manage my portal password and security settings.</span>
           </label>
         </div>
       )}
 
       {step === 2 && (
         <div className="space-y-5 text-sm">
-          <h3 className={sectionTitle}>Before you begin</h3>
-          <p className="text-muted-foreground leading-relaxed">
-            Our products and services are designed for professional and serious individual traders. Before you
-            proceed, confirm that you meet illustrative minimum standards (actual minima are set in your client
-            agreement and may differ by strategy):
-          </p>
-          <ul className="list-disc space-y-2 pl-5 text-muted-foreground leading-relaxed">
-            <li>
-              <strong className="text-foreground">Equities / options.</strong> Pattern day-trading profiles
-              historically required materially higher equity than non–day-trading profiles; uncovered options and
-              spreads may carry additional house requirements. Activity may be speculative with a short-term
-              objective.
-            </li>
-            <li>
-              <strong className="text-foreground">Futures.</strong> Futures and options on futures are leveraged;
-              maintain risk capital only—funds you can afford to lose without affecting your standard of living.
-            </li>
-            <li>
-              <strong className="text-foreground">Forex.</strong> FX involves leverage and counterparty risk; only
-              risk capital should be deployed.
-            </li>
-          </ul>
-          <label className="flex items-start gap-2 text-foreground">
-            <input
-              type="checkbox"
-              className="mt-1"
-              checked={f.acceptedMinimums}
-              onChange={(e) => setF({ ...f, acceptedMinimums: e.target.checked })}
-            />
-            <span>I confirm I meet the suitability profile described above and will fund with risk capital only.{req}</span>
-          </label>
-
-          <h3 className={cn(sectionTitle, "mt-6")}>What will you be trading?</h3>
+          <h3 className={sectionTitle}>What will you be trading?</h3>
           <div className="space-y-2">
             {PRODUCT_LINES.map((p) => (
               <label key={p.id} className="flex items-center gap-2 text-foreground">
@@ -878,6 +815,19 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
                 {p.label}
               </label>
             ))}
+            <div className="pt-1 text-foreground">Derivatives</div>
+            <div className="space-y-2 pl-6">
+              {DERIVATIVE_PRODUCT_LINES.map((p) => (
+                <label key={p.id} className="flex items-center gap-2 text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={f.products.includes(p.id)}
+                    onChange={() => toggleProduct(p.id)}
+                  />
+                  {p.label}
+                </label>
+              ))}
+            </div>
           </div>
 
           <h3 className={cn(sectionTitle, "mt-6")}>Select the account type you need</h3>
@@ -894,18 +844,24 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
               </label>
             ))}
           </div>
+        </div>
+      )}
 
+      {step === 3 && (
+        <div className="space-y-5 text-sm">
+          <p className="text-muted-foreground">
+            Complete identity and mailing information. Fields marked with an asterisk are required for regulatory
+            records.
+          </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className={label}>Account registration</label>
-              <select
+              <label className={label}>Date of birth</label>
+              <input
+                type="date"
                 className={cn("mt-1", field)}
-                value={f.account_type}
-                onChange={(e) => setF({ ...f, account_type: e.target.value as "cash" | "margin" })}
-              >
-                <option value="cash">Cash / fully paid</option>
-                <option value="margin">Margin (subject to approval)</option>
-              </select>
+                value={f.dob}
+                onChange={(e) => setF({ ...f, dob: e.target.value })}
+              />
             </div>
             <div>
               <label className={label}>Base currency</label>
@@ -920,34 +876,8 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
               </select>
             </div>
           </div>
-        </div>
-      )}
-
-      {step === 3 && (
-        <div className="space-y-5 text-sm">
-          <p className="text-muted-foreground">
-            Complete identity and mailing information. Fields marked with an asterisk are required for regulatory
-            records.
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className={label}>Date of birth{req}</label>
-              <input
-                type="date"
-                className={cn("mt-1", field)}
-                value={f.dob}
-                onChange={(e) => setF({ ...f, dob: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className={label}>Nationality (ISO country){req}</label>
-              <div className="mt-1">
-                <CountrySelect value={f.nationality} onChange={(c) => setF({ ...f, nationality: c })} />
-              </div>
-            </div>
-          </div>
           <div>
-            <span className={label}>Citizenship{req}</span>
+            <span className={label}>Citizenship</span>
             <div className="mt-2 flex flex-wrap gap-4">
               <label className="flex items-center gap-2">
                 <input
@@ -979,7 +909,7 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className={label}>Type of ID{req}</label>
+              <label className={label}>Type of ID</label>
               <select className={cn("mt-1", field)} value={f.idType} onChange={(e) => setF({ ...f, idType: e.target.value })}>
                 {ID_TYPES.map((o) => (
                   <option key={o.value || "x"} value={o.value}>
@@ -989,14 +919,14 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
               </select>
             </div>
             <div>
-              <label className={label}>ID number{req}</label>
+              <label className={label}>ID number</label>
               <input className={cn("mt-1", field)} value={f.idNumber} onChange={(e) => setF({ ...f, idNumber: e.target.value })} />
             </div>
           </div>
           <h3 className={sectionTitle}>Mailing address</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label className={label}>Address line 1{req}</label>
+              <label className={label}>Address line 1</label>
               <input className={cn("mt-1", field)} value={f.mailLine1} onChange={(e) => setF({ ...f, mailLine1: e.target.value })} />
             </div>
             <div className="sm:col-span-2">
@@ -1004,19 +934,19 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
               <input className={cn("mt-1", field)} value={f.mailLine2} onChange={(e) => setF({ ...f, mailLine2: e.target.value })} />
             </div>
             <div>
-              <label className={label}>City{req}</label>
+              <label className={label}>City</label>
               <input className={cn("mt-1", field)} value={f.mailCity} onChange={(e) => setF({ ...f, mailCity: e.target.value })} />
             </div>
             <div>
-              <label className={label}>State / region{req}</label>
+              <label className={label}>State / region</label>
               <input className={cn("mt-1", field)} value={f.mailState} onChange={(e) => setF({ ...f, mailState: e.target.value })} />
             </div>
             <div>
-              <label className={label}>Postal code{req}</label>
+              <label className={label}>Postal code</label>
               <input className={cn("mt-1", field)} value={f.mailPostal} onChange={(e) => setF({ ...f, mailPostal: e.target.value })} />
             </div>
             <div>
-              <label className={label}>Country{req}</label>
+              <label className={label}>Country</label>
               <div className="mt-1">
                 <CountrySelect value={f.mailCountry} onChange={(c) => setF({ ...f, mailCountry: c })} />
               </div>
@@ -1037,7 +967,7 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
               <input className={cn("mt-1", field)} value={f.fax} onChange={(e) => setF({ ...f, fax: e.target.value })} />
             </div>
             <div>
-              <label className={label}>Email{req}</label>
+              <label className={label}>Email</label>
               <input type="email" className={cn("mt-1", field)} value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
             </div>
           </div>
@@ -1051,7 +981,7 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
             ))}
           </div>
           <div>
-            <label className={label}>Number of dependents{req}</label>
+            <label className={label}>Number of dependents</label>
             <input className={cn("mt-1 max-w-xs", field)} value={f.dependents} onChange={(e) => setF({ ...f, dependents: e.target.value })} />
           </div>
         </div>
@@ -1067,7 +997,6 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
                 <div key={row.key}>
                   <label className={label}>
                     {row.label}
-                    {req}
                   </label>
                   <select
                     className={cn("mt-1", field)}
@@ -1134,7 +1063,7 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className={label}>Employment status{req}</label>
+              <label className={label}>Employment status</label>
               <select
                 className={cn("mt-1", field)}
                 value={f.employment_status}
@@ -1155,7 +1084,7 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
               <input className={cn("mt-1", field)} value={f.occupation} onChange={(e) => setF({ ...f, occupation: e.target.value })} />
             </div>
             <div>
-              <label className={label}>Approximate annual income{req}</label>
+              <label className={label}>Approximate annual income</label>
               <select
                 className={cn("mt-1", field)}
                 value={f.annual_income}
@@ -1169,21 +1098,7 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
               </select>
             </div>
             <div>
-              <label className={label}>Nested marginal tax bracket</label>
-              <select
-                className={cn("mt-1", field)}
-                value={f.marginalBracket}
-                onChange={(e) => setF({ ...f, marginalBracket: e.target.value })}
-              >
-                {BRACKET_OPTS.map((o) => (
-                  <option key={o.value || "b"} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={label}>Approximate total net worth{req}</label>
+              <label className={label}>Approximate total net worth</label>
               <select
                 className={cn("mt-1", field)}
                 value={f.net_worth}
@@ -1215,7 +1130,7 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
               </select>
             </div>
             <div>
-              <label className={label}>Source of funds to be deposited{req}</label>
+              <label className={label}>Source of funds to be deposited</label>
               <select
                 className={cn("mt-1", field)}
                 value={f.source_of_funds}
@@ -1229,7 +1144,7 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className={label}>Overall trading / investing experience{req}</label>
+              <label className={label}>Overall trading / investing experience</label>
               <select
                 className={cn("mt-1", field)}
                 value={f.investment_experience}
@@ -1243,7 +1158,7 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className={label}>Risk tolerance{req}</label>
+              <label className={label}>Risk tolerance</label>
               <select
                 className={cn("mt-1", field)}
                 value={f.risk_tolerance}
@@ -1337,14 +1252,14 @@ export function FullAccountApplicationWizard({ mode = "apply" }: { mode?: "apply
               <Link to="/terms" className="text-brand hover:underline">
                 Terms of Service
               </Link>{" "}
-              and representations made in this application.{req}
+              and representations made in this application.
             </span>
           </label>
           <label className="flex items-start gap-2">
             <input type="checkbox" checked={f.agreedRisk} onChange={(e) => setF({ ...f, agreedRisk: e.target.checked })} />
             <span>
               I understand trading involves substantial risk of loss and that past performance is not indicative of
-              future results.{req}
+              future results.
             </span>
           </label>
         </div>
