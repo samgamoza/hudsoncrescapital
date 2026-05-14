@@ -56,7 +56,7 @@ function InvestorSignupPage() {
             </p>
             <ul className="mt-8 space-y-3 text-sm text-foreground/90">
               {[
-                "Quick signup — just your basic details and password",
+                "Quick signup, just your basic details and password",
                 "Encrypted connection; passwords handled by secure auth",
                 "Complete suitability, disclosures, and identity verification inside your secure portal",
               ].map((line) => (
