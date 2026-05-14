@@ -5,14 +5,11 @@ import {
   AlertTriangle,
   ArrowLeftRight,
   Banknote,
-  ChartCandlestick,
-  ExternalLink,
   Globe2,
   History,
   LayoutDashboard,
   LifeBuoy,
   LineChart,
-  Lock,
   LogOut,
   PieChart,
   ScrollText,
@@ -28,7 +25,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 import { getMarketingWebsiteHomeUrl } from "@/lib/site-origin";
-import { usePortalProfileStatus } from "@/lib/portal-profile-status";
 import { cn } from "@/lib/utils";
 
 export type NavItem = {
@@ -37,15 +33,13 @@ export type NavItem = {
   /** Optional icon (IG-style rail) — shown before the label when set. */
   icon?: LucideIcon;
   openInNewWindow?: boolean;
-  /** Render below other links with CTA styling (e.g. Open Platform). */
+  /**
+   * Render at the bottom of the sidebar using regular nav styling. Used today
+   * for Support + Settings so they sit underneath the main navigation list
+   * (with a divider) without changing visual treatment.
+   */
   pinBelow?: boolean;
 };
-
-/** Nav items whose `to` should be hard-gated until the profile is submitted. */
-const INVESTOR_LOCKED_PATHS = new Set([
-  "/portal/trade-workspace",
-  "/portal/investor/wallet",
-]);
 
 export function PortalShell({
   title,
@@ -60,7 +54,6 @@ export function PortalShell({
 }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { isIncomplete } = usePortalProfileStatus();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -130,30 +123,28 @@ export function PortalShell({
             {nav
               .filter((item) => item.pinBelow)
               .map((item) => {
-                const PinIcon = item.icon ?? ExternalLink;
-                const locked = isIncomplete && INVESTOR_LOCKED_PATHS.has(item.to);
-                if (locked) {
-                  return (
-                    <div
-                      key={item.to}
-                      aria-disabled="true"
-                      title="Complete your profile to unlock"
-                      className="flex min-w-0 items-center justify-center gap-2 rounded-xl border border-border bg-muted/15 px-4 py-3 text-sm font-semibold text-muted-foreground opacity-80 cursor-not-allowed"
-                    >
-                      <Lock className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
-                      <span className="truncate">{item.label}</span>
-                    </div>
-                  );
-                }
+                const Icon = item.icon;
+                const rowClass = Icon ? "flex w-full min-w-0 items-center gap-2.5" : "";
+                const active =
+                  pathname === item.to || pathname.startsWith(item.to + "/");
                 return (
                   <Link
                     key={item.to}
                     to={item.to}
                     target={item.openInNewWindow ? "_blank" : undefined}
                     rel={item.openInNewWindow ? "noopener noreferrer" : undefined}
-                    className="flex min-w-0 items-center justify-center gap-2 rounded-xl bg-gradient-brand px-4 py-3 text-sm font-semibold text-brand-foreground shadow-glow transition-opacity hover:opacity-95 border border-brand/30"
+                    className={`px-3 py-2 rounded-lg text-sm transition-colors ${rowClass} ${
+                      active
+                        ? "bg-brand/15 text-foreground border border-brand/30"
+                        : "text-muted-foreground hover:text-foreground hover:bg-surface-elevated"
+                    }`}
                   >
-                    <PinIcon className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+                    {Icon ? (
+                      <Icon
+                        className={`h-4 w-4 shrink-0 ${active ? "text-brand opacity-95" : "opacity-80"}`}
+                        aria-hidden
+                      />
+                    ) : null}
                     <span className="truncate">{item.label}</span>
                   </Link>
                 );
@@ -291,15 +282,8 @@ export const NAV_INVESTOR: NavItem[] = [
   { to: "/portal/investor/transactions", label: "Transactions", icon: ArrowLeftRight },
   { to: "/portal/investor/kyc", label: "KYC", icon: ShieldCheck },
   { to: "/portal/investor/profile", label: "Profile", icon: UserCircle },
-  { to: "/portal/investor/support", label: "Support", icon: LifeBuoy },
-  { to: "/portal/investor/settings", label: "Settings", icon: Settings },
-  {
-    to: "/portal/trade-workspace",
-    label: "Open Platform",
-    icon: ChartCandlestick,
-    openInNewWindow: true,
-    pinBelow: true,
-  },
+  { to: "/portal/investor/support", label: "Support", icon: LifeBuoy, pinBelow: true },
+  { to: "/portal/investor/settings", label: "Settings", icon: Settings, pinBelow: true },
 ];
 
 export const NAV_ADMIN: NavItem[] = [

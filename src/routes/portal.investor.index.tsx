@@ -27,6 +27,42 @@ const fmt = (n: any, c = "USD") =>
     maximumFractionDigits: 2,
   });
 
+/**
+ * Compact "Open Platform" button shown in the top-right of the dashboard
+ * header. Replaces the wide hero tile we used to render under the quick
+ * actions grid. Locked state mirrors the QuickAction lock treatment for
+ * visual consistency.
+ */
+function OpenPlatformButton({ locked }: { locked?: boolean }) {
+  if (locked) {
+    return (
+      <div
+        aria-disabled="true"
+        title="Complete your profile to unlock"
+        className="inline-flex h-10 shrink-0 items-center gap-2 self-start rounded-md border border-border bg-muted/20 px-3 text-sm font-medium text-muted-foreground opacity-80 cursor-not-allowed"
+      >
+        <Lock className="h-4 w-4" aria-hidden />
+        <span>Open Platform</span>
+      </div>
+    );
+  }
+  return (
+    <Link
+      to="/portal/trade-workspace"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group inline-flex h-10 shrink-0 items-center gap-2 self-start rounded-md border border-brand/40 bg-gradient-brand px-3 text-sm font-semibold text-brand-foreground shadow-glow transition-opacity hover:opacity-95"
+    >
+      <ChartCandlestick className="h-4 w-4 opacity-90" aria-hidden />
+      <span>Open Platform</span>
+      <ExternalLink
+        className="h-3.5 w-3.5 opacity-90 transition-transform group-hover:translate-x-0.5"
+        aria-hidden
+      />
+    </Link>
+  );
+}
+
 function QuickAction({
   to,
   icon: Icon,
@@ -145,10 +181,13 @@ function InvestorDashboard() {
 
   return (
     <>
-      <PageHeader
-        title="Investor Dashboard"
-        subtitle="Capital, funding activity, and portfolio at a glance."
-      />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <PageHeader
+          title="Investor Dashboard"
+          subtitle="Capital, funding activity, and portfolio at a glance."
+        />
+        <OpenPlatformButton locked={isIncomplete} />
+      </div>
 
       <ProfileCompletionBanner />
 
@@ -180,59 +219,6 @@ function InvestorDashboard() {
           label="Verification"
           hint="KYC & documents"
         />
-      </div>
-
-      <div className="mt-4">
-        {isIncomplete ? (
-          <div
-            aria-disabled="true"
-            title="Complete your profile to unlock"
-            className="flex w-full flex-col items-stretch gap-2 rounded-xl border-2 border-border bg-muted/15 p-4 text-muted-foreground opacity-80 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted/30 ring-2 ring-border">
-                <ChartCandlestick className="h-6 w-6" aria-hidden />
-              </div>
-              <div className="text-left">
-                <div className="text-base font-semibold tracking-tight text-foreground">
-                  Open Platform
-                </div>
-                <div className="mt-0.5 text-xs text-muted-foreground">
-                  Complete your profile to open the trading workspace.
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-2 text-sm font-medium text-muted-foreground sm:shrink-0">
-              <Lock className="h-4 w-4" aria-hidden />
-              <span>Locked</span>
-            </div>
-          </div>
-        ) : (
-          <Link
-            to="/portal/trade-workspace"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex w-full flex-col items-stretch gap-2 rounded-xl border-2 border-brand/50 bg-gradient-to-br from-brand/25 via-brand to-brand/80 p-4 text-brand-foreground shadow-glow transition-[transform,opacity] hover:opacity-[0.97] hover:-translate-y-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-foreground/15 text-brand-foreground ring-2 ring-brand-foreground/25">
-                <ChartCandlestick className="h-6 w-6" aria-hidden />
-              </div>
-              <div className="text-left">
-                <div className="text-base font-semibold tracking-tight text-brand-foreground">
-                  Open Platform
-                </div>
-                <div className="mt-0.5 text-xs text-brand-foreground/85">
-                  Trading workspace opens in a new browser tab.
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-2 text-sm font-semibold text-brand-foreground sm:shrink-0">
-              <span className="hidden sm:inline">Open in new window</span>
-              <ExternalLink className="h-5 w-5 opacity-90 transition-transform group-hover:translate-x-0.5" aria-hidden />
-            </div>
-          </Link>
-        )}
       </div>
 
       {/* Real metrics */}
