@@ -1,12 +1,23 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { Pencil, HelpCircle, Check, X } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  ClipboardList,
+  Clock3,
+  HelpCircle,
+  Pencil,
+  Check,
+  X,
+} from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { PageHeader, SectionCard } from "@/lib/portalShared";
 import { CountrySelect, IntlPhoneInput } from "@/components/portal/IntlPhoneInput";
 import { isValidE164 } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
+import { usePortalProfileStatus } from "@/lib/portal-profile-status";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/portal/investor/profile")({
   component: ProfilePage,
@@ -262,6 +273,8 @@ function ProfilePage() {
           </a>
         </div>
       </div>
+
+      <OnlineApplicationCard />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* PROFILE */}
@@ -629,5 +642,134 @@ function KV({ label, value }: { label: string; value: any }) {
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className="capitalize text-foreground">{value ?? "—"}</div>
     </div>
+  );
+}
+
+/**
+ * Nested "Online application" card shown at the top of the Profile page.
+ * Surfaces the in-portal completion wizard as a sub-section of Profile so
+ * we don't need a separate sidebar entry.
+ */
+function OnlineApplicationCard() {
+  const { loading, summary, isComplete, isIncomplete } = usePortalProfileStatus();
+  const status = summary?.status ?? null;
+
+  // Status badge palette
+  let tone:
+    | { ring: string; bg: string; icon: any; label: string; pill: string }
+    | null = null;
+  if (loading) {
+    tone = {
+      ring: "border-border",
+      bg: "bg-muted/15",
+      icon: Clock3,
+      label: "Checking status…",
+      pill: "bg-muted/40 text-muted-foreground",
+    };
+  } else if (isIncomplete) {
+    tone = {
+      ring: "border-amber-500/40",
+      bg: "bg-amber-500/10",
+      icon: ClipboardList,
+      label: "Action required",
+      pill: "bg-amber-500/20 text-amber-700 dark:text-amber-300",
+    };
+  } else if (status === "submitted") {
+    tone = {
+      ring: "border-brand/40",
+      bg: "bg-brand/10",
+      icon: Clock3,
+      label: "Under review",
+      pill: "bg-brand/20 text-brand",
+    };
+  } else if (isComplete) {
+    tone = {
+      ring: "border-success/40",
+      bg: "bg-success/10",
+      icon: CheckCircle2,
+      label: "Verified",
+      pill: "bg-success/20 text-success",
+    };
+  } else {
+    tone = {
+      ring: "border-border",
+      bg: "bg-surface",
+      icon: ClipboardList,
+      label: status ?? "Unknown",
+      pill: "bg-muted/40 text-muted-foreground",
+    };
+  }
+
+  const Icon = tone.icon;
+  const title = isIncomplete
+    ? "Complete your investment account application"
+    : status === "submitted"
+      ? "Application submitted — under review"
+      : isComplete
+        ? "Investment account application on file"
+        : "Investment account application";
+
+  const description = isIncomplete
+    ? "Finish suitability, disclosures, banking and identity verification so our desk can approve trading, deposits and withdrawals."
+    : status === "submitted"
+      ? "Our compliance desk is reviewing your submission. We'll email you when your account is approved."
+      : isComplete
+        ? "Your application is on file. You can revisit it if compliance asks you to update anything."
+        : "Open the online account application to review or update your submission.";
+
+  const ctaLabel = isIncomplete
+    ? "Start application"
+    : status === "submitted"
+      ? "Review submission"
+      : "Review application";
+
+  return (
+    <SectionCard
+      title="Online application"
+      description="Online Account Opening Form — required before trading, deposits, or withdrawals are enabled."
+      className={cn("border-l-4", tone.ring.replace("border-", "border-l-"))}
+    >
+      <div
+        className={cn(
+          "rounded-lg border p-4 sm:p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between",
+          tone.ring,
+          tone.bg,
+        )}
+      >
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="h-10 w-10 shrink-0 rounded-lg bg-background/80 flex items-center justify-center border border-border">
+            <Icon className="h-5 w-5 text-foreground" aria-hidden />
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+                  tone.pill,
+                )}
+              >
+                {tone.label}
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-end sm:gap-1">
+          <Link
+            to="/portal/investor/profile/complete"
+            className={cn(
+              "inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold shadow-glow",
+              isIncomplete
+                ? "bg-gradient-brand text-brand-foreground hover:opacity-90"
+                : "border border-border bg-surface text-foreground hover:bg-surface-elevated",
+            )}
+          >
+            {ctaLabel}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
+    </SectionCard>
   );
 }

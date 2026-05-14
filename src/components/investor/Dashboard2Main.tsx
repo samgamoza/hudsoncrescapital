@@ -12,6 +12,7 @@ import type { TradeHistoryRow } from "@/lib/trade-history.types";
 import type { Dashboard2Tab } from "@/components/investor/InvestorDashboard2Shell";
 import { CountrySelect } from "@/components/portal/IntlPhoneInput";
 import { SectionCard } from "@/lib/portalShared";
+import { ProfileCompletionBanner } from "@/components/portal/ProfileCompletionBanner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -61,6 +62,7 @@ function D2Empty({ icon: Icon, title, hint }: { icon: LucideIcon; title: string;
 export function Dashboard2Main({ tab }: { tab: Dashboard2Tab }) {
   return (
     <div className="space-y-8">
+      <ProfileCompletionBanner />
       {tab === "profile" && <ProfileTab />}
       {tab === "trading-buy" && <TradesTab mode="buy" />}
       {tab === "trading-sell" && <TradesTab mode="sell" />}

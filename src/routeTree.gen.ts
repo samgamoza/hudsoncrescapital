@@ -76,6 +76,8 @@ import { Route as ApiPortalTicketsRouteImport } from './routes/api/portal/ticket
 import { Route as ApiPortalSubPortfoliosRouteImport } from './routes/api/portal/sub-portfolios'
 import { Route as ApiPortalSubPortfolioHoldingsRouteImport } from './routes/api/portal/sub-portfolio-holdings'
 import { Route as ApiPortalStaffTradeHistoryRouteImport } from './routes/api/portal/staff-trade-history'
+import { Route as ApiPortalSignupBootstrapRouteImport } from './routes/api/portal/signup-bootstrap'
+import { Route as ApiPortalProfileCompletionRouteImport } from './routes/api/portal/profile-completion'
 import { Route as ApiPortalProfileRouteImport } from './routes/api/portal/profile'
 import { Route as ApiPortalPortalSettingsRouteImport } from './routes/api/portal/portal-settings'
 import { Route as ApiPortalOrderExecutionRouteImport } from './routes/api/portal/order-execution'
@@ -92,6 +94,7 @@ import { Route as ApiPortalAssetListingsRouteImport } from './routes/api/portal/
 import { Route as ApiPortalAdminStaffRouteImport } from './routes/api/portal/admin-staff'
 import { Route as ApiPortalAccountApplicationRouteImport } from './routes/api/portal/account-application'
 import { Route as PortalLoginAdminCreateAccountRouteImport } from './routes/portal.login.admin.create-account'
+import { Route as PortalInvestorProfileCompleteRouteImport } from './routes/portal.investor.profile_.complete'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -439,6 +442,18 @@ const ApiPortalStaffTradeHistoryRoute =
     path: '/api/portal/staff-trade-history',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPortalSignupBootstrapRoute =
+  ApiPortalSignupBootstrapRouteImport.update({
+    id: '/api/portal/signup-bootstrap',
+    path: '/api/portal/signup-bootstrap',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPortalProfileCompletionRoute =
+  ApiPortalProfileCompletionRouteImport.update({
+    id: '/api/portal/profile-completion',
+    path: '/api/portal/profile-completion',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPortalProfileRoute = ApiPortalProfileRouteImport.update({
   id: '/api/portal/profile',
   path: '/api/portal/profile',
@@ -524,6 +539,12 @@ const PortalLoginAdminCreateAccountRoute =
     path: '/admin/create-account',
     getParentRoute: () => PortalLoginRoute,
   } as any)
+const PortalInvestorProfileCompleteRoute =
+  PortalInvestorProfileCompleteRouteImport.update({
+    id: '/profile_/complete',
+    path: '/profile/complete',
+    getParentRoute: () => PortalInvestorRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -562,6 +583,8 @@ export interface FileRoutesByFullPath {
   '/api/portal/order-execution': typeof ApiPortalOrderExecutionRoute
   '/api/portal/portal-settings': typeof ApiPortalPortalSettingsRoute
   '/api/portal/profile': typeof ApiPortalProfileRoute
+  '/api/portal/profile-completion': typeof ApiPortalProfileCompletionRoute
+  '/api/portal/signup-bootstrap': typeof ApiPortalSignupBootstrapRoute
   '/api/portal/staff-trade-history': typeof ApiPortalStaffTradeHistoryRoute
   '/api/portal/sub-portfolio-holdings': typeof ApiPortalSubPortfolioHoldingsRoute
   '/api/portal/sub-portfolios': typeof ApiPortalSubPortfoliosRoute
@@ -608,6 +631,7 @@ export interface FileRoutesByFullPath {
   '/portal/signup/investor': typeof PortalSignupInvestorRoute
   '/portal/admin/': typeof PortalAdminIndexRoute
   '/portal/investor/': typeof PortalInvestorIndexRoute
+  '/portal/investor/profile/complete': typeof PortalInvestorProfileCompleteRoute
   '/portal/login/admin/create-account': typeof PortalLoginAdminCreateAccountRoute
 }
 export interface FileRoutesByTo {
@@ -645,6 +669,8 @@ export interface FileRoutesByTo {
   '/api/portal/order-execution': typeof ApiPortalOrderExecutionRoute
   '/api/portal/portal-settings': typeof ApiPortalPortalSettingsRoute
   '/api/portal/profile': typeof ApiPortalProfileRoute
+  '/api/portal/profile-completion': typeof ApiPortalProfileCompletionRoute
+  '/api/portal/signup-bootstrap': typeof ApiPortalSignupBootstrapRoute
   '/api/portal/staff-trade-history': typeof ApiPortalStaffTradeHistoryRoute
   '/api/portal/sub-portfolio-holdings': typeof ApiPortalSubPortfolioHoldingsRoute
   '/api/portal/sub-portfolios': typeof ApiPortalSubPortfoliosRoute
@@ -691,6 +717,7 @@ export interface FileRoutesByTo {
   '/portal/signup/investor': typeof PortalSignupInvestorRoute
   '/portal/admin': typeof PortalAdminIndexRoute
   '/portal/investor': typeof PortalInvestorIndexRoute
+  '/portal/investor/profile/complete': typeof PortalInvestorProfileCompleteRoute
   '/portal/login/admin/create-account': typeof PortalLoginAdminCreateAccountRoute
 }
 export interface FileRoutesById {
@@ -731,6 +758,8 @@ export interface FileRoutesById {
   '/api/portal/order-execution': typeof ApiPortalOrderExecutionRoute
   '/api/portal/portal-settings': typeof ApiPortalPortalSettingsRoute
   '/api/portal/profile': typeof ApiPortalProfileRoute
+  '/api/portal/profile-completion': typeof ApiPortalProfileCompletionRoute
+  '/api/portal/signup-bootstrap': typeof ApiPortalSignupBootstrapRoute
   '/api/portal/staff-trade-history': typeof ApiPortalStaffTradeHistoryRoute
   '/api/portal/sub-portfolio-holdings': typeof ApiPortalSubPortfolioHoldingsRoute
   '/api/portal/sub-portfolios': typeof ApiPortalSubPortfoliosRoute
@@ -777,6 +806,7 @@ export interface FileRoutesById {
   '/portal/signup_/investor': typeof PortalSignupInvestorRoute
   '/portal/admin/': typeof PortalAdminIndexRoute
   '/portal/investor/': typeof PortalInvestorIndexRoute
+  '/portal/investor/profile_/complete': typeof PortalInvestorProfileCompleteRoute
   '/portal/login/admin/create-account': typeof PortalLoginAdminCreateAccountRoute
 }
 export interface FileRouteTypes {
@@ -818,6 +848,8 @@ export interface FileRouteTypes {
     | '/api/portal/order-execution'
     | '/api/portal/portal-settings'
     | '/api/portal/profile'
+    | '/api/portal/profile-completion'
+    | '/api/portal/signup-bootstrap'
     | '/api/portal/staff-trade-history'
     | '/api/portal/sub-portfolio-holdings'
     | '/api/portal/sub-portfolios'
@@ -864,6 +896,7 @@ export interface FileRouteTypes {
     | '/portal/signup/investor'
     | '/portal/admin/'
     | '/portal/investor/'
+    | '/portal/investor/profile/complete'
     | '/portal/login/admin/create-account'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -901,6 +934,8 @@ export interface FileRouteTypes {
     | '/api/portal/order-execution'
     | '/api/portal/portal-settings'
     | '/api/portal/profile'
+    | '/api/portal/profile-completion'
+    | '/api/portal/signup-bootstrap'
     | '/api/portal/staff-trade-history'
     | '/api/portal/sub-portfolio-holdings'
     | '/api/portal/sub-portfolios'
@@ -947,6 +982,7 @@ export interface FileRouteTypes {
     | '/portal/signup/investor'
     | '/portal/admin'
     | '/portal/investor'
+    | '/portal/investor/profile/complete'
     | '/portal/login/admin/create-account'
   id:
     | '__root__'
@@ -986,6 +1022,8 @@ export interface FileRouteTypes {
     | '/api/portal/order-execution'
     | '/api/portal/portal-settings'
     | '/api/portal/profile'
+    | '/api/portal/profile-completion'
+    | '/api/portal/signup-bootstrap'
     | '/api/portal/staff-trade-history'
     | '/api/portal/sub-portfolio-holdings'
     | '/api/portal/sub-portfolios'
@@ -1032,6 +1070,7 @@ export interface FileRouteTypes {
     | '/portal/signup_/investor'
     | '/portal/admin/'
     | '/portal/investor/'
+    | '/portal/investor/profile_/complete'
     | '/portal/login/admin/create-account'
   fileRoutesById: FileRoutesById
 }
@@ -1072,6 +1111,8 @@ export interface RootRouteChildren {
   ApiPortalOrderExecutionRoute: typeof ApiPortalOrderExecutionRoute
   ApiPortalPortalSettingsRoute: typeof ApiPortalPortalSettingsRoute
   ApiPortalProfileRoute: typeof ApiPortalProfileRoute
+  ApiPortalProfileCompletionRoute: typeof ApiPortalProfileCompletionRoute
+  ApiPortalSignupBootstrapRoute: typeof ApiPortalSignupBootstrapRoute
   ApiPortalStaffTradeHistoryRoute: typeof ApiPortalStaffTradeHistoryRoute
   ApiPortalSubPortfolioHoldingsRoute: typeof ApiPortalSubPortfolioHoldingsRoute
   ApiPortalSubPortfoliosRoute: typeof ApiPortalSubPortfoliosRoute
@@ -1566,6 +1607,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPortalStaffTradeHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/portal/signup-bootstrap': {
+      id: '/api/portal/signup-bootstrap'
+      path: '/api/portal/signup-bootstrap'
+      fullPath: '/api/portal/signup-bootstrap'
+      preLoaderRoute: typeof ApiPortalSignupBootstrapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/portal/profile-completion': {
+      id: '/api/portal/profile-completion'
+      path: '/api/portal/profile-completion'
+      fullPath: '/api/portal/profile-completion'
+      preLoaderRoute: typeof ApiPortalProfileCompletionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/portal/profile': {
       id: '/api/portal/profile'
       path: '/api/portal/profile'
@@ -1678,6 +1733,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalLoginAdminCreateAccountRouteImport
       parentRoute: typeof PortalLoginRoute
     }
+    '/portal/investor/profile_/complete': {
+      id: '/portal/investor/profile_/complete'
+      path: '/profile/complete'
+      fullPath: '/portal/investor/profile/complete'
+      preLoaderRoute: typeof PortalInvestorProfileCompleteRouteImport
+      parentRoute: typeof PortalInvestorRoute
+    }
   }
 }
 
@@ -1728,6 +1790,7 @@ interface PortalInvestorRouteChildren {
   PortalInvestorTransactionsRoute: typeof PortalInvestorTransactionsRoute
   PortalInvestorWalletRoute: typeof PortalInvestorWalletRoute
   PortalInvestorIndexRoute: typeof PortalInvestorIndexRoute
+  PortalInvestorProfileCompleteRoute: typeof PortalInvestorProfileCompleteRoute
 }
 
 const PortalInvestorRouteChildren: PortalInvestorRouteChildren = {
@@ -1745,6 +1808,7 @@ const PortalInvestorRouteChildren: PortalInvestorRouteChildren = {
   PortalInvestorTransactionsRoute: PortalInvestorTransactionsRoute,
   PortalInvestorWalletRoute: PortalInvestorWalletRoute,
   PortalInvestorIndexRoute: PortalInvestorIndexRoute,
+  PortalInvestorProfileCompleteRoute: PortalInvestorProfileCompleteRoute,
 }
 
 const PortalInvestorRouteWithChildren = PortalInvestorRoute._addFileChildren(
@@ -1800,6 +1864,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPortalOrderExecutionRoute: ApiPortalOrderExecutionRoute,
   ApiPortalPortalSettingsRoute: ApiPortalPortalSettingsRoute,
   ApiPortalProfileRoute: ApiPortalProfileRoute,
+  ApiPortalProfileCompletionRoute: ApiPortalProfileCompletionRoute,
+  ApiPortalSignupBootstrapRoute: ApiPortalSignupBootstrapRoute,
   ApiPortalStaffTradeHistoryRoute: ApiPortalStaffTradeHistoryRoute,
   ApiPortalSubPortfolioHoldingsRoute: ApiPortalSubPortfolioHoldingsRoute,
   ApiPortalSubPortfoliosRoute: ApiPortalSubPortfoliosRoute,

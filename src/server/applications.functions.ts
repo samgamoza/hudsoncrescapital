@@ -29,6 +29,20 @@ export type SignupBootstrapPayload = z.infer<typeof signupBootstrapSchema>;
  * for the current user, using only the basic identity fields collected at
  * signup. Idempotent: if a profile row already exists we keep its status.
  */
+/**
+ * Truthy when a Postgres / PostgREST error indicates that the (new) metadata
+ * column on `profiles` is not present yet. Lets us silently fall back to a
+ * metadata-less read or write so the portal still works in environments where
+ * `20260514000000_profile_completion_split.sql` has not been applied.
+ */
+function isMissingProfilesMetadata(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { message?: unknown; code?: unknown };
+  const msg = typeof e.message === "string" ? e.message : "";
+  if (e.code === "42703" || e.code === "PGRST204") return true;
+  return /metadata/i.test(msg) && /(column|does not exist|schema cache|could not find)/i.test(msg);
+}
+
 export const bootstrapInvestorProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => signupBootstrapSchema.parse(d))
@@ -39,29 +53,50 @@ export const bootstrapInvestorProfile = createServerFn({ method: "POST" })
     const country = data.country_of_residence.toUpperCase();
     const now = new Date().toISOString();
 
-    const { data: existing, error: lookupErr } = await supabaseAdmin
-      .from("profiles")
-      .select("user_id, status, metadata")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (lookupErr) throw new Error(lookupErr.message);
+    let existing: { user_id: string; status: string | null; metadata?: unknown } | null = null;
+    {
+      const fullLookup = await supabaseAdmin
+        .from("profiles")
+        .select("user_id, status, metadata")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (fullLookup.error) {
+        if (!isMissingProfilesMetadata(fullLookup.error)) {
+          throw new Error(fullLookup.error.message);
+        }
+        const fallback = await supabaseAdmin
+          .from("profiles")
+          .select("user_id, status")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (fallback.error) throw new Error(fallback.error.message);
+        existing = fallback.data ? { ...fallback.data, metadata: null } : null;
+      } else {
+        existing = fullLookup.data;
+      }
+    }
 
     const prevMeta =
       existing?.metadata && typeof existing.metadata === "object" && !Array.isArray(existing.metadata)
         ? (existing.metadata as Record<string, unknown>)
         : {};
 
-    const { error: profErr } = await (supabaseAdmin.from("profiles") as any).upsert(
-      {
-        user_id: userId,
-        legal_first_name: data.legal_first_name,
-        legal_last_name: data.legal_last_name,
-        display_name: `${data.legal_first_name} ${data.legal_last_name}`.trim(),
-        phone: data.phone,
-        country_of_residence: country,
-        status: existing?.status === "submitted" || existing?.status === "verified"
+    const baseProfileRow = {
+      user_id: userId,
+      legal_first_name: data.legal_first_name,
+      legal_last_name: data.legal_last_name,
+      display_name: `${data.legal_first_name} ${data.legal_last_name}`.trim(),
+      phone: data.phone,
+      country_of_residence: country,
+      status:
+        existing?.status === "submitted" || existing?.status === "verified"
           ? existing.status
           : "incomplete",
+    };
+
+    let { error: profErr } = await (supabaseAdmin.from("profiles") as any).upsert(
+      {
+        ...baseProfileRow,
         metadata: {
           ...prevMeta,
           agreed_terms_at: prevMeta.agreed_terms_at ?? now,
@@ -71,6 +106,11 @@ export const bootstrapInvestorProfile = createServerFn({ method: "POST" })
       },
       { onConflict: "user_id" },
     );
+    if (profErr && isMissingProfilesMetadata(profErr)) {
+      ({ error: profErr } = await (supabaseAdmin.from("profiles") as any).upsert(baseProfileRow, {
+        onConflict: "user_id",
+      }));
+    }
     if (profErr) throw new Error(`Profile bootstrap failed: ${profErr.message}`);
 
     // Ensure exactly one pending brokerage account exists so the in-portal
@@ -348,18 +388,51 @@ export const getPortalProfileSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<PortalProfileSummary> => {
     const { userId } = context;
-    const [profileQ, accountsQ] = await Promise.all([
-      supabaseAdmin.from("profiles").select("status, metadata").eq("user_id", userId).maybeSingle(),
-      supabaseAdmin.from("accounts").select("id").eq("user_id", userId).limit(1),
-    ]);
-    const meta =
-      profileQ.data?.metadata && typeof profileQ.data.metadata === "object" && !Array.isArray(profileQ.data.metadata)
-        ? (profileQ.data.metadata as Record<string, unknown>)
-        : {};
-    const seenRaw = meta.completion_modal_seen_at;
+
+    // Read accounts in parallel — independent of metadata.
+    const accountsPromise = supabaseAdmin
+      .from("accounts")
+      .select("id")
+      .eq("user_id", userId)
+      .limit(1);
+
+    let status = "incomplete";
+    let modalSeenAt: string | null = null;
+
+    const profileFull = await supabaseAdmin
+      .from("profiles")
+      .select("status, metadata")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (profileFull.error) {
+      if (!isMissingProfilesMetadata(profileFull.error)) {
+        throw new Error(profileFull.error.message);
+      }
+      // Metadata column not deployed yet — read what we can.
+      const profileBasic = await supabaseAdmin
+        .from("profiles")
+        .select("status")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (profileBasic.error) throw new Error(profileBasic.error.message);
+      status = (profileBasic.data as { status?: string | null } | null)?.status ?? "incomplete";
+    } else if (profileFull.data) {
+      status = profileFull.data.status ?? "incomplete";
+      const meta =
+        profileFull.data.metadata &&
+        typeof profileFull.data.metadata === "object" &&
+        !Array.isArray(profileFull.data.metadata)
+          ? (profileFull.data.metadata as Record<string, unknown>)
+          : {};
+      const seenRaw = meta.completion_modal_seen_at;
+      if (typeof seenRaw === "string" && seenRaw.length > 0) modalSeenAt = seenRaw;
+    }
+
+    const accountsQ = await accountsPromise;
     return {
-      status: profileQ.data?.status ?? "incomplete",
-      modalSeenAt: typeof seenRaw === "string" && seenRaw.length > 0 ? seenRaw : null,
+      status,
+      modalSeenAt,
       hasAccount: (accountsQ.data ?? []).length > 0,
     };
   });
@@ -374,7 +447,14 @@ export const markProfileCompletionModalSeen = createServerFn({ method: "POST" })
       .select("metadata")
       .eq("user_id", userId)
       .maybeSingle();
-    if (readErr) throw new Error(readErr.message);
+    if (readErr) {
+      if (isMissingProfilesMetadata(readErr)) {
+        // No metadata column → nothing to persist. Treat the dismissal as
+        // acknowledged for this session so the modal doesn't loop.
+        return { ok: true as const, persisted: false as const };
+      }
+      throw new Error(readErr.message);
+    }
 
     const prev =
       existing?.metadata && typeof existing.metadata === "object" && !Array.isArray(existing.metadata)
@@ -386,8 +466,11 @@ export const markProfileCompletionModalSeen = createServerFn({ method: "POST" })
       { user_id: userId, metadata: next },
       { onConflict: "user_id" },
     );
-    if (updErr) throw new Error(updErr.message);
-    return { ok: true as const };
+    if (updErr) {
+      if (isMissingProfilesMetadata(updErr)) return { ok: true as const, persisted: false as const };
+      throw new Error(updErr.message);
+    }
+    return { ok: true as const, persisted: true as const };
   });
 
 /* ------------------------------------------------------------------ */

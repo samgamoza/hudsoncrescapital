@@ -6,13 +6,13 @@ import {
   ArrowLeftRight,
   Banknote,
   ChartCandlestick,
-  ClipboardList,
   ExternalLink,
   Globe2,
   History,
   LayoutDashboard,
   LifeBuoy,
   LineChart,
+  Lock,
   LogOut,
   PieChart,
   ScrollText,
@@ -28,6 +28,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 import { getMarketingWebsiteHomeUrl } from "@/lib/site-origin";
+import { usePortalProfileStatus } from "@/lib/portal-profile-status";
 import { cn } from "@/lib/utils";
 
 export type NavItem = {
@@ -39,6 +40,12 @@ export type NavItem = {
   /** Render below other links with CTA styling (e.g. Open Platform). */
   pinBelow?: boolean;
 };
+
+/** Nav items whose `to` should be hard-gated until the profile is submitted. */
+const INVESTOR_LOCKED_PATHS = new Set([
+  "/portal/trade-workspace",
+  "/portal/investor/wallet",
+]);
 
 export function PortalShell({
   title,
@@ -53,6 +60,7 @@ export function PortalShell({
 }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { isIncomplete } = usePortalProfileStatus();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -123,6 +131,20 @@ export function PortalShell({
               .filter((item) => item.pinBelow)
               .map((item) => {
                 const PinIcon = item.icon ?? ExternalLink;
+                const locked = isIncomplete && INVESTOR_LOCKED_PATHS.has(item.to);
+                if (locked) {
+                  return (
+                    <div
+                      key={item.to}
+                      aria-disabled="true"
+                      title="Complete your profile to unlock"
+                      className="flex min-w-0 items-center justify-center gap-2 rounded-xl border border-border bg-muted/15 px-4 py-3 text-sm font-semibold text-muted-foreground opacity-80 cursor-not-allowed"
+                    >
+                      <Lock className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+                      <span className="truncate">{item.label}</span>
+                    </div>
+                  );
+                }
                 return (
                   <Link
                     key={item.to}
@@ -266,7 +288,6 @@ export const NAV_INVESTOR: NavItem[] = [
   { to: "/portal/investor/performance", label: "Performance", icon: LineChart },
   { to: "/portal/investor/trade-history", label: "Trade history", icon: History },
   { to: "/portal/investor/wallet", label: "Wallet", icon: Wallet },
-  { to: "/portal/investor/profile/complete", label: "Complete profile", icon: ClipboardList },
   { to: "/portal/investor/transactions", label: "Transactions", icon: ArrowLeftRight },
   { to: "/portal/investor/kyc", label: "KYC", icon: ShieldCheck },
   { to: "/portal/investor/profile", label: "Profile", icon: UserCircle },
