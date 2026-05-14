@@ -3,6 +3,7 @@ import { Check, Shield } from "lucide-react";
 import { InvestorSignupForm } from "@/components/portal/InvestorSignupForm";
 import { getMarketingWebsiteHomeUrl } from "@/lib/site-origin";
 import logo from "@/assets/logo.png";
+import sidePanelImage from "@/assets/city-newyork.jpg";
 
 export const Route = createFileRoute("/portal/signup_/investor")({
   head: () => ({
@@ -23,8 +24,19 @@ function InvestorSignupPage() {
   return (
     <div className="min-h-screen bg-background grid-bg flex items-center justify-center px-4 py-10 sm:px-6">
       <div className="flex w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl lg:min-h-[min(100vh-5rem,720px)] lg:flex-row">
-        <aside className="relative flex flex-col justify-between border-b border-border bg-gradient-to-br from-brand/25 via-background to-background p-8 lg:w-[42%] lg:border-b-0 lg:border-r lg:p-10">
-          <div>
+        <aside className="relative isolate flex flex-col justify-between overflow-hidden border-b border-border p-8 lg:w-[42%] lg:border-b-0 lg:border-r lg:p-10">
+          {/* Background photo + corporate overlay */}
+          <div
+            className="pointer-events-none absolute inset-0 -z-20 bg-cover bg-center"
+            style={{ backgroundImage: `url(${sidePanelImage})` }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-background/95 via-background/80 to-brand/25"
+            aria-hidden
+          />
+
+          <div className="relative">
             <a
               href={getMarketingWebsiteHomeUrl()}
               className="inline-flex items-center gap-2"
@@ -49,7 +61,7 @@ function InvestorSignupPage() {
                 "Complete suitability, disclosures, and identity verification inside your secure portal",
               ].map((line) => (
                 <li key={line} className="flex gap-3">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand/20 text-brand">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand/20 text-brand backdrop-blur">
                     <Check className="h-3 w-3" strokeWidth={3} />
                   </span>
                   <span>{line}</span>
@@ -57,7 +69,9 @@ function InvestorSignupPage() {
               ))}
             </ul>
           </div>
-          <p className="mt-10 hidden text-xs text-muted-foreground lg:block">Hudson Crest Capital</p>
+          <p className="relative mt-10 hidden text-xs text-muted-foreground lg:block">
+            Hudson Crest Capital
+          </p>
         </aside>
 
         <div className="flex flex-1 flex-col overflow-y-auto bg-card p-6 sm:p-8 lg:p-10">
