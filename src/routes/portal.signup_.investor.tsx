@@ -81,7 +81,7 @@ function InvestorSignupPage() {
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">Online Account Opening Form</p>
             <p className="mt-3 text-xs text-muted-foreground">
-              Start with the basics below — you'll finish suitability, disclosures, and identity
+              Start with the basics below, you'll finish suitability, disclosures, and identity
               verification inside your portal after sign-in.
             </p>
           </div>
