@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { PortalLoginForm } from "@/components/portal/PortalLoginForm";
+import { SiteLayout } from "@/components/site/SiteLayout";
 
 const searchSchema = z.object({
   redirect: z.string().optional(),
@@ -22,5 +23,9 @@ export const Route = createFileRoute("/portal/login_/investor")({
 });
 
 function InvestorLoginPage() {
-  return <PortalLoginForm audience="investor" fromRouteId="/portal/login_/investor" />;
+  return (
+    <SiteLayout>
+      <PortalLoginForm audience="investor" fromRouteId="/portal/login_/investor" />
+    </SiteLayout>
+  );
 }

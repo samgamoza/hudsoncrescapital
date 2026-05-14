@@ -2,6 +2,7 @@ import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-rout
 import { z } from "zod";
 import { Briefcase, ArrowRight } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { SiteLayout } from "@/components/site/SiteLayout";
 import { getMarketingWebsiteHomeUrl } from "@/lib/site-origin";
 
 const searchSchema = z.object({
@@ -34,7 +35,8 @@ function PortalChooser() {
   }
 
   return (
-    <div className="min-h-screen bg-background grid-bg flex items-center justify-center px-6 py-12">
+    <SiteLayout>
+    <div className="grid-bg flex items-center justify-center px-6 py-12 sm:py-16">
       <div className="w-full max-w-2xl">
         <a
           href={getMarketingWebsiteHomeUrl()}
@@ -68,16 +70,8 @@ function PortalChooser() {
           </Link>
         </div>
 
-        <div className="mt-8 text-center">
-          <a
-            href={getMarketingWebsiteHomeUrl()}
-            className="text-xs text-muted-foreground hover:text-foreground"
-            rel="noreferrer"
-          >
-            ← Back to website
-          </a>
-        </div>
       </div>
     </div>
+    </SiteLayout>
   );
 }

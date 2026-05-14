@@ -263,7 +263,7 @@ export function PortalLoginForm({ audience, fromRouteId }: Props) {
   const otherPortalLabel = "Investor login";
 
   return (
-    <div className="min-h-screen bg-background grid-bg flex items-center justify-center px-6 py-12">
+    <div className="grid-bg flex items-center justify-center px-6 py-12 sm:py-16">
       <div className="w-full max-w-md surface-card p-8 shadow-elevated">
         <a
           href={getMarketingWebsiteHomeUrl()}
