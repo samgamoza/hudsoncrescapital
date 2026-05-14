@@ -12,10 +12,10 @@ export const Route = createFileRoute("/api/portal/signup-bootstrap")({
     handlers: {
       POST: async ({ request }) => {
         try {
-          await requireUserIdFromRequest(request);
+          const userId = await requireUserIdFromRequest(request);
           const body = await readJsonBody(request);
           const { bootstrapInvestorProfile } = await import("@/server/applications.functions");
-          return Response.json(await bootstrapInvestorProfile({ data: body }));
+          return Response.json(await bootstrapInvestorProfile(userId, body));
         } catch (error) {
           return apiErrorResponse(error);
         }

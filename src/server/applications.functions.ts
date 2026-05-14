@@ -1,6 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 /* ------------------------------------------------------------------ */
@@ -25,11 +23,6 @@ export const signupBootstrapSchema = z.object({
 export type SignupBootstrapPayload = z.infer<typeof signupBootstrapSchema>;
 
 /**
- * Create (or refresh) the stub investor profile + pending brokerage account
- * for the current user, using only the basic identity fields collected at
- * signup. Idempotent: if a profile row already exists we keep its status.
- */
-/**
  * Truthy when a Postgres / PostgREST error indicates that the (new) metadata
  * column on `profiles` is not present yet. Lets us silently fall back to a
  * metadata-less read or write so the portal still works in environments where
@@ -43,12 +36,20 @@ function isMissingProfilesMetadata(err: unknown): boolean {
   return /metadata/i.test(msg) && /(column|does not exist|schema cache|could not find)/i.test(msg);
 }
 
-export const bootstrapInvestorProfile = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => signupBootstrapSchema.parse(d))
-  .handler(async ({ context, data }) => {
+/**
+ * Create (or refresh) the stub investor profile + pending brokerage account
+ * for the current user, using only the basic identity fields collected at
+ * signup. Idempotent: if a profile row already exists we keep its status.
+ *
+ * Plain async function — `/api/**` handlers call this directly after
+ * resolving auth via `requireUserIdFromRequest`. We deliberately avoid
+ * createServerFn wrappers from Nitro routes because production builds can
+ * lose the server-fn manifest mapping and start throwing
+ * "Server function info not found".
+ */
+export async function bootstrapInvestorProfile(userId: string, rawData: unknown) {
+    const data = signupBootstrapSchema.parse(rawData);
     const { audit } = await import("./_shared.server");
-    const { userId } = context;
 
     const country = data.country_of_residence.toUpperCase();
     const now = new Date().toISOString();
@@ -165,7 +166,7 @@ export const bootstrapInvestorProfile = createServerFn({ method: "POST" })
           : "incomplete",
       accountId: primaryId,
     };
-  });
+}
 
 /* ------------------------------------------------------------------ */
 /* Profile-completion wizard (in-portal)                              */
@@ -246,11 +247,6 @@ export const profileCompletionSchema = z.object({
 export type ProfileCompletionPayload = z.infer<typeof profileCompletionSchema>;
 
 /** Submit (or update) the full in-portal profile-completion wizard. */
-export const submitProfileCompletion = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => profileCompletionSchema.parse(d))
-  .handler(async ({ context, data }) => submitProfileCompletionForApi(context.userId, data));
-
 export async function submitProfileCompletionForApi(userId: string, raw: unknown) {
   const data = profileCompletionSchema.parse(raw);
   const { audit } = await import("./_shared.server");
@@ -384,94 +380,87 @@ export type PortalProfileSummary = {
 };
 
 /** Compact summary used by the portal layout to drive modal/banner/gate UX. */
-export const getPortalProfileSummary = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<PortalProfileSummary> => {
-    const { userId } = context;
+export async function getPortalProfileSummary(userId: string): Promise<PortalProfileSummary> {
+  // Read accounts in parallel — independent of metadata.
+  const accountsPromise = supabaseAdmin
+    .from("accounts")
+    .select("id")
+    .eq("user_id", userId)
+    .limit(1);
 
-    // Read accounts in parallel — independent of metadata.
-    const accountsPromise = supabaseAdmin
-      .from("accounts")
-      .select("id")
-      .eq("user_id", userId)
-      .limit(1);
+  let status = "incomplete";
+  let modalSeenAt: string | null = null;
 
-    let status = "incomplete";
-    let modalSeenAt: string | null = null;
+  const profileFull = await supabaseAdmin
+    .from("profiles")
+    .select("status, metadata")
+    .eq("user_id", userId)
+    .maybeSingle();
 
-    const profileFull = await supabaseAdmin
+  if (profileFull.error) {
+    if (!isMissingProfilesMetadata(profileFull.error)) {
+      throw new Error(profileFull.error.message);
+    }
+    // Metadata column not deployed yet — read what we can.
+    const profileBasic = await supabaseAdmin
       .from("profiles")
-      .select("status, metadata")
+      .select("status")
       .eq("user_id", userId)
       .maybeSingle();
+    if (profileBasic.error) throw new Error(profileBasic.error.message);
+    status = (profileBasic.data as { status?: string | null } | null)?.status ?? "incomplete";
+  } else if (profileFull.data) {
+    status = profileFull.data.status ?? "incomplete";
+    const meta =
+      profileFull.data.metadata &&
+      typeof profileFull.data.metadata === "object" &&
+      !Array.isArray(profileFull.data.metadata)
+        ? (profileFull.data.metadata as Record<string, unknown>)
+        : {};
+    const seenRaw = meta.completion_modal_seen_at;
+    if (typeof seenRaw === "string" && seenRaw.length > 0) modalSeenAt = seenRaw;
+  }
 
-    if (profileFull.error) {
-      if (!isMissingProfilesMetadata(profileFull.error)) {
-        throw new Error(profileFull.error.message);
-      }
-      // Metadata column not deployed yet — read what we can.
-      const profileBasic = await supabaseAdmin
-        .from("profiles")
-        .select("status")
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (profileBasic.error) throw new Error(profileBasic.error.message);
-      status = (profileBasic.data as { status?: string | null } | null)?.status ?? "incomplete";
-    } else if (profileFull.data) {
-      status = profileFull.data.status ?? "incomplete";
-      const meta =
-        profileFull.data.metadata &&
-        typeof profileFull.data.metadata === "object" &&
-        !Array.isArray(profileFull.data.metadata)
-          ? (profileFull.data.metadata as Record<string, unknown>)
-          : {};
-      const seenRaw = meta.completion_modal_seen_at;
-      if (typeof seenRaw === "string" && seenRaw.length > 0) modalSeenAt = seenRaw;
-    }
-
-    const accountsQ = await accountsPromise;
-    return {
-      status,
-      modalSeenAt,
-      hasAccount: (accountsQ.data ?? []).length > 0,
-    };
-  });
+  const accountsQ = await accountsPromise;
+  return {
+    status,
+    modalSeenAt,
+    hasAccount: (accountsQ.data ?? []).length > 0,
+  };
+}
 
 /** Persist the "user has acknowledged the completion reminder" flag. */
-export const markProfileCompletionModalSeen = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { userId } = context;
-    const { data: existing, error: readErr } = await supabaseAdmin
-      .from("profiles")
-      .select("metadata")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (readErr) {
-      if (isMissingProfilesMetadata(readErr)) {
-        // No metadata column → nothing to persist. Treat the dismissal as
-        // acknowledged for this session so the modal doesn't loop.
-        return { ok: true as const, persisted: false as const };
-      }
-      throw new Error(readErr.message);
+export async function markProfileCompletionModalSeen(userId: string) {
+  const { data: existing, error: readErr } = await supabaseAdmin
+    .from("profiles")
+    .select("metadata")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (readErr) {
+    if (isMissingProfilesMetadata(readErr)) {
+      // No metadata column → nothing to persist. Treat the dismissal as
+      // acknowledged for this session so the modal doesn't loop.
+      return { ok: true as const, persisted: false as const };
     }
+    throw new Error(readErr.message);
+  }
 
-    const prev =
-      existing?.metadata && typeof existing.metadata === "object" && !Array.isArray(existing.metadata)
-        ? (existing.metadata as Record<string, unknown>)
-        : {};
-    const next = { ...prev, completion_modal_seen_at: new Date().toISOString() };
+  const prev =
+    existing?.metadata && typeof existing.metadata === "object" && !Array.isArray(existing.metadata)
+      ? (existing.metadata as Record<string, unknown>)
+      : {};
+  const next = { ...prev, completion_modal_seen_at: new Date().toISOString() };
 
-    const { error: updErr } = await (supabaseAdmin.from("profiles") as any).upsert(
-      { user_id: userId, metadata: next },
-      { onConflict: "user_id" },
-    );
-    if (updErr) {
-      if (isMissingProfilesMetadata(updErr)) return { ok: true as const, persisted: false as const };
-      throw new Error(updErr.message);
-    }
-    return { ok: true as const, persisted: true as const };
-  });
+  const { error: updErr } = await (supabaseAdmin.from("profiles") as any).upsert(
+    { user_id: userId, metadata: next },
+    { onConflict: "user_id" },
+  );
+  if (updErr) {
+    if (isMissingProfilesMetadata(updErr)) return { ok: true as const, persisted: false as const };
+    throw new Error(updErr.message);
+  }
+  return { ok: true as const, persisted: true as const };
+}
 
 /* ------------------------------------------------------------------ */
 /* Application context — read for the wizard + admin tooling          */
@@ -487,24 +476,21 @@ export async function getAccountApplicationContextForApi(userId: string) {
   return { accounts: rows ?? [] };
 }
 
-export const getMyApplicationStatus = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { userId } = context;
-    const [accountsQ, profileQ, kycQ] = await Promise.all([
-      supabaseAdmin
-        .from("accounts")
-        .select(
-          "id, account_number, status, account_type, base_currency, created_at, opened_at, suspension_reason, metadata",
-        )
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false }),
-      supabaseAdmin.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
-      supabaseAdmin.from("kyc_documents").select("doc_type, status").eq("user_id", userId),
-    ]);
-    return {
-      accounts: accountsQ.data ?? [],
-      profile: profileQ.data,
-      kycDocs: kycQ.data ?? [],
-    };
-  });
+export async function getMyApplicationStatus(userId: string) {
+  const [accountsQ, profileQ, kycQ] = await Promise.all([
+    supabaseAdmin
+      .from("accounts")
+      .select(
+        "id, account_number, status, account_type, base_currency, created_at, opened_at, suspension_reason, metadata",
+      )
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false }),
+    supabaseAdmin.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
+    supabaseAdmin.from("kyc_documents").select("doc_type, status").eq("user_id", userId),
+  ]);
+  return {
+    accounts: accountsQ.data ?? [],
+    profile: profileQ.data,
+    kycDocs: kycQ.data ?? [],
+  };
+}

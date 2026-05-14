@@ -14,9 +14,9 @@ export const Route = createFileRoute("/api/portal/profile-completion")({
     handlers: {
       GET: async ({ request }) => {
         try {
-          await requireUserIdFromRequest(request);
+          const userId = await requireUserIdFromRequest(request);
           const { getPortalProfileSummary } = await import("@/server/applications.functions");
-          return Response.json(await getPortalProfileSummary());
+          return Response.json(await getPortalProfileSummary(userId));
         } catch (error) {
           return apiErrorResponse(error);
         }
@@ -33,11 +33,11 @@ export const Route = createFileRoute("/api/portal/profile-completion")({
       },
       PATCH: async ({ request }) => {
         try {
-          await requireUserIdFromRequest(request);
+          const userId = await requireUserIdFromRequest(request);
           const { markProfileCompletionModalSeen } = await import(
             "@/server/applications.functions"
           );
-          return Response.json(await markProfileCompletionModalSeen());
+          return Response.json(await markProfileCompletionModalSeen(userId));
         } catch (error) {
           return apiErrorResponse(error);
         }

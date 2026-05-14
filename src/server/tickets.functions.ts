@@ -1,12 +1,23 @@
-import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { audit, getRolesForUser, isStaff, requireMinRole, topRole } from "./_shared.server";
 
+/**
+ * Plain async helpers used by `/api/portal/tickets` (and the admin equivalents
+ * if any). See `profile.functions.ts` for why we no longer wrap these in
+ * `createServerFn` — the manifest mapping is fragile when called from Nitro
+ * API route handlers and we'd rather not surprise users with random 500s.
+ */
+
 const TICKET_CATEGORIES = ["account", "funding", "trading", "kyc", "technical", "other"] as const;
 const TICKET_PRIORITIES = ["low", "normal", "high", "urgent"] as const;
-const TICKET_STATUSES = ["open", "pending_user", "pending_staff", "resolved", "closed"] as const;
+const TICKET_STATUSES = [
+  "open",
+  "pending_user",
+  "pending_staff",
+  "resolved",
+  "closed",
+] as const;
 
 const createTicketSchema = z.object({
   subject: z.string().trim().min(3, "Subject too short").max(200),
@@ -16,10 +27,16 @@ const createTicketSchema = z.object({
   account_id: z.string().uuid().optional().nullable(),
 });
 
+const getSchema = z.object({ id: z.string().uuid() });
+
 const replySchema = z.object({
   ticket_id: z.string().uuid(),
   body: z.string().trim().min(1).max(5000),
   is_internal: z.boolean().default(false),
+});
+
+const listAllSchema = z.object({
+  status: z.enum([...TICKET_STATUSES, "all"]).default("all"),
 });
 
 const updateStatusSchema = z.object({
@@ -39,212 +56,188 @@ const assignSchema = z.object({
 
 // ---------- INVESTOR ----------
 
-export const listMyTickets = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await (supabaseAdmin.from("tickets") as any)
-      .select("id, subject, category, priority, status, last_activity_at, created_at")
-      .eq("user_id", context.userId)
-      .order("last_activity_at", { ascending: false })
-      .limit(200);
-    if (error) throw new Error(error.message);
-    return data ?? [];
+export async function listMyTickets(userId: string) {
+  const { data, error } = await (supabaseAdmin.from("tickets") as any)
+    .select("id, subject, category, priority, status, last_activity_at, created_at")
+    .eq("user_id", userId)
+    .order("last_activity_at", { ascending: false })
+    .limit(200);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function createTicket(userId: string, raw: unknown) {
+  const data = createTicketSchema.parse(raw);
+
+  const { data: ticket, error: tErr } = await (supabaseAdmin.from("tickets") as any)
+    .insert({
+      user_id: userId,
+      account_id: data.account_id ?? null,
+      subject: data.subject,
+      category: data.category,
+      priority: data.priority,
+      status: "open",
+    })
+    .select()
+    .single();
+  if (tErr || !ticket) throw new Error(tErr?.message ?? "Failed to create ticket");
+
+  const { error: mErr } = await (supabaseAdmin.from("ticket_messages") as any).insert({
+    ticket_id: ticket.id,
+    author_id: userId,
+    author_role: "investor",
+    body: data.body,
+    is_internal: false,
+  });
+  if (mErr) throw new Error(mErr.message);
+
+  await audit({
+    actorId: userId,
+    action: "ticket.create",
+    targetType: "ticket",
+    targetId: ticket.id,
+    targetUserId: userId,
+    payload: { subject: data.subject, category: data.category },
   });
 
-export const createTicket = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => createTicketSchema.parse(d))
-  .handler(async ({ context, data }) => {
-    const { userId } = context;
-
-    const { data: ticket, error: tErr } = await (supabaseAdmin.from("tickets") as any)
-      .insert({
-        user_id: userId,
-        account_id: data.account_id ?? null,
-        subject: data.subject,
-        category: data.category,
-        priority: data.priority,
-        status: "open",
-      })
-      .select()
-      .single();
-    if (tErr || !ticket) throw new Error(tErr?.message ?? "Failed to create ticket");
-
-    const { error: mErr } = await (supabaseAdmin.from("ticket_messages") as any).insert({
-      ticket_id: ticket.id,
-      author_id: userId,
-      author_role: "investor",
-      body: data.body,
-      is_internal: false,
-    });
-    if (mErr) throw new Error(mErr.message);
-
-    await audit({
-      actorId: userId,
-      action: "ticket.create",
-      targetType: "ticket",
-      targetId: ticket.id,
-      targetUserId: userId,
-      payload: { subject: data.subject, category: data.category },
-    });
-
-    return { id: ticket.id };
-  });
+  return { id: ticket.id };
+}
 
 // ---------- SHARED (investor or staff) ----------
 
-export const getTicket = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ context, data }) => {
-    const { userId } = context;
-    const roles = await getRolesForUser(userId);
-    const staff = isStaff(roles);
+export async function getTicket(userId: string, raw: unknown) {
+  const data = getSchema.parse(raw);
+  const roles = await getRolesForUser(userId);
+  const staff = isStaff(roles);
 
-    const { data: ticket, error } = await (supabaseAdmin.from("tickets") as any)
-      .select("*")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!ticket) throw new Error("Ticket not found");
-    if (!staff && ticket.user_id !== userId) throw new Error("Forbidden");
+  const { data: ticket, error } = await (supabaseAdmin.from("tickets") as any)
+    .select("*")
+    .eq("id", data.id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!ticket) throw new Error("Ticket not found");
+  if (!staff && ticket.user_id !== userId) throw new Error("Forbidden");
 
-    let messageQuery = (supabaseAdmin.from("ticket_messages") as any)
-      .select("id, author_id, author_role, body, is_internal, created_at")
-      .eq("ticket_id", data.id)
-      .order("created_at", { ascending: true });
-    if (!staff) messageQuery = messageQuery.eq("is_internal", false);
+  let messageQuery = (supabaseAdmin.from("ticket_messages") as any)
+    .select("id, author_id, author_role, body, is_internal, created_at")
+    .eq("ticket_id", data.id)
+    .order("created_at", { ascending: true });
+  if (!staff) messageQuery = messageQuery.eq("is_internal", false);
 
-    const { data: messages, error: mErr } = await messageQuery;
-    if (mErr) throw new Error(mErr.message);
+  const { data: messages, error: mErr } = await messageQuery;
+  if (mErr) throw new Error(mErr.message);
 
-    return { ticket, messages: messages ?? [], viewerIsStaff: staff };
+  return { ticket, messages: messages ?? [], viewerIsStaff: staff };
+}
+
+export async function replyTicket(userId: string, raw: unknown) {
+  const data = replySchema.parse(raw);
+  const roles = await getRolesForUser(userId);
+  const staff = isStaff(roles);
+  if (data.is_internal && !staff) throw new Error("Only staff can post internal notes");
+
+  const { data: ticket, error: tErr } = await (supabaseAdmin.from("tickets") as any)
+    .select("id, user_id, status")
+    .eq("id", data.ticket_id)
+    .maybeSingle();
+  if (tErr) throw new Error(tErr.message);
+  if (!ticket) throw new Error("Ticket not found");
+  if (!staff && ticket.user_id !== userId) throw new Error("Forbidden");
+  if (ticket.status === "closed") throw new Error("Ticket is closed");
+
+  const authorRole = staff ? (topRole(roles) ?? "support") : "investor";
+
+  const { error: mErr } = await (supabaseAdmin.from("ticket_messages") as any).insert({
+    ticket_id: ticket.id,
+    author_id: userId,
+    author_role: authorRole,
+    body: data.body,
+    is_internal: data.is_internal,
   });
+  if (mErr) throw new Error(mErr.message);
 
-export const replyTicket = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => replySchema.parse(d))
-  .handler(async ({ context, data }) => {
-    const { userId } = context;
-    const roles = await getRolesForUser(userId);
-    const staff = isStaff(roles);
-    if (data.is_internal && !staff) throw new Error("Only staff can post internal notes");
+  if (!data.is_internal) {
+    const newStatus = staff ? "pending_user" : "pending_staff";
+    await (supabaseAdmin.from("tickets") as any)
+      .update({ status: newStatus })
+      .eq("id", ticket.id);
+  }
 
-    // Load ticket for ownership / status check
-    const { data: ticket, error: tErr } = await (supabaseAdmin.from("tickets") as any)
-      .select("id, user_id, status")
-      .eq("id", data.ticket_id)
-      .maybeSingle();
-    if (tErr) throw new Error(tErr.message);
-    if (!ticket) throw new Error("Ticket not found");
-    if (!staff && ticket.user_id !== userId) throw new Error("Forbidden");
-    if (ticket.status === "closed") throw new Error("Ticket is closed");
-
-    const authorRole = staff ? (topRole(roles) ?? "support") : "investor";
-
-    const { error: mErr } = await (supabaseAdmin.from("ticket_messages") as any).insert({
-      ticket_id: ticket.id,
-      author_id: userId,
-      author_role: authorRole,
-      body: data.body,
-      is_internal: data.is_internal,
-    });
-    if (mErr) throw new Error(mErr.message);
-
-    // Auto-flip status if not internal
-    if (!data.is_internal) {
-      const newStatus = staff ? "pending_user" : "pending_staff";
-      await (supabaseAdmin.from("tickets") as any)
-        .update({ status: newStatus })
-        .eq("id", ticket.id);
-    }
-
-    return { ok: true };
-  });
+  return { ok: true };
+}
 
 // ---------- STAFF ----------
 
-export const listAllTickets = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) =>
-    z.object({
-      status: z.enum([...TICKET_STATUSES, "all"]).default("all"),
-    }).parse(d ?? {}),
-  )
-  .handler(async ({ context, data }) => {
-    await requireMinRole(context.userId, "support");
+export async function listAllTickets(userId: string, raw?: unknown) {
+  const data = listAllSchema.parse(raw ?? {});
+  await requireMinRole(userId, "support");
 
-    let q = (supabaseAdmin.from("tickets") as any)
-      .select("id, user_id, subject, category, priority, status, assigned_to, last_activity_at, created_at")
-      .order("last_activity_at", { ascending: false })
-      .limit(500);
-    if (data.status !== "all") q = q.eq("status", data.status);
+  let q = (supabaseAdmin.from("tickets") as any)
+    .select(
+      "id, user_id, subject, category, priority, status, assigned_to, last_activity_at, created_at",
+    )
+    .order("last_activity_at", { ascending: false })
+    .limit(500);
+  if (data.status !== "all") q = q.eq("status", data.status);
 
-    const { data: tickets, error } = await q;
-    if (error) throw new Error(error.message);
+  const { data: tickets, error } = await q;
+  if (error) throw new Error(error.message);
 
-    // Fetch profile names for involved users
-    const userIds = Array.from(new Set((tickets ?? []).map((t: any) => t.user_id)));
-    let nameMap: Record<string, string> = {};
-    if (userIds.length) {
-      const { data: profs } = await (supabaseAdmin.from("profiles") as any)
-        .select("user_id, legal_first_name, legal_last_name, display_name")
-        .in("user_id", userIds);
-      nameMap = Object.fromEntries(
-        (profs ?? []).map((p: any) => [
-          p.user_id,
-          [p.legal_first_name, p.legal_last_name].filter(Boolean).join(" ") ||
-            p.display_name ||
-            "—",
-        ]),
-      );
-    }
+  const userIds = Array.from(new Set((tickets ?? []).map((t: any) => t.user_id)));
+  let nameMap: Record<string, string> = {};
+  if (userIds.length) {
+    const { data: profs } = await (supabaseAdmin.from("profiles") as any)
+      .select("user_id, legal_first_name, legal_last_name, display_name")
+      .in("user_id", userIds);
+    nameMap = Object.fromEntries(
+      (profs ?? []).map((p: any) => [
+        p.user_id,
+        [p.legal_first_name, p.legal_last_name].filter(Boolean).join(" ") ||
+          p.display_name ||
+          "—",
+      ]),
+    );
+  }
 
-    return (tickets ?? []).map((t: any) => ({ ...t, user_name: nameMap[t.user_id] ?? "—" }));
+  return (tickets ?? []).map((t: any) => ({ ...t, user_name: nameMap[t.user_id] ?? "—" }));
+}
+
+export async function updateTicketStatus(userId: string, raw: unknown) {
+  const data = updateStatusSchema.parse(raw);
+  await requireMinRole(userId, "support");
+  const patch: Record<string, unknown> = { status: data.status };
+  if (data.status === "resolved") patch.resolved_at = new Date().toISOString();
+  if (data.status === "closed") patch.closed_at = new Date().toISOString();
+  const { error } = await (supabaseAdmin.from("tickets") as any)
+    .update(patch)
+    .eq("id", data.ticket_id);
+  if (error) throw new Error(error.message);
+  await audit({
+    actorId: userId,
+    action: "ticket.status.update",
+    targetType: "ticket",
+    targetId: data.ticket_id,
+    payload: { status: data.status },
   });
+  return { ok: true };
+}
 
-export const updateTicketStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => updateStatusSchema.parse(d))
-  .handler(async ({ context, data }) => {
-    await requireMinRole(context.userId, "support");
-    const patch: Record<string, unknown> = { status: data.status };
-    if (data.status === "resolved") patch.resolved_at = new Date().toISOString();
-    if (data.status === "closed") patch.closed_at = new Date().toISOString();
-    const { error } = await (supabaseAdmin.from("tickets") as any)
-      .update(patch)
-      .eq("id", data.ticket_id);
-    if (error) throw new Error(error.message);
-    await audit({
-      actorId: context.userId,
-      action: "ticket.status.update",
-      targetType: "ticket",
-      targetId: data.ticket_id,
-      payload: { status: data.status },
-    });
-    return { ok: true };
-  });
+export async function updateTicketPriority(userId: string, raw: unknown) {
+  const data = updatePrioritySchema.parse(raw);
+  await requireMinRole(userId, "support");
+  const { error } = await (supabaseAdmin.from("tickets") as any)
+    .update({ priority: data.priority })
+    .eq("id", data.ticket_id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
 
-export const updateTicketPriority = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => updatePrioritySchema.parse(d))
-  .handler(async ({ context, data }) => {
-    await requireMinRole(context.userId, "support");
-    const { error } = await (supabaseAdmin.from("tickets") as any)
-      .update({ priority: data.priority })
-      .eq("id", data.ticket_id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-export const assignTicket = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => assignSchema.parse(d))
-  .handler(async ({ context, data }) => {
-    await requireMinRole(context.userId, "support");
-    const { error } = await (supabaseAdmin.from("tickets") as any)
-      .update({ assigned_to: data.assigned_to })
-      .eq("id", data.ticket_id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+export async function assignTicket(userId: string, raw: unknown) {
+  const data = assignSchema.parse(raw);
+  await requireMinRole(userId, "support");
+  const { error } = await (supabaseAdmin.from("tickets") as any)
+    .update({ assigned_to: data.assigned_to })
+    .eq("id", data.ticket_id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
