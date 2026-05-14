@@ -117,11 +117,17 @@
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    overflow-x: hidden;
+    /* `overflow-x: clip` (not `hidden`) avoids making body a scroll
+       container — `position: sticky` would otherwise clamp to body
+       instead of the viewport and the marketing header would scroll
+       away with the page. */
+    overflow-x: clip;
   }
 
   html {
-    overflow-x: hidden;
+    /* Same reason as body above: keep horizontal bleed protection
+       without breaking position:sticky descendants. */
+    overflow-x: clip;
   }
 
   h1, h2, h3, h4 {
