@@ -9,10 +9,22 @@ import {
   pendingFundingAccounts,
 } from "@/components/portal/FundingEligibilityCallout";
 import { assignLocationHref } from "@/lib/assign-location-href";
+import { ProfileGate } from "@/components/portal/ProfileGateLock";
 
 export const Route = createFileRoute("/portal/investor/wallet")({
-  component: WalletPage,
+  component: GuardedWalletPage,
 });
+
+function GuardedWalletPage() {
+  return (
+    <ProfileGate
+      feature="Wallet"
+      hint="Deposits and withdrawals open up once your profile is submitted and our desk approves your account."
+    >
+      <WalletPage />
+    </ProfileGate>
+  );
+}
 
 type Data = {
   wallets: any[];

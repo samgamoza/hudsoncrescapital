@@ -39,6 +39,8 @@ import { DiscoverAIPanel } from "@/components/workspace/DiscoverAIPanel";
 import { WorkspaceFundsPanel } from "@/components/workspace/WorkspaceFundsPanel";
 import { usePortalAuth } from "@/hooks/usePortalAuth";
 import type { AssetListing, AssetListingsResponse } from "@/lib/asset-listings.types";
+import { PortalProfileStatusProvider } from "@/lib/portal-profile-status";
+import { ProfileGate } from "@/components/portal/ProfileGateLock";
 
 type PlacePayload = {
   accountId: string;
@@ -207,8 +209,27 @@ export const Route = createFileRoute("/portal/trade-workspace")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: TradeWorkspacePage,
+  component: GuardedTradeWorkspaceRoute,
 });
+
+/**
+ * The trade workspace is hard-gated: investors with an incomplete profile see
+ * a lock screen with a CTA back to the completion wizard. Staff users skip
+ * the gate (they reach this page only via "Investor view").
+ */
+function GuardedTradeWorkspaceRoute() {
+  return (
+    <PortalProfileStatusProvider>
+      <ProfileGate
+        feature="My Workspace"
+        fullScreen
+        hint="Trading, deposits, and withdrawals unlock once your application is submitted and our desk has approved your account."
+      >
+        <TradeWorkspacePage />
+      </ProfileGate>
+    </PortalProfileStatusProvider>
+  );
+}
 
 type WorkspaceMainPanel =
   | "catalog"

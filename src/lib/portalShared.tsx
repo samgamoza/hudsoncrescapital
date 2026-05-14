@@ -266,7 +266,7 @@ export const NAV_INVESTOR: NavItem[] = [
   { to: "/portal/investor/performance", label: "Performance", icon: LineChart },
   { to: "/portal/investor/trade-history", label: "Trade history", icon: History },
   { to: "/portal/investor/wallet", label: "Wallet", icon: Wallet },
-  { to: "/portal/investor/apply", label: "Open account", icon: ClipboardList },
+  { to: "/portal/investor/profile/complete", label: "Complete profile", icon: ClipboardList },
   { to: "/portal/investor/transactions", label: "Transactions", icon: ArrowLeftRight },
   { to: "/portal/investor/kyc", label: "KYC", icon: ShieldCheck },
   { to: "/portal/investor/profile", label: "Profile", icon: UserCircle },

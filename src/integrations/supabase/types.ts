@@ -613,6 +613,7 @@ export type Database = {
           id: string
           legal_first_name: string | null
           legal_last_name: string | null
+          metadata: Json
           nationality: string | null
           phone: string | null
           status: string
@@ -629,6 +630,7 @@ export type Database = {
           id?: string
           legal_first_name?: string | null
           legal_last_name?: string | null
+          metadata?: Json
           nationality?: string | null
           phone?: string | null
           status?: string
@@ -645,6 +647,7 @@ export type Database = {
           id?: string
           legal_first_name?: string | null
           legal_last_name?: string | null
+          metadata?: Json
           nationality?: string | null
           phone?: string | null
           status?: string

@@ -8,10 +8,13 @@ import {
   ArrowRight,
   ChartCandlestick,
   ExternalLink,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { MetricCard, PageHeader, SectionCard, DataTable } from "@/lib/portalShared";
+import { usePortalProfileStatus } from "@/lib/portal-profile-status";
+import { ProfileCompletionBanner } from "@/components/portal/ProfileCompletionBanner";
 
 export const Route = createFileRoute("/portal/investor/")({
   component: InvestorDashboard,
@@ -29,12 +32,32 @@ function QuickAction({
   icon: Icon,
   label,
   hint,
+  locked,
 }: {
   to: string;
   icon: any;
   label: string;
   hint: string;
+  locked?: boolean;
 }) {
+  if (locked) {
+    return (
+      <div
+        aria-disabled="true"
+        title="Complete your profile to unlock"
+        className="surface-card p-4 flex items-center gap-3 opacity-60 cursor-not-allowed"
+      >
+        <div className="h-10 w-10 rounded-lg bg-muted/40 text-muted-foreground flex items-center justify-center">
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="flex-1">
+          <div className="text-sm font-medium text-foreground">{label}</div>
+          <div className="text-xs text-muted-foreground">Complete profile to unlock</div>
+        </div>
+        <Lock className="h-4 w-4 text-muted-foreground" />
+      </div>
+    );
+  }
   return (
     <Link
       to={to}
@@ -53,6 +76,7 @@ function QuickAction({
 }
 
 function InvestorDashboard() {
+  const { isIncomplete } = usePortalProfileStatus();
   const [data, setData] = useState<{
     wallets: any[];
     transactions: any[];
@@ -126,6 +150,8 @@ function InvestorDashboard() {
         subtitle="Capital, funding activity, and portfolio at a glance."
       />
 
+      <ProfileCompletionBanner />
+
       {/* Quick actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <QuickAction
@@ -133,12 +159,14 @@ function InvestorDashboard() {
           icon={ArrowDownToLine}
           label="Deposit Funds"
           hint="Top up your account"
+          locked={isIncomplete}
         />
         <QuickAction
           to="/portal/investor/wallet"
           icon={ArrowUpFromLine}
           label="Withdraw"
           hint="Request a payout"
+          locked={isIncomplete}
         />
         <QuickAction
           to="/portal/investor/transactions"
@@ -155,30 +183,56 @@ function InvestorDashboard() {
       </div>
 
       <div className="mt-4">
-        <Link
-          to="/portal/trade-workspace"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex w-full flex-col items-stretch gap-2 rounded-xl border-2 border-brand/50 bg-gradient-to-br from-brand/25 via-brand to-brand/80 p-4 text-brand-foreground shadow-glow transition-[transform,opacity] hover:opacity-[0.97] hover:-translate-y-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-foreground/15 text-brand-foreground ring-2 ring-brand-foreground/25">
-              <ChartCandlestick className="h-6 w-6" aria-hidden />
+        {isIncomplete ? (
+          <div
+            aria-disabled="true"
+            title="Complete your profile to unlock"
+            className="flex w-full flex-col items-stretch gap-2 rounded-xl border-2 border-border bg-muted/15 p-4 text-muted-foreground opacity-80 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted/30 ring-2 ring-border">
+                <ChartCandlestick className="h-6 w-6" aria-hidden />
+              </div>
+              <div className="text-left">
+                <div className="text-base font-semibold tracking-tight text-foreground">
+                  Open Platform
+                </div>
+                <div className="mt-0.5 text-xs text-muted-foreground">
+                  Complete your profile to open the trading workspace.
+                </div>
+              </div>
             </div>
-            <div className="text-left">
-              <div className="text-base font-semibold tracking-tight text-brand-foreground">
-                Open Platform
-              </div>
-              <div className="mt-0.5 text-xs text-brand-foreground/85">
-                Trading workspace opens in a new browser tab.
-              </div>
+            <div className="flex items-center justify-end gap-2 text-sm font-medium text-muted-foreground sm:shrink-0">
+              <Lock className="h-4 w-4" aria-hidden />
+              <span>Locked</span>
             </div>
           </div>
-          <div className="flex items-center justify-end gap-2 text-sm font-semibold text-brand-foreground sm:shrink-0">
-            <span className="hidden sm:inline">Open in new window</span>
-            <ExternalLink className="h-5 w-5 opacity-90 transition-transform group-hover:translate-x-0.5" aria-hidden />
-          </div>
-        </Link>
+        ) : (
+          <Link
+            to="/portal/trade-workspace"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex w-full flex-col items-stretch gap-2 rounded-xl border-2 border-brand/50 bg-gradient-to-br from-brand/25 via-brand to-brand/80 p-4 text-brand-foreground shadow-glow transition-[transform,opacity] hover:opacity-[0.97] hover:-translate-y-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-foreground/15 text-brand-foreground ring-2 ring-brand-foreground/25">
+                <ChartCandlestick className="h-6 w-6" aria-hidden />
+              </div>
+              <div className="text-left">
+                <div className="text-base font-semibold tracking-tight text-brand-foreground">
+                  Open Platform
+                </div>
+                <div className="mt-0.5 text-xs text-brand-foreground/85">
+                  Trading workspace opens in a new browser tab.
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 text-sm font-semibold text-brand-foreground sm:shrink-0">
+              <span className="hidden sm:inline">Open in new window</span>
+              <ExternalLink className="h-5 w-5 opacity-90 transition-transform group-hover:translate-x-0.5" aria-hidden />
+            </div>
+          </Link>
+        )}
       </div>
 
       {/* Real metrics */}

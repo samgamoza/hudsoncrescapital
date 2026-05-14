@@ -6,6 +6,8 @@ import { InvestorDashboardModeProvider, useInvestorDashboardMode } from "@/conte
 import { InvestorDashboard2Shell } from "@/components/investor/InvestorDashboard2Shell";
 import { supabase } from "@/integrations/supabase/client";
 import type { PortalRole } from "@/lib/portal-auth";
+import { PortalProfileStatusProvider } from "@/lib/portal-profile-status";
+import { ProfileCompletionModal } from "@/components/portal/ProfileCompletionModal";
 
 export const Route = createFileRoute("/portal/investor")({
   head: () => ({
@@ -19,52 +21,39 @@ export const Route = createFileRoute("/portal/investor")({
 
 function InvestorLayout() {
   const navigate = useNavigate();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { loading, role } = usePortalAuth("investor");
-  const [investorGateReady, setInvestorGateReady] = useState(false);
+  const [bootstrapReady, setBootstrapReady] = useState(false);
 
   useEffect(() => {
     if (loading) return;
     if (!role) navigate({ to: "/portal/login/investor", search: { redirect: "/portal/investor" } });
   }, [loading, role, navigate]);
 
+  // Flush any pending signup-bootstrap payload that was stashed before the
+  // user confirmed their email. Idempotent on the server.
   useEffect(() => {
     if (loading || !role) {
-      setInvestorGateReady(false);
+      setBootstrapReady(false);
       return;
     }
     if (role !== "investor") {
-      setInvestorGateReady(true);
+      setBootstrapReady(true);
       return;
     }
-    const path = pathname.replace(/\/+$/, "") || "/";
-    if (
-      path.startsWith("/portal/investor/onboarding") ||
-      path.startsWith("/portal/investor/apply") ||
-      path.startsWith("/portal/investor/kyc")
-    ) {
-      setInvestorGateReady(true);
-      return;
-    }
-    setInvestorGateReady(false);
+    setBootstrapReady(false);
     void (async () => {
       try {
-        const { flushPendingAccountApplication } = await import("@/lib/flush-pending-account-application");
-        await flushPendingAccountApplication();
-        const res = await fetch("/api/portal/investor-onboarding");
-        if (res.ok) {
-          const j = (await res.json()) as { needsOnboarding?: boolean };
-          if (j.needsOnboarding) {
-            navigate({ to: "/portal/investor/onboarding", replace: true });
-          }
-        }
+        const { flushPendingSignupBootstrap } = await import(
+          "@/lib/flush-pending-account-application"
+        );
+        await flushPendingSignupBootstrap();
       } finally {
-        setInvestorGateReady(true);
+        setBootstrapReady(true);
       }
     })();
-  }, [loading, role, pathname, navigate]);
+  }, [loading, role]);
 
-  if (loading || !role || (role === "investor" && !investorGateReady))
+  if (loading || !role || (role === "investor" && !bootstrapReady))
     return (
       <div className="min-h-screen flex items-center justify-center text-muted-foreground">
         Loading portal…
@@ -72,9 +61,12 @@ function InvestorLayout() {
     );
 
   return (
-    <InvestorDashboardModeProvider>
-      <InvestorLayoutContent role={role} />
-    </InvestorDashboardModeProvider>
+    <PortalProfileStatusProvider>
+      <InvestorDashboardModeProvider>
+        <InvestorLayoutContent role={role} />
+        {role === "investor" ? <ProfileCompletionModal /> : null}
+      </InvestorDashboardModeProvider>
+    </PortalProfileStatusProvider>
   );
 }
 
@@ -99,7 +91,7 @@ function InvestorLayoutContent({ role }: { role: NonNullable<PortalRole> }) {
 
   const pathNorm = pathname.replace(/\/+$/, "") || "/";
   const exemptDeskV2 =
-    pathNorm.startsWith("/portal/investor/onboarding") ||
+    pathNorm.startsWith("/portal/investor/profile") ||
     pathNorm.startsWith("/portal/investor/apply") ||
     pathNorm.startsWith("/portal/investor/kyc");
 
@@ -107,7 +99,7 @@ function InvestorLayoutContent({ role }: { role: NonNullable<PortalRole> }) {
     if (role !== "investor" || modeLoading || investorDashboard !== "v2") return;
     const p = pathname.replace(/\/+$/, "") || "/";
     if (
-      p.startsWith("/portal/investor/onboarding") ||
+      p.startsWith("/portal/investor/profile") ||
       p.startsWith("/portal/investor/apply") ||
       p.startsWith("/portal/investor/kyc")
     )
