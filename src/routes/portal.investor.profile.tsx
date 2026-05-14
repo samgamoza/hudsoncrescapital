@@ -272,10 +272,10 @@ function ProfilePage() {
         />
         <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
           <span>{today}</span>
-          <a className={linkBtn} href="#">
+          <Link to="/portal/investor/support" className={linkBtn}>
             <HelpCircle className="h-3.5 w-3.5" />
             Help
-          </a>
+          </Link>
         </div>
       </div>
 
@@ -752,7 +752,7 @@ function OnlineApplicationCard() {
   const title = isIncomplete
     ? "Complete your investment account application"
     : status === "submitted"
-      ? "Application submitted — under review"
+      ? "Application submitted, under review"
       : isComplete
         ? "Investment account application on file"
         : "Investment account application";
@@ -774,7 +774,7 @@ function OnlineApplicationCard() {
   return (
     <SectionCard
       title="Online application"
-      description="Online Account Opening Form — required before trading, deposits, or withdrawals are enabled."
+      description="Online Account Opening Form. Required before trading, deposits, or withdrawals are enabled."
       className={cn("border-l-4", tone.ring.replace("border-", "border-l-"))}
     >
       <div

@@ -33,7 +33,7 @@ export function ProfileGateLock({ feature, hint, fullScreen }: Props) {
       <h2 className="text-xl font-semibold text-foreground">{feature} is locked</h2>
       <p className="text-sm text-muted-foreground">
         {hint ??
-          "Complete your online application — including identity verification — so our desk can review your account. " +
+          "Complete your online application, including identity verification, so our desk can review your account. " +
             "Once approved, this feature unlocks automatically."}
       </p>
       <Link

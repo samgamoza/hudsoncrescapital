@@ -53,7 +53,7 @@ export function ProfileCompletionModal() {
             id="profile-completion-modal-title"
             className="mt-4 text-xl font-semibold tracking-tight text-foreground sm:text-2xl"
           >
-            Welcome — finish setting up your profile
+            Welcome! Finish setting up your profile
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             Your account is created. To unlock the trading workspace, deposits, and withdrawals,
