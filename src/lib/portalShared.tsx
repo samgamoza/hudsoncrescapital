@@ -322,7 +322,7 @@ export function PortalShell({
       </aside>
 
       <div className="flex flex-col">
-        <header className="h-16 border-b border-border flex items-center justify-between px-6 bg-background/60 backdrop-blur">
+        <header className="relative z-30 h-16 border-b border-border flex items-center justify-between px-6 bg-background/60 backdrop-blur">
           <span className="text-sm font-medium text-muted-foreground">{title}</span>
           <AccountMenu
             displayName={who.displayName}
