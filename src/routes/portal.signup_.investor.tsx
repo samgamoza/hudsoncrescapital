@@ -69,7 +69,7 @@ function InvestorSignupPage() {
               ))}
             </ul>
           </div>
-          <p className="relative mt-10 hidden text-xs text-muted-foreground lg:block">
+          <p className="relative mt-10 hidden text-center text-xs text-muted-foreground lg:block">
             Hudson Crest Capital
           </p>
         </aside>
