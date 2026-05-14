@@ -12,6 +12,54 @@ import appCss from "../styles.css?url";
 // localStorage, so getSession() can briefly return null. We wait (poll) up to
 // ~2s for a token, and additionally retry once on a 401 response in case a
 // token becomes available right after the initial request fired.
+// After a deploy the previously loaded index.html still references chunk
+// filenames (e.g. portal.investor-<hash>.js) whose hashes have rotated. The
+// browser then throws "Failed to fetch dynamically imported module" / "error
+// loading dynamically imported module" when the router lazy-loads a route.
+// Trap those errors once and refresh to pull the fresh index.html. A
+// sessionStorage flag prevents reload loops if the new build is still broken.
+if (typeof window !== "undefined" && !(window as any).__hcChunkReloadInstalled) {
+  (window as any).__hcChunkReloadInstalled = true;
+  const RELOAD_KEY = "hc:chunk-reload-at";
+  const RELOAD_COOLDOWN_MS = 60_000;
+
+  const looksLikeStaleChunk = (msg: string | undefined): boolean => {
+    if (!msg) return false;
+    return (
+      /Failed to fetch dynamically imported module/i.test(msg) ||
+      /error loading dynamically imported module/i.test(msg) ||
+      /Importing a module script failed/i.test(msg) ||
+      /Loading chunk [\w-]+ failed/i.test(msg) ||
+      /ChunkLoadError/i.test(msg)
+    );
+  };
+
+  const maybeReload = (msg: string | undefined): boolean => {
+    if (!looksLikeStaleChunk(msg)) return false;
+    try {
+      const last = Number(window.sessionStorage.getItem(RELOAD_KEY) ?? "0");
+      if (Number.isFinite(last) && Date.now() - last < RELOAD_COOLDOWN_MS) {
+        return false;
+      }
+      window.sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+    } catch {
+      // sessionStorage may be unavailable; reload anyway, just once per tab.
+    }
+    window.location.reload();
+    return true;
+  };
+
+  window.addEventListener("error", (event) => {
+    const m = (event.error && (event.error as Error).message) || event.message;
+    maybeReload(m);
+  });
+  window.addEventListener("unhandledrejection", (event) => {
+    const reason = (event as PromiseRejectionEvent).reason;
+    const m = reason instanceof Error ? reason.message : typeof reason === "string" ? reason : "";
+    maybeReload(m);
+  });
+}
+
 if (typeof window !== "undefined" && !(window as any).__lovableServerFnAuthPatched) {
   (window as any).__lovableServerFnAuthPatched = true;
   const originalFetch = window.fetch.bind(window);
