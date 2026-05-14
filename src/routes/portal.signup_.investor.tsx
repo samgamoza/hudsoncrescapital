@@ -51,8 +51,8 @@ function InvestorSignupPage() {
               Open your investor account in less than a minute
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Create your investor account in under a minute. Suitability checks, disclosures,
-              and identity verification are completed securely within your portal after sign-in.
+            Open your investor account in less than a minute. Suitability checks, disclosures, and identity 
+            verification are completed securely within your portal after sign-in.
             </p>
             <ul className="mt-8 space-y-3 text-sm text-foreground/90">
               {[
