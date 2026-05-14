@@ -48,7 +48,7 @@ function InvestorSignupPage() {
               Investor signup
             </p>
             <h2 className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Open your account in minutes
+              Open your investor account in less than a minute
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               Create your investor account in under a minute. Suitability, disclosures, and
