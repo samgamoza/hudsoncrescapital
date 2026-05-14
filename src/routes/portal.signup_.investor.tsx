@@ -88,9 +88,9 @@ function InvestorSignupPage() {
 
           <InvestorSignupForm />
 
-          <div className="mt-8 flex items-center justify-center gap-2 border-t border-border pt-6 text-xs text-muted-foreground">
+          <div className="mt-8 flex items-center justify-center gap-2 border-t border-border pt-6 text-xs text-muted-foreground opacity-60">
             <Shield className="h-3.5 w-3.5 shrink-0" />
-            <span>Data encrypted in transit</span>
+            <span>Data Encrypted &amp; Secured</span>
           </div>
 
           <div className="mt-4 text-xs text-muted-foreground">
