@@ -58,10 +58,15 @@ function ProfilePage() {
     year: "numeric",
   });
 
+  const [loadError, setLoadError] = useState<string | null>(null);
   const load = async () => {
+    setLoadError(null);
     try {
       const res = await fetch("/api/portal/profile");
-      if (!res.ok) throw new Error(`Failed (${res.status})`);
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text ? `Failed (${res.status}) ${text}` : `Failed (${res.status})`);
+      }
       const d = await res.json();
       setData(d);
       setForm(d.profile ?? {});
@@ -69,7 +74,9 @@ function ProfilePage() {
       const primary = accounts.find((a) => a.status === "active") ?? accounts[0];
       setAddr(primary?.metadata?.address ?? {});
     } catch (e: any) {
-      toast.error(e?.message ?? "Failed to load profile");
+      const msg = e?.message ?? "Failed to load profile";
+      setLoadError(msg);
+      toast.error(msg);
     }
   };
   useEffect(() => {
@@ -251,14 +258,12 @@ function ProfilePage() {
     }
   };
 
-  if (!data) return <p className="text-sm text-muted-foreground">Loading…</p>;
-
-  const accounts = (data.accounts ?? []) as any[];
+  const accounts = (data?.accounts ?? []) as any[];
   const primary = accounts.find((a) => a.status === "active") ?? accounts[0];
   const fin = primary?.metadata?.financial ?? null;
-  const isInactive = data.profile?.status === "inactive";
+  const isInactive = data?.profile?.status === "inactive";
 
-  return (
+  const header = (
     <>
       <div className="flex items-start justify-between gap-3 mb-2">
         <PageHeader
@@ -275,6 +280,49 @@ function ProfilePage() {
       </div>
 
       <OnlineApplicationCard />
+    </>
+  );
+
+  if (loadError) {
+    return (
+      <>
+        {header}
+        <SectionCard
+          title="Profile details temporarily unavailable"
+          description="We couldn't load the rest of your profile. The Online application above still works."
+        >
+          <p className="text-sm text-muted-foreground mb-3 break-words">
+            {loadError}
+          </p>
+          <button
+            type="button"
+            className={btn}
+            onClick={() => void load()}
+            disabled={busy}
+          >
+            Retry
+          </button>
+        </SectionCard>
+        <Toaster />
+      </>
+    );
+  }
+
+  if (!data) {
+    return (
+      <>
+        {header}
+        <SectionCard title="Loading profile…">
+          <p className="text-sm text-muted-foreground">Fetching your details…</p>
+        </SectionCard>
+        <Toaster />
+      </>
+    );
+  }
+
+  return (
+    <>
+      {header}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* PROFILE */}
