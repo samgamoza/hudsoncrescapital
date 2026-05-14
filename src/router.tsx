@@ -1,8 +1,65 @@
 import { createRouter, useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { routeTree } from "./routeTree.gen";
+
+// Stale-deploy lazy-chunk errors are caught here by TanStack Router's error
+// boundary (rather than escaping to window.onerror), so we mirror the same
+// "reload once, cooldown 60s" recovery used in __root.tsx.
+const RELOAD_KEY = "hc:chunk-reload-at";
+const RELOAD_COOLDOWN_MS = 60_000;
+
+function looksLikeStaleChunk(msg: string | undefined): boolean {
+  if (!msg) return false;
+  return (
+    /Failed to fetch dynamically imported module/i.test(msg) ||
+    /error loading dynamically imported module/i.test(msg) ||
+    /Importing a module script failed/i.test(msg) ||
+    /Loading chunk [\w-]+ failed/i.test(msg) ||
+    /ChunkLoadError/i.test(msg)
+  );
+}
+
+function tryReloadForStaleChunk(message: string | undefined): boolean {
+  if (typeof window === "undefined") return false;
+  if (!looksLikeStaleChunk(message)) return false;
+  try {
+    const last = Number(window.sessionStorage.getItem(RELOAD_KEY) ?? "0");
+    if (Number.isFinite(last) && Date.now() - last < RELOAD_COOLDOWN_MS) {
+      return false;
+    }
+    window.sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+  } catch {
+    // ignore storage failures
+  }
+  window.location.reload();
+  return true;
+}
 
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
+  const isStaleChunk = looksLikeStaleChunk(error?.message);
+
+  useEffect(() => {
+    if (isStaleChunk) tryReloadForStaleChunk(error?.message);
+  }, [isStaleChunk, error]);
+
+  // While the recovery reload is in flight, show a friendly state instead of
+  // the generic "Something went wrong" screen.
+  if (isStaleChunk) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md text-center">
+          <div className="mx-auto mb-6 h-10 w-10 animate-spin rounded-full border-2 border-muted border-t-primary" />
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            Updating to the latest version…
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            A new version of the site is available. Refreshing now.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
