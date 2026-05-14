@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Shield } from "lucide-react";
 import { InvestorSignupForm } from "@/components/portal/InvestorSignupForm";
+import { SiteLayout } from "@/components/site/SiteLayout";
 import { getMarketingWebsiteHomeUrl } from "@/lib/site-origin";
 import logo from "@/assets/logo.png";
 import sidePanelImage from "@/assets/city-newyork.jpg";
@@ -22,8 +23,9 @@ export const Route = createFileRoute("/portal/signup_/investor")({
 
 function InvestorSignupPage() {
   return (
-    <div className="min-h-screen bg-background grid-bg flex items-center justify-center px-4 py-10 sm:px-6">
-      <div className="flex w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl lg:min-h-[min(100vh-5rem,720px)] lg:flex-row">
+    <SiteLayout>
+    <div className="grid-bg flex items-center justify-center px-4 py-10 sm:px-6 sm:py-14">
+      <div className="flex w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl lg:flex-row">
         <aside className="relative isolate flex flex-col justify-between overflow-hidden border-b border-border p-8 lg:w-[42%] lg:border-b-0 lg:border-r lg:p-10">
           {/* Background photo + corporate overlay */}
           <div
@@ -97,16 +99,10 @@ function InvestorSignupPage() {
             <Link to="/portal/login/investor" className="block hover:text-foreground">
               Already have an account? Sign in →
             </Link>
-            <a
-              href={getMarketingWebsiteHomeUrl()}
-              className="mt-2 block hover:text-foreground"
-              rel="noreferrer"
-            >
-              ← Back to website
-            </a>
           </div>
         </div>
       </div>
     </div>
+    </SiteLayout>
   );
 }
