@@ -7,9 +7,13 @@ import { TickerTape } from "./TickerTape";
 const siteTickerEnabled = import.meta.env.VITE_SITE_TICKER_ENABLED !== "false";
 
 export function SiteLayout({ children }: { children: ReactNode }) {
+  // NOTE: `overflow-x-clip` (not `overflow-x-hidden`) is intentional. Setting
+  // any non-`visible` overflow on this ancestor would make it the scroll
+  // container for `position: sticky` and break the sticky header below.
+  // `clip` blocks horizontal bleed without creating a scroll container.
   return (
-    <div className="flex min-h-screen flex-col bg-background overflow-x-hidden">
-      <div className="sticky top-0 z-50 flex flex-col">
+    <div className="flex min-h-screen flex-col bg-background overflow-x-clip">
+      <div className="sticky top-0 z-50 flex flex-col shadow-sm shadow-black/20">
         {siteTickerEnabled ? <TickerTape /> : null}
         <Header />
       </div>
