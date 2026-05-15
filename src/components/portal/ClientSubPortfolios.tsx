@@ -8,6 +8,8 @@ import {
   type HoldingRow,
   type DetailField,
 } from "@/lib/assetClasses";
+import { COMMODITY_SELECT_GROUPS, COMMODITY_VALUE_TO_LABEL } from "@/lib/commodityTradeOrderSelect";
+import { GC_COMEX_CONTRACT_OPTIONS } from "@/lib/gcComexContractOptions";
 import { Plus, Trash2, Loader2, Pencil, Check, X } from "lucide-react";
 import { usePersistedState } from "@/hooks/usePersistedState";
 
@@ -174,25 +176,6 @@ function parseNum(v: string): number {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 }
-
-/** Desk Trade Order commodity routes → stored `details.commodity` label. */
-const COMMODITY_ROUTE_LABELS: Record<string, string> = {
-  listed_options: "Listed options (limited risk)",
-  index_options: "Index options",
-  currencies: "Currencies",
-  majors: "Major pairs",
-  metals: "Metals",
-  energy: "Energy",
-  ag: "Agricultural",
-  indices: "Indices",
-};
-
-const CONTRACT_SPEC_OPTIONS: { value: string; label: string }[] = [
-  { value: "", label: "— Select —" },
-  { value: "g14", label: "G14 (28 Jan 14)" },
-  { value: "h15", label: "H15 (15 Mar 15)" },
-  { value: "m16", label: "M16 (20 Jun 16)" },
-];
 
 const roFieldDesk =
   "bg-muted/40 border border-border rounded-md px-3 py-2 text-sm text-muted-foreground w-full cursor-not-allowed";
@@ -760,23 +743,16 @@ function CommodityTradeOrderNewHolding({
               value={f.desk_commodity_route}
               onChange={(e) => setF({ ...f, desk_commodity_route: e.target.value })}
             >
-              <option value="">— Select —</option>
-              <optgroup label="Derivatives / listed options">
-                <option value="listed_options">Listed options (limited risk)</option>
-                <option value="index_options">Index options</option>
-              </optgroup>
-              <optgroup label="Currencies">
-                <option value="currencies">Currencies</option>
-                <option value="majors">Major pairs</option>
-              </optgroup>
-              <optgroup label="Commodities">
-                <option value="metals">Metals</option>
-                <option value="energy">Energy</option>
-                <option value="ag">Agricultural</option>
-              </optgroup>
-              <optgroup label="Other">
-                <option value="indices">Indices</option>
-              </optgroup>
+              <option value="">Select a Commodity</option>
+              {COMMODITY_SELECT_GROUPS.map((g) => (
+                <optgroup key={g.groupLabel} label={g.groupLabel}>
+                  {g.items.map((it) => (
+                    <option key={it.value} value={it.value}>
+                      {it.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
             </select>
           </div>
           <div>
@@ -786,7 +762,7 @@ function CommodityTradeOrderNewHolding({
               value={f.desk_contract_spec}
               onChange={(e) => setF({ ...f, desk_contract_spec: e.target.value })}
             >
-              {CONTRACT_SPEC_OPTIONS.map((o) => (
+              {GC_COMEX_CONTRACT_OPTIONS.map((o) => (
                 <option key={o.value || "blank"} value={o.value}>
                   {o.label}
                 </option>
@@ -948,14 +924,14 @@ function CommodityTradeOrderNewHolding({
           onClick={async () => {
             setSaving(true);
             try {
-              const routeLabel = f.desk_commodity_route
-                ? COMMODITY_ROUTE_LABELS[f.desk_commodity_route] ?? f.desk_commodity_route
+              const commodityLabel = f.desk_commodity_route
+                ? COMMODITY_VALUE_TO_LABEL[f.desk_commodity_route] ?? f.desk_commodity_route
                 : "";
               const specLabel =
-                CONTRACT_SPEC_OPTIONS.find((o) => o.value === f.desk_contract_spec)?.label ?? "";
+                GC_COMEX_CONTRACT_OPTIONS.find((o) => o.value === f.desk_contract_spec)?.label ?? "";
               const stem =
                 f.nameOfContract.trim() ||
-                [routeLabel, specLabel].filter(Boolean).join(" · ") ||
+                [commodityLabel, specLabel].filter(Boolean).join(" · ") ||
                 specLabel ||
                 "POSITION";
               const { symbol, display_name, detailsExtra } = buildHoldingNames(stem, "commodities");
@@ -964,7 +940,7 @@ function CommodityTradeOrderNewHolding({
               const opt = detailsForClean.option_type;
               detailsForClean.instrument_kind =
                 opt === "call" || opt === "put" ? "option" : detailsForClean.instrument_kind || "future";
-              if (routeLabel) detailsForClean.commodity = routeLabel;
+              if (commodityLabel) detailsForClean.commodity = commodityLabel;
               const baseClean = cleanDetails(meta, detailsForClean);
               const mergedDetails: Record<string, string | number> = {
                 ...baseClean,

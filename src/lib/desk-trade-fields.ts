@@ -1,12 +1,11 @@
+import { GC_COMEX_CONTRACT_OPTIONS } from "./gcComexContractOptions";
+
 /**
  * Shared desk trade ticket options — keep Trade order form, trade history tables,
  * and portfolio views aligned on the same vocabulary.
  */
 export const DESK_CONTRACT_OPTIONS: { value: string; label: string }[] = [
-  { value: "", label: "— Select —" },
-  { value: "g14", label: "G14 (28 Jan 14)" },
-  { value: "h15", label: "H15 (15 Mar 15)" },
-  { value: "m16", label: "M16 (20 Jun 16)" },
+  ...GC_COMEX_CONTRACT_OPTIONS,
   { value: "es", label: "ES front month" },
   { value: "sample", label: "Sample contract (illustrative)" },
 ];

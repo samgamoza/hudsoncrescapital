@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ClientSubPortfolios } from "@/components/portal/ClientSubPortfolios";
+import { COMMODITY_SELECT_GROUPS } from "@/lib/commodityTradeOrderSelect";
+import { GC_COMEX_CONTRACT_OPTIONS } from "@/lib/gcComexContractOptions";
 import { MetricCard, PageHeader, SectionCard } from "@/lib/portalShared";
 import { supabase } from "@/integrations/supabase/client";
 import { usePersistedState } from "@/hooks/usePersistedState";
@@ -531,23 +533,16 @@ function TradingPage() {
                         value={commodity}
                         onChange={(e) => setCommodity(e.target.value)}
                       >
-                        <option value="">— Select —</option>
-                        <optgroup label="Derivatives / listed options">
-                          <option value="listed_options">Listed options (limited risk)</option>
-                          <option value="index_options">Index options</option>
-                        </optgroup>
-                        <optgroup label="Currencies">
-                          <option value="currencies">Currencies</option>
-                          <option value="majors">Major pairs</option>
-                        </optgroup>
-                        <optgroup label="Commodities">
-                          <option value="metals">Metals</option>
-                          <option value="energy">Energy</option>
-                          <option value="ag">Agricultural</option>
-                        </optgroup>
-                        <optgroup label="Other">
-                          <option value="indices">Indices</option>
-                        </optgroup>
+                        <option value="">Select a Commodity</option>
+                        {COMMODITY_SELECT_GROUPS.map((g) => (
+                          <optgroup key={g.groupLabel} label={g.groupLabel}>
+                            {g.items.map((it) => (
+                              <option key={it.value} value={it.value}>
+                                {it.label}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
                       </select>
                     </div>
                     <div>
@@ -560,10 +555,11 @@ function TradingPage() {
                         value={contractSpec}
                         onChange={(e) => setContractSpec(e.target.value)}
                       >
-                        <option value="">— Select —</option>
-                        <option value="g14">G14 (28 Jan 14)</option>
-                        <option value="h15">H15 (15 Mar 15)</option>
-                        <option value="m16">M16 (20 Jun 16)</option>
+                        {GC_COMEX_CONTRACT_OPTIONS.map((o) => (
+                          <option key={o.value || "blank"} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div>
