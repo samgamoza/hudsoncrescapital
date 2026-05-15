@@ -25,6 +25,7 @@ function TradingPage() {
   const [selectedOrderId, setSelectedOrderId] = useState("");
   const [fillQty, setFillQty] = useState("");
   const [fillPrice, setFillPrice] = useState("");
+  const [fillPricePerContract, setFillPricePerContract] = useState("");
   const [fillFees, setFillFees] = useState("35");
   const [fillCommission, setFillCommission] = useState("0");
   /** Desk ticket fields (CrossOcean-style trade order form — only qty/price/fees feed execution). */
@@ -246,19 +247,12 @@ function TradingPage() {
 
   const premiumNum = Number(fillPrice);
   const positionsNum = Number(fillQty);
-  const contractSizeNum = Number(contractSize);
-  const feesNum = Number(fillFees);
-
-  const pricePerContract = useMemo(() => {
-    if (!Number.isFinite(premiumNum) || !Number.isFinite(contractSizeNum)) return null;
-    return premiumNum * contractSizeNum;
-  }, [premiumNum, contractSizeNum]);
-
+  const feesNum = Math.max(Number(fillFees) || 0, 0);
+  const pricePerContractNum = Number(fillPricePerContract);
   const tradeValue = useMemo(() => {
-    if (!Number.isFinite(positionsNum) || pricePerContract == null || !Number.isFinite(pricePerContract))
-      return null;
-    return positionsNum * pricePerContract;
-  }, [positionsNum, pricePerContract]);
+    if (!Number.isFinite(positionsNum) || !Number.isFinite(pricePerContractNum)) return null;
+    return positionsNum * pricePerContractNum;
+  }, [positionsNum, pricePerContractNum]);
 
   const totalInvoiced = useMemo(() => {
     if (tradeValue == null || !Number.isFinite(feesNum)) return null;
@@ -269,10 +263,14 @@ function TradingPage() {
     if (!selectedOrder) return "";
     const side = (selectedOrder.side ?? "buy").toString().toUpperCase();
     const opt = optionType === "call" ? "CALL" : "PUT";
-    const pr = strikePrice.trim() || (Number.isFinite(premiumNum) ? premiumNum.toFixed(2) : "—");
+    const pr =
+      Number.isFinite(pricePerContractNum) && pricePerContractNum > 0
+        ? pricePerContractNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : strikePrice.trim() ||
+          (Number.isFinite(premiumNum) && premiumNum > 0 ? premiumNum.toFixed(2) : "—");
     const pos = Number.isFinite(positionsNum) && positionsNum > 0 ? String(positionsNum) : "—";
     return `${side} ${pos}x ${opt} PR:${pr}`;
-  }, [selectedOrder, optionType, strikePrice, premiumNum, positionsNum]);
+  }, [selectedOrder, optionType, strikePrice, premiumNum, positionsNum, pricePerContractNum]);
 
   useEffect(() => {
     if (!selectedOrder) return;
@@ -280,6 +278,7 @@ function TradingPage() {
     setCommodity("");
     setContractSpec("");
     setStrikePrice("");
+    setFillPricePerContract("");
     setContractSize("1000");
     setFillFees("35");
     setFillCommission("0");
@@ -597,10 +596,13 @@ function TradingPage() {
                       </label>
                       <input
                         id="desk-contract-size"
-                        className={roField}
-                        readOnly
-                        tabIndex={-1}
-                        value={Number(contractSize).toLocaleString()}
+                        className={field}
+                        inputMode="decimal"
+                        step="any"
+                        min={1}
+                        placeholder="1000"
+                        value={contractSize}
+                        onChange={(e) => setContractSize(e.target.value)}
                       />
                     </div>
                     <div>
@@ -609,17 +611,11 @@ function TradingPage() {
                       </label>
                       <input
                         id="desk-px-per"
-                        className={roField}
-                        readOnly
-                        tabIndex={-1}
-                        value={
-                          pricePerContract != null && Number.isFinite(pricePerContract)
-                            ? pricePerContract.toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })
-                            : "—"
-                        }
+                        className={field}
+                        inputMode="decimal"
+                        placeholder="0.00"
+                        value={fillPricePerContract}
+                        onChange={(e) => setFillPricePerContract(e.target.value)}
                       />
                     </div>
                     <div>

@@ -1,8 +1,6 @@
 import { useMemo, useState } from "react";
+import { crossOceanLegacyFieldClass as fieldClass, crossOceanLegacyLabelClass as labelClass } from "@/lib/crossOceanLegacyUi";
 
-const fieldClass =
-  "w-full border border-neutral-400 bg-white px-2 py-1.5 text-sm text-neutral-900 shadow-sm focus:border-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-700";
-const labelClass = "block text-xs font-semibold text-neutral-800 mb-0.5";
 const req = (text: string) => (
   <span>
     <span className="text-red-600">*</span>

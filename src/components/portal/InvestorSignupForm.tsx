@@ -13,10 +13,10 @@ import {
   isStrictAccountSeparationEnabled,
 } from "@/lib/portal-signup-email-guard";
 import { cn } from "@/lib/utils";
+import { crossOceanLegacyFieldClass, crossOceanLegacyLabelClass } from "@/lib/crossOceanLegacyUi";
 
-const field =
-  "w-full bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-brand/60";
-const label = "block text-xs font-medium uppercase tracking-wider text-muted-foreground";
+const field = crossOceanLegacyFieldClass;
+const label = crossOceanLegacyLabelClass;
 
 type FormState = {
   firstName: string;
@@ -173,7 +173,7 @@ export function InvestorSignupForm() {
     <form onSubmit={onSubmit} className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className={label}>First name</label>
+          <label className={label}>First Name</label>
           <input
             autoComplete="given-name"
             className={cn("mt-1", field)}
@@ -184,7 +184,7 @@ export function InvestorSignupForm() {
           />
         </div>
         <div>
-          <label className={label}>Last name</label>
+          <label className={label}>Last Name</label>
           <input
             autoComplete="family-name"
             className={cn("mt-1", field)}
@@ -197,7 +197,7 @@ export function InvestorSignupForm() {
       </div>
 
       <div>
-        <label className={label}>Email address</label>
+        <label className={label}>Email Address</label>
         <input
           type="email"
           autoComplete="email"
@@ -210,7 +210,7 @@ export function InvestorSignupForm() {
       </div>
 
       <div>
-        <label className={label}>Country of residence</label>
+        <label className={label}>Country of Residence</label>
         <div className="mt-1">
           <CountrySelect
             value={f.country}
@@ -221,7 +221,7 @@ export function InvestorSignupForm() {
       </div>
 
       <div>
-        <label className={label}>Mobile number</label>
+        <label className={label}>Mobile Number</label>
         <IntlPhoneInput
           className="mt-1"
           value={f.phone}
@@ -244,10 +244,10 @@ export function InvestorSignupForm() {
             minLength={8}
             required
           />
-          <p className="mt-1 text-[11px] text-muted-foreground">At least 8 characters.</p>
+          <p className="mt-1 text-[11px] text-neutral-600">At least 8 characters.</p>
         </div>
         <div>
-          <label className={label}>Confirm password</label>
+          <label className={label}>Confirm Password</label>
           <input
             type="password"
             autoComplete="new-password"
@@ -261,22 +261,22 @@ export function InvestorSignupForm() {
         </div>
       </div>
 
-      <div className="space-y-3 rounded-md border border-border bg-muted/10 p-3 text-xs">
+      <div className="space-y-3 rounded border border-neutral-300 bg-neutral-50/80 p-3 text-xs text-neutral-800">
         <label className="flex items-start gap-2">
           <input
             type="checkbox"
-            className="mt-0.5"
+            className="mt-0.5 h-3.5 w-3.5 shrink-0 border-neutral-400 text-blue-700"
             checked={f.agreedTerms}
             onChange={(e) => update("agreedTerms", e.target.checked)}
             disabled={busy}
           />
-          <span className="text-foreground/90">
+          <span>
             I have read and agree to the{" "}
-            <Link to="/terms" className="text-brand hover:underline">
+            <Link to="/terms" className="font-medium text-blue-800 hover:underline">
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link to="/privacy" className="text-brand hover:underline">
+            <Link to="/privacy" className="font-medium text-blue-800 hover:underline">
               Privacy Policy
             </Link>
             .
@@ -285,14 +285,14 @@ export function InvestorSignupForm() {
         <label className="flex items-start gap-2">
           <input
             type="checkbox"
-            className="mt-0.5"
+            className="mt-0.5 h-3.5 w-3.5 shrink-0 border-neutral-400 text-blue-700"
             checked={f.agreedRisk}
             onChange={(e) => update("agreedRisk", e.target.checked)}
             disabled={busy}
           />
-          <span className="text-foreground/90">
-            I understand trading involves substantial risk of loss and that past performance is not
-            indicative of future results.
+          <span>
+            I understand trading involves substantial risk of loss and that past performance is not indicative of
+            future results.
           </span>
         </label>
       </div>
@@ -300,7 +300,7 @@ export function InvestorSignupForm() {
       <button
         type="submit"
         disabled={busy}
-        className="inline-flex items-center justify-center gap-2 rounded-md bg-gradient-brand px-5 py-2.5 text-sm font-medium text-brand-foreground shadow-glow hover:opacity-90 disabled:opacity-50"
+        className="inline-flex items-center justify-center gap-2 rounded border border-blue-800 bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-blue-800 disabled:opacity-50"
       >
         {busy ? (
           <>

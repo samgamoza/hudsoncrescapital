@@ -2,6 +2,7 @@
 // Used by the onboarding wizard, admin holdings editor, and investor portfolio.
 
 import type { ReactNode } from "react";
+import { GC_COMEX_CONTRACT_OPTIONS } from "./gcComexContractOptions";
 
 export type AssetClass = "equities" | "crypto" | "commodities" | "managed_strategy";
 
@@ -66,6 +67,19 @@ const fmtNum = (n: number, dp = 4) =>
 function pnl(h: HoldingRow) {
   if (h.mark_price == null) return null;
   return (h.mark_price - h.avg_cost) * h.quantity;
+}
+
+/** Contract cell: desk ticket stores `desk_contract_spec` (e.g. GCZ26); fall back to legacy fields. */
+function commodityContractCell(h: HoldingRow): ReactNode {
+  const spec = String(h.details?.desk_contract_spec ?? "").trim();
+  if (spec) {
+    const hit = GC_COMEX_CONTRACT_OPTIONS.find((o) => o.value === spec);
+    return hit?.label ?? spec;
+  }
+  const legacy = String(h.details?.contract_name ?? "").trim();
+  if (legacy) return legacy;
+  const sym = (h.symbol ?? "").trim();
+  return sym || "—";
 }
 
 const baseCols = [
@@ -236,11 +250,11 @@ export const ASSET_CLASSES: Record<AssetClass, AssetClassMeta> = {
       ...baseCols,
       { key: "commodity", label: "Commodity", render: (h) => h.details?.commodity ?? "—" },
       { key: "exchange", label: "Exchange", render: (h) => h.details?.exchange ?? "—" },
-      { key: "contract", label: "Contract", render: (h) => h.details?.contract_name ?? h.symbol },
-      { key: "quantity", label: "# Contracts", render: (h) => fmtNum(h.quantity, 0) },
+      { key: "contract", label: "Contract", render: commodityContractCell },
+      { key: "quantity", label: "# contracts", render: (h) => fmtNum(h.quantity, 0) },
       {
         key: "avg_cost",
-        label: "Premium / Price",
+        label: "Premium / price",
         render: (h) => fmtMoney(h.avg_cost, h.currency),
       },
       {

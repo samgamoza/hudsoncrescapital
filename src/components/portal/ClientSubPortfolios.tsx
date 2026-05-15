@@ -579,13 +579,13 @@ type DeskCommodityHoldingForm = {
   nameOfContract: string;
   quantity: string;
   avg_cost: string;
-  mark_price: string;
   currency: string;
   desk_trade_order: "buy" | "sell";
   desk_commodity_route: string;
   desk_contract_spec: string;
   desk_trade_fees: string;
   desk_contract_size: string;
+  desk_price_per_contract: string;
   details: Record<string, string>;
 };
 
@@ -610,13 +610,13 @@ function CommodityTradeOrderNewHolding({
     nameOfContract: "",
     quantity: "",
     avg_cost: "1",
-    mark_price: "",
     currency,
     desk_trade_order: "buy",
     desk_commodity_route: "",
     desk_contract_spec: "",
     desk_trade_fees: "35",
     desk_contract_size: "1000",
+    desk_price_per_contract: "",
     details: emptyDetailsFromMeta(meta),
   });
   const [saving, setSaving] = useState(false);
@@ -625,14 +625,11 @@ function CommodityTradeOrderNewHolding({
   const positionsNum = parseNum(f.quantity);
   const contractSizeNum = Math.max(parseNum(f.desk_contract_size) || 1000, 1);
   const feesNum = Math.max(parseNum(f.desk_trade_fees), 0);
-  const pricePerContract = useMemo(() => {
-    if (!Number.isFinite(premiumNum) || !Number.isFinite(contractSizeNum)) return null;
-    return premiumNum * contractSizeNum;
-  }, [premiumNum, contractSizeNum]);
+  const pricePerContractNum = parseNum(f.desk_price_per_contract);
   const tradeValue = useMemo(() => {
-    if (pricePerContract == null || !Number.isFinite(positionsNum)) return null;
-    return positionsNum * pricePerContract;
-  }, [pricePerContract, positionsNum]);
+    if (!Number.isFinite(positionsNum)) return null;
+    return positionsNum * pricePerContractNum;
+  }, [positionsNum, pricePerContractNum]);
   const totalInvoiced = useMemo(() => {
     if (tradeValue == null || !Number.isFinite(feesNum)) return null;
     return tradeValue + feesNum;
@@ -647,8 +644,8 @@ function CommodityTradeOrderNewHolding({
     const opt =
       f.details.option_type === "put" ? "PUT" : f.details.option_type === "call" ? "CALL" : "—";
     let pr = "—";
-    if (pricePerContract != null && Number.isFinite(pricePerContract) && pricePerContract > 0) {
-      pr = pricePerContract.toLocaleString(undefined, {
+    if (Number.isFinite(pricePerContractNum) && pricePerContractNum > 0) {
+      pr = pricePerContractNum.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
@@ -662,7 +659,7 @@ function CommodityTradeOrderNewHolding({
     f.desk_trade_order,
     f.details.option_type,
     positionsNum,
-    pricePerContract,
+    pricePerContractNum,
     strikeStr,
     strikeNum,
     premiumNum,
@@ -810,17 +807,11 @@ function CommodityTradeOrderNewHolding({
           <div>
             <label className={lbl}>Price per Contract</label>
             <input
-              className={roFieldDesk}
-              readOnly
-              tabIndex={-1}
-              value={
-                pricePerContract != null && Number.isFinite(pricePerContract)
-                  ? pricePerContract.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })
-                  : "—"
-              }
+              className={field}
+              inputMode="decimal"
+              placeholder="0.00"
+              value={f.desk_price_per_contract ?? ""}
+              onChange={(e) => setF({ ...f, desk_price_per_contract: e.target.value })}
             />
           </div>
           <div>
@@ -868,18 +859,6 @@ function CommodityTradeOrderNewHolding({
       </div>
 
       <div className="grid grid-cols-1 gap-3 border-t border-border/60 pt-3 sm:grid-cols-2">
-        <div>
-          <label className={lbl}>Mark (optional)</label>
-          <input
-            className={field}
-            type="number"
-            step="any"
-            min={0}
-            placeholder="—"
-            value={f.mark_price}
-            onChange={(e) => setF({ ...f, mark_price: e.target.value })}
-          />
-        </div>
         <div>
           <label className={lbl}>Currency</label>
           <input
@@ -949,18 +928,17 @@ function CommodityTradeOrderNewHolding({
                 desk_contract_spec: f.desk_contract_spec || "",
                 desk_trade_fees: feesNum,
                 desk_contract_size: contractSizeNum,
+                desk_price_per_contract: pricePerContractNum,
                 desk_trade_value: tradeValue ?? 0,
                 desk_total_invoiced: totalInvoiced ?? 0,
                 desk_trade_summary: tradeDetailsSummary,
               };
-              const mark = parseNum(f.mark_price);
               await onSave({
                 sub_portfolio_id: subId,
                 symbol,
                 display_name,
                 quantity: positionsNum,
                 avg_cost: premiumNum,
-                mark_price: mark > 0 ? mark : undefined,
                 unit_label: meta.defaultUnit,
                 currency: (f.currency || "USD").toUpperCase(),
                 details: mergedDetails,
@@ -1206,7 +1184,13 @@ function EditHoldingRow({
               />
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div
+            className={
+              assetClass === "commodities"
+                ? "grid grid-cols-1 sm:grid-cols-2 gap-3"
+                : "grid grid-cols-1 sm:grid-cols-3 gap-3"
+            }
+          >
             <div>
               <label className={lbl}>
                 {assetClass === "commodities" ? "Premium / avg price" : "Avg cost"}
@@ -1220,18 +1204,20 @@ function EditHoldingRow({
                 onChange={(e) => setF({ ...f, avg_cost: e.target.value })}
               />
             </div>
-            <div>
-              <label className={lbl}>Mark (optional)</label>
-              <input
-                className={field}
-                type="number"
-                step="any"
-                min={0}
-                placeholder="—"
-                value={f.mark_price}
-                onChange={(e) => setF({ ...f, mark_price: e.target.value })}
-              />
-            </div>
+            {assetClass !== "commodities" ? (
+              <div>
+                <label className={lbl}>Mark (optional)</label>
+                <input
+                  className={field}
+                  type="number"
+                  step="any"
+                  min={0}
+                  placeholder="—"
+                  value={f.mark_price}
+                  onChange={(e) => setF({ ...f, mark_price: e.target.value })}
+                />
+              </div>
+            ) : null}
             <div>
               <label className={lbl}>Currency</label>
               <input
@@ -1277,7 +1263,8 @@ function EditHoldingRow({
                   display_name,
                   quantity: parseNum(f.quantity),
                   avg_cost: parseNum(f.avg_cost),
-                  mark_price: mark > 0 ? mark : undefined,
+                  mark_price:
+                    assetClass === "commodities" ? undefined : mark > 0 ? mark : undefined,
                   currency: (f.currency || "USD").toUpperCase(),
                   details: mergedDetails,
                 });
