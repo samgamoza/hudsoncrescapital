@@ -769,12 +769,12 @@ function OnlineApplicationCard() {
 
   const Icon = tone.icon;
   const title = isIncomplete
-    ? "Complete your investment account application"
+    ? "Complete your investor questionnaire"
     : status === "submitted"
-      ? "Application submitted, under review"
+      ? "Questionnaire submitted, under review"
       : isComplete
-        ? "Investment account application on file"
-        : "Investment account application";
+        ? "Investor profile on file"
+        : "Investor questionnaire";
 
   const description = isIncomplete
     ? "Finish suitability, disclosures, banking and identity verification so our desk can approve trading, deposits and withdrawals."
@@ -788,8 +788,8 @@ function OnlineApplicationCard() {
 
   return (
     <SectionCard
-      title="Online application"
-      description="Online Account Opening Form. Required before trading, deposits, or withdrawals are enabled."
+      title="Your application (signed-in)"
+      description="Investor questionnaire and disclosures — not the admin desk form. Required before trading, deposits, or withdrawals are enabled."
       className={cn("border-l-4", tone.ring.replace("border-", "border-l-"))}
     >
       <div

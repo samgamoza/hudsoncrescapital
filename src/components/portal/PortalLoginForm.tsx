@@ -394,12 +394,6 @@ export function PortalLoginForm({ audience, fromRouteId }: Props) {
 
         {allowSignup && (
           <div className="mt-4 flex flex-col gap-2 text-center">
-            <Link
-              to="/portal/signup/investor"
-              className="w-full text-xs text-brand font-medium hover:underline"
-            >
-              Sign up with onboarding
-            </Link>
             <button
               type="button"
               onClick={() => setMode((m) => (m === "login" ? "signup" : "login"))}
@@ -409,6 +403,11 @@ export function PortalLoginForm({ audience, fromRouteId }: Props) {
                 ? "Don't have an account? Quick signup"
                 : "Already have an account? Sign in"}
             </button>
+            {mode === "login" && (
+              <Link to="/portal/signup/investor" className="w-full text-xs font-medium text-brand hover:underline">
+                Investor self-registration page →
+              </Link>
+            )}
           </div>
         )}
 

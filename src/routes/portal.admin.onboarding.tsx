@@ -217,7 +217,7 @@ function OnboardingWizard() {
     <>
       <PageHeader
         title="Open New Client Account"
-        subtitle="Compliance-grade onboarding. All fields sync to the client's profile."
+        subtitle="Staff-only desk onboarding — not the public investor self-signup page. All fields sync to the client's profile."
       />
 
       {/* Stepper */}

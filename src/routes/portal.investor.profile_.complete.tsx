@@ -17,10 +17,10 @@ function ProfileCompletionPage() {
   return (
     <>
       <PageHeader
-        title="INVESTMENT ACCOUNT APPLICATION"
-        subtitle="Online Account Opening Form"
+        title="Your investor profile & questionnaire"
+        subtitle="Signed-in investors — complete suitability, identity, and disclosures here. (Staff use Admin → Open New Client Account for desk-led onboarding.)"
       />
-      <SectionCard title="Online application">
+      <SectionCard title="Questionnaire & uploads">
         <ProfileCompletionWizard />
       </SectionCard>
       <div className="mt-4 text-xs text-muted-foreground">

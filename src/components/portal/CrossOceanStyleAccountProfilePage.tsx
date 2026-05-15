@@ -36,7 +36,8 @@ export function CrossOceanStyleAccountProfilePage() {
     <div className="min-h-screen bg-neutral-200 text-neutral-900">
       <main className="mx-auto max-w-6xl bg-white px-3 py-4 shadow sm:px-6 sm:py-6">
         <p className="mb-3 text-xs text-neutral-600">
-          Reference field layout only (not production chrome). Investor signup uses the themed multi-step flow.
+          Reference field layout only (not production chrome). Live investor self-registration is at
+          /portal/signup/investor; staff desk onboarding uses Admin → Open New Client Account.
         </p>
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <h1 className="text-lg font-bold text-neutral-900">Account Profile</h1>
