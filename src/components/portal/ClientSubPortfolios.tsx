@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   ASSET_CLASSES,
   ASSET_CLASS_LIST,
   type AssetClass,
+  type AssetClassMeta,
   type HoldingRow,
   type DetailField,
 } from "@/lib/assetClasses";
@@ -173,6 +174,28 @@ function parseNum(v: string): number {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 }
+
+/** Desk Trade Order commodity routes → stored `details.commodity` label. */
+const COMMODITY_ROUTE_LABELS: Record<string, string> = {
+  listed_options: "Listed options (limited risk)",
+  index_options: "Index options",
+  currencies: "Currencies",
+  majors: "Major pairs",
+  metals: "Metals",
+  energy: "Energy",
+  ag: "Agricultural",
+  indices: "Indices",
+};
+
+const CONTRACT_SPEC_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "— Select —" },
+  { value: "g14", label: "G14 (28 Jan 14)" },
+  { value: "h15", label: "H15 (15 Mar 15)" },
+  { value: "m16", label: "M16 (20 Jun 16)" },
+];
+
+const roFieldDesk =
+  "bg-muted/40 border border-border rounded-md px-3 py-2 text-sm text-muted-foreground w-full cursor-not-allowed";
 
 const lbl =
   "block text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5";
@@ -569,6 +592,416 @@ function SubPortfolioCard({
   );
 }
 
+type DeskCommodityHoldingForm = {
+  nameOfContract: string;
+  quantity: string;
+  avg_cost: string;
+  mark_price: string;
+  currency: string;
+  desk_trade_order: "buy" | "sell";
+  desk_commodity_route: string;
+  desk_contract_spec: string;
+  desk_trade_fees: string;
+  desk_contract_size: string;
+  details: Record<string, string>;
+};
+
+function emptyDetailsFromMeta(meta: AssetClassMeta): Record<string, string> {
+  return Object.fromEntries(meta.detailFields.map((d) => [d.key, ""])) as Record<string, string>;
+}
+
+function CommodityTradeOrderNewHolding({
+  subId,
+  meta,
+  currency,
+  onCancel,
+  onSave,
+}: {
+  subId: string;
+  meta: AssetClassMeta;
+  currency: string;
+  onCancel: () => void;
+  onSave: (payload: HoldingPayload) => Promise<void>;
+}) {
+  const [f, setF, clearF] = usePersistedState<DeskCommodityHoldingForm>(`sp:newHolding:desk:${subId}`, {
+    nameOfContract: "",
+    quantity: "",
+    avg_cost: "1",
+    mark_price: "",
+    currency,
+    desk_trade_order: "buy",
+    desk_commodity_route: "",
+    desk_contract_spec: "",
+    desk_trade_fees: "35",
+    desk_contract_size: "1000",
+    details: emptyDetailsFromMeta(meta),
+  });
+  const [saving, setSaving] = useState(false);
+
+  const premiumNum = parseNum(f.avg_cost);
+  const positionsNum = parseNum(f.quantity);
+  const contractSizeNum = Math.max(parseNum(f.desk_contract_size) || 1000, 1);
+  const feesNum = Math.max(parseNum(f.desk_trade_fees), 0);
+  const pricePerContract = useMemo(() => {
+    if (!Number.isFinite(premiumNum) || !Number.isFinite(contractSizeNum)) return null;
+    return premiumNum * contractSizeNum;
+  }, [premiumNum, contractSizeNum]);
+  const tradeValue = useMemo(() => {
+    if (pricePerContract == null || !Number.isFinite(positionsNum)) return null;
+    return positionsNum * pricePerContract;
+  }, [pricePerContract, positionsNum]);
+  const totalInvoiced = useMemo(() => {
+    if (tradeValue == null || !Number.isFinite(feesNum)) return null;
+    return tradeValue + feesNum;
+  }, [tradeValue, feesNum]);
+
+  const strikeStr = String(f.details.strike ?? "").trim();
+  const strikeNum = parseNum(strikeStr);
+
+  const tradeDetailsSummary = useMemo(() => {
+    const side = f.desk_trade_order === "sell" ? "SELL" : "BUY";
+    const pos = Number.isFinite(positionsNum) && positionsNum > 0 ? String(positionsNum) : "—";
+    const opt =
+      f.details.option_type === "put" ? "PUT" : f.details.option_type === "call" ? "CALL" : "—";
+    let pr = "—";
+    if (pricePerContract != null && Number.isFinite(pricePerContract) && pricePerContract > 0) {
+      pr = pricePerContract.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    } else if (strikeStr && Number.isFinite(strikeNum) && strikeNum > 0) {
+      pr = strikeNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    } else if (Number.isFinite(premiumNum) && premiumNum > 0) {
+      pr = premiumNum.toFixed(2);
+    }
+    return `${side} ${pos}x ${opt} PR:${pr}`;
+  }, [
+    f.desk_trade_order,
+    f.details.option_type,
+    positionsNum,
+    pricePerContract,
+    strikeStr,
+    strikeNum,
+    premiumNum,
+  ]);
+
+  const secondaryDetailFields = meta.detailFields.filter(
+    (d) => !["option_type", "side", "instrument_kind"].includes(d.key),
+  );
+
+  return (
+    <div className="mt-3 rounded-md border border-brand/40 bg-surface-elevated/40 p-4 space-y-4">
+      <div>
+        <h4 className="text-sm font-semibold text-foreground">Trade Order</h4>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Add a position using the same ticket layout as the admin desk (Limited Risk Options).
+        </p>
+      </div>
+
+      <div>
+        <label className={lbl}>Contract / listing ID (optional override)</label>
+        <input
+          className={field}
+          placeholder={meta.symbolHint}
+          value={f.nameOfContract}
+          onChange={(e) => setF({ ...f, nameOfContract: e.target.value })}
+          autoComplete="off"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="space-y-3">
+          <div>
+            <label className={lbl}>Trade Order</label>
+            <select
+              className={field}
+              value={f.desk_trade_order}
+              onChange={(e) =>
+                setF({ ...f, desk_trade_order: e.target.value === "sell" ? "sell" : "buy" })
+              }
+            >
+              <option value="buy">Buy</option>
+              <option value="sell">Sell</option>
+            </select>
+          </div>
+          <div>
+            <label className={lbl}>Position(s)</label>
+            <input
+              className={field}
+              type="number"
+              step="any"
+              min={0}
+              placeholder="Contracts"
+              value={f.quantity}
+              onChange={(e) => setF({ ...f, quantity: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={lbl}>Option</label>
+            <select
+              className={field}
+              value={f.details.option_type}
+              onChange={(e) =>
+                setF({
+                  ...f,
+                  details: { ...f.details, option_type: e.target.value },
+                })
+              }
+            >
+              <option value="">N/A</option>
+              <option value="call">Call</option>
+              <option value="put">Put</option>
+            </select>
+          </div>
+          <div>
+            <label className={lbl}>Select a Commodity</label>
+            <select
+              className={field}
+              value={f.desk_commodity_route}
+              onChange={(e) => setF({ ...f, desk_commodity_route: e.target.value })}
+            >
+              <option value="">— Select —</option>
+              <optgroup label="Derivatives / listed options">
+                <option value="listed_options">Listed options (limited risk)</option>
+                <option value="index_options">Index options</option>
+              </optgroup>
+              <optgroup label="Currencies">
+                <option value="currencies">Currencies</option>
+                <option value="majors">Major pairs</option>
+              </optgroup>
+              <optgroup label="Commodities">
+                <option value="metals">Metals</option>
+                <option value="energy">Energy</option>
+                <option value="ag">Agricultural</option>
+              </optgroup>
+              <optgroup label="Other">
+                <option value="indices">Indices</option>
+              </optgroup>
+            </select>
+          </div>
+          <div>
+            <label className={lbl}>Contract</label>
+            <select
+              className={field}
+              value={f.desk_contract_spec}
+              onChange={(e) => setF({ ...f, desk_contract_spec: e.target.value })}
+            >
+              {CONTRACT_SPEC_OPTIONS.map((o) => (
+                <option key={o.value || "blank"} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={lbl}>Strike Price</label>
+            <input
+              className={field}
+              inputMode="decimal"
+              placeholder="Strike"
+              value={String(f.details.strike ?? "")}
+              onChange={(e) =>
+                setF({ ...f, details: { ...f.details, strike: e.target.value } })
+              }
+            />
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className={lbl}>Premium</label>
+            <input
+              className={field}
+              inputMode="decimal"
+              placeholder="1.00"
+              value={f.avg_cost}
+              onChange={(e) => setF({ ...f, avg_cost: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={lbl}>Contract Size</label>
+            <input
+              className={field}
+              type="number"
+              inputMode="decimal"
+              step="any"
+              min={1}
+              placeholder="1000"
+              value={f.desk_contract_size}
+              onChange={(e) => setF({ ...f, desk_contract_size: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={lbl}>Price per Contract</label>
+            <input
+              className={roFieldDesk}
+              readOnly
+              tabIndex={-1}
+              value={
+                pricePerContract != null && Number.isFinite(pricePerContract)
+                  ? pricePerContract.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                  : "—"
+              }
+            />
+          </div>
+          <div>
+            <label className={lbl}>Trade Value</label>
+            <input
+              className={roFieldDesk}
+              readOnly
+              tabIndex={-1}
+              value={
+                tradeValue != null && Number.isFinite(tradeValue)
+                  ? tradeValue.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                  : "0.00"
+              }
+            />
+          </div>
+          <div>
+            <label className={lbl}>Trade Fees</label>
+            <input
+              className={field}
+              inputMode="decimal"
+              value={f.desk_trade_fees}
+              onChange={(e) => setF({ ...f, desk_trade_fees: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className={lbl}>Total Invoiced</label>
+            <input
+              className={roFieldDesk}
+              readOnly
+              tabIndex={-1}
+              value={
+                totalInvoiced != null && Number.isFinite(totalInvoiced)
+                  ? totalInvoiced.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                  : "0.00"
+              }
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 border-t border-border/60 pt-3 sm:grid-cols-2">
+        <div>
+          <label className={lbl}>Mark (optional)</label>
+          <input
+            className={field}
+            type="number"
+            step="any"
+            min={0}
+            placeholder="—"
+            value={f.mark_price}
+            onChange={(e) => setF({ ...f, mark_price: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className={lbl}>Currency</label>
+          <input
+            className={field}
+            maxLength={3}
+            value={f.currency}
+            onChange={(e) => setF({ ...f, currency: e.target.value.toUpperCase() })}
+          />
+        </div>
+        {secondaryDetailFields.map((d) => (
+          <DetailFieldInput
+            key={d.key}
+            field={d}
+            value={String(f.details[d.key] ?? "")}
+            onChange={(v) => setF({ ...f, details: { ...f.details, [d.key]: v } })}
+          />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 border-t border-border/60 pt-4 md:grid-cols-2">
+        <div>
+          <div className={lbl}>Trade Details</div>
+          <p className="text-sm font-medium text-foreground">{tradeDetailsSummary}</p>
+        </div>
+        <p className="text-xs leading-relaxed text-muted-foreground md:text-left">
+          Trade requests are submitted to your broker for verification. Upon receiving a request, your broker will
+          contact you to verify your trade details.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2 justify-end">
+        <button type="button" className={btnGhost} onClick={onCancel}>
+          <X className="h-3 w-3" /> Cancel
+        </button>
+        <button
+          type="button"
+          className={btnPrimary}
+          disabled={
+            saving ||
+            !(f.nameOfContract.trim() || f.desk_contract_spec || f.desk_commodity_route)
+          }
+          onClick={async () => {
+            setSaving(true);
+            try {
+              const routeLabel = f.desk_commodity_route
+                ? COMMODITY_ROUTE_LABELS[f.desk_commodity_route] ?? f.desk_commodity_route
+                : "";
+              const specLabel =
+                CONTRACT_SPEC_OPTIONS.find((o) => o.value === f.desk_contract_spec)?.label ?? "";
+              const stem =
+                f.nameOfContract.trim() ||
+                [routeLabel, specLabel].filter(Boolean).join(" · ") ||
+                specLabel ||
+                "POSITION";
+              const { symbol, display_name, detailsExtra } = buildHoldingNames(stem, "commodities");
+              const detailsForClean: Record<string, string> = { ...f.details };
+              detailsForClean.side = f.desk_trade_order === "sell" ? "short" : "long";
+              const opt = detailsForClean.option_type;
+              detailsForClean.instrument_kind =
+                opt === "call" || opt === "put" ? "option" : detailsForClean.instrument_kind || "future";
+              if (routeLabel) detailsForClean.commodity = routeLabel;
+              const baseClean = cleanDetails(meta, detailsForClean);
+              const mergedDetails: Record<string, string | number> = {
+                ...baseClean,
+                ...detailsExtra,
+                desk_trade_order: f.desk_trade_order,
+                desk_contract_spec: f.desk_contract_spec || "",
+                desk_trade_fees: feesNum,
+                desk_contract_size: contractSizeNum,
+                desk_trade_value: tradeValue ?? 0,
+                desk_total_invoiced: totalInvoiced ?? 0,
+                desk_trade_summary: tradeDetailsSummary,
+              };
+              const mark = parseNum(f.mark_price);
+              await onSave({
+                sub_portfolio_id: subId,
+                symbol,
+                display_name,
+                quantity: positionsNum,
+                avg_cost: premiumNum,
+                mark_price: mark > 0 ? mark : undefined,
+                unit_label: meta.defaultUnit,
+                currency: (f.currency || "USD").toUpperCase(),
+                details: mergedDetails,
+              });
+              clearF();
+            } finally {
+              setSaving(false);
+            }
+          }}
+        >
+          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />} Save position
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function NewHoldingRow({
   subId,
   assetClass,
@@ -582,15 +1015,25 @@ function NewHoldingRow({
   onCancel: () => void;
   onSave: (payload: HoldingPayload) => Promise<void>;
 }) {
+  if (assetClass === "commodities") {
+    return (
+      <CommodityTradeOrderNewHolding
+        subId={subId}
+        meta={ASSET_CLASSES.commodities}
+        currency={currency}
+        onCancel={onCancel}
+        onSave={onSave}
+      />
+    );
+  }
+
   const meta = ASSET_CLASSES[assetClass];
   const qtyLabel =
-    assetClass === "commodities"
-      ? "No. of contracts"
-      : assetClass === "crypto"
+    assetClass === "crypto"
+      ? "Units"
+      : assetClass === "managed_strategy"
         ? "Units"
-        : assetClass === "managed_strategy"
-          ? "Units"
-          : "Shares";
+        : "Shares";
   const [f, setF, clearF] = usePersistedState(`sp:newHolding:v2:${subId}`, {
     nameOfContract: "",
     quantity: "",
