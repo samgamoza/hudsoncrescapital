@@ -13,7 +13,7 @@ export const Route = createFileRoute("/portal/signup_/investor")({
       {
         name: "description",
         content:
-          "Public self-registration for investors (not staff desk onboarding). Create a portal login in one step; complete suitability and identity inside the portal after sign-in.",
+          "Open your Hudson Crest investor account in less than a minute. Suitability checks, disclosures, and identity verification are completed securely within your portal after sign-in.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -34,7 +34,7 @@ function InvestorSignupPage() {
         <div className="absolute inset-0 grid-bg opacity-30" />
         <div className="absolute -right-40 -top-40 h-[28rem] w-[28rem] rounded-full bg-brand/15 blur-3xl" />
         <div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-20">
-          <div>
+          <div className="flex min-h-full flex-col">
             <Link
               to="/portal/login/investor"
               className="mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
@@ -45,12 +45,11 @@ function InvestorSignupPage() {
             <a href={getMarketingWebsiteHomeUrl()} className="mb-8 inline-block" rel="noreferrer">
               <img src={logo} alt="Hudson Crest Capital" className="h-11 w-auto" />
             </a>
-            <div className="eyebrow">Investor signup</div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand">INVESTOR SIGNUP</p>
             <h1 className="mt-4 text-4xl font-bold leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-[3.25rem]">
-              Open your account in{" "}
-              <span className="text-gradient-brand">minutes</span>
+              Open your account in <span className="text-gradient-brand">minutes</span>
             </h1>
-            <ul className="mt-8 max-w-xl space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
+            <ul className="mt-8 max-w-xl flex-1 space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
               {bullets.map((text) => (
                 <li key={text} className="flex gap-3">
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand/15 text-brand ring-1 ring-brand/25">
@@ -60,21 +59,17 @@ function InvestorSignupPage() {
                 </li>
               ))}
             </ul>
+            <p className="mt-10 text-xs text-muted-foreground">Hudson Crest Capital</p>
           </div>
 
           <div className="surface-card border border-border/80 p-6 shadow-elevated sm:p-8">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand">Investor self-registration</p>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Create your portal login</h2>
-            <p className="mt-2 rounded-md border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-              <span className="font-medium text-foreground">Staff / advisors:</span> to open an account{" "}
-              <span className="text-foreground">for a client</span>, use{" "}
-              <span className="font-medium text-foreground">Admin → Open New Client Account</span> (desk onboarding). This
-              public page is only for individuals registering <span className="text-foreground">their own</span> investor
-              access.
+            <p className="text-base font-bold uppercase tracking-wide text-foreground sm:text-lg">
+              INVESTMENT ACCOUNT APPLICATION
             </p>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Enter the basics below. Suitability, disclosures, and identity verification are completed after you sign in
-              to the investor portal.
+            <h2 className="mt-2 text-lg font-semibold text-muted-foreground sm:text-xl">Online Account Opening Form</h2>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              Open your investor account in less than a minute. Suitability checks, disclosures, and identity verification
+              are completed securely within your portal after sign-in.
             </p>
             <div className="mt-6">
               <InvestorSignupForm />
@@ -82,7 +77,7 @@ function InvestorSignupPage() {
             <div className="mt-6 flex flex-col gap-3 border-t border-border pt-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
                 <Shield className="h-3.5 w-3.5 shrink-0 text-brand" aria-hidden />
-                <span>Data encrypted in transit.</span>
+                <span>Data encrypted in transit</span>
               </div>
               <Link to="/portal/login/investor" className="font-medium text-brand hover:underline">
                 Already have an account? Sign in →
