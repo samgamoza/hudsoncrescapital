@@ -22,7 +22,7 @@ export const Route = createFileRoute("/portal/signup_/investor")({
 });
 
 const bullets = [
-  "Quick signup — just your basic details and password",
+  "Quick signup, just your basic details and password",
   "Encrypted connection; passwords handled by secure auth",
   "Complete suitability, disclosures, and identity verification inside your secure portal",
 ];

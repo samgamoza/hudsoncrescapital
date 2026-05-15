@@ -1,16 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { PageHeader, SectionCard, MetricCard } from "@/lib/portalShared";
 import { ASSET_CLASSES, type AssetClass, type HoldingRow } from "@/lib/assetClasses";
 import { supabase } from "@/integrations/supabase/client";
-import type {
-  AccountPortfolioSnapshot,
-  InvestorOrderRow,
-  InvestorPositionRow,
-} from "@/lib/trading.types";
-
 export const Route = createFileRoute("/portal/investor/portfolio")({
   component: PortfolioPage,
 });
@@ -44,30 +38,11 @@ function fmtMoney(n: number, ccy = "USD") {
   }
 }
 
-function orderStatusTone(status: string) {
-  switch (status) {
-    case "filled":
-      return "text-success";
-    case "rejected":
-    case "cancelled":
-    case "expired":
-      return "text-muted-foreground";
-    case "working":
-    case "partially_filled":
-      return "text-brand";
-    default:
-      return "text-foreground";
-  }
-}
-
 function PortfolioPage() {
   const [rows, setRows] = useState<SP[] | null>(null);
   const [accounts, setAccounts] = useState<
     { id: string; account_number: string; base_currency: string }[]
   >([]);
-  const [orders, setOrders] = useState<InvestorOrderRow[]>([]);
-  const [positions, setPositions] = useState<InvestorPositionRow[]>([]);
-  const [snapshots, setSnapshots] = useState<AccountPortfolioSnapshot[]>([]);
   const [tab, setTab] = useState<"overview" | "add">("overview");
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState({
@@ -90,17 +65,11 @@ function PortfolioPage() {
       const r = await portfolioRes.json();
       const trading = await tradingRes.json();
       setAccounts(Array.isArray(trading?.accounts) ? trading.accounts : []);
-      setOrders(Array.isArray(trading?.orders) ? trading.orders : []);
-      setPositions(Array.isArray(trading?.positions) ? trading.positions : []);
-      setSnapshots(Array.isArray(trading?.account_snapshots) ? trading.account_snapshots : []);
       setRows((r ?? []) as SP[]);
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to load portfolio");
       setRows([]);
       setAccounts([]);
-      setOrders([]);
-      setPositions([]);
-      setSnapshots([]);
     }
   };
 
@@ -138,28 +107,6 @@ function PortfolioPage() {
           },
           () => setRefreshTick((n) => n + 1),
         );
-        for (const a of accounts) {
-          channel.on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "orders",
-              filter: `account_id=eq.${a.id}`,
-            },
-            () => setRefreshTick((n) => n + 1),
-          );
-          channel.on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "positions",
-              filter: `account_id=eq.${a.id}`,
-            },
-            () => setRefreshTick((n) => n + 1),
-          );
-        }
         void channel.subscribe();
       })
       .catch(() => {
@@ -189,14 +136,6 @@ function PortfolioPage() {
     return { total, pnl, sleevePositions, byClass };
   }, [rows]);
 
-  const openOrdersCount = useMemo(
-    () =>
-      orders.filter((o) =>
-        ["pending", "working", "partially_filled"].includes(String(o.status)),
-      ).length,
-    [orders],
-  );
-
   if (rows === null) {
     return <p className="text-sm text-muted-foreground">Loading portfolio…</p>;
   }
@@ -205,7 +144,7 @@ function PortfolioPage() {
     <>
       <PageHeader
         title="Portfolio"
-        subtitle="Same data the desk uses for Trade Order: your live orders and broker positions, plus optional sleeves when you expand beyond Limited Risk Options / listed derivatives into other asset classes."
+        subtitle="Optional sleeves for multi-asset allocation and holdings reporting. Trade execution and order history are on the Trade page."
       />
 
       <div className="flex items-center gap-2 mb-2">
@@ -226,7 +165,7 @@ function PortfolioPage() {
       {tab === "add" && (
         <SectionCard
           title="Add Portfolio (optional sleeve)"
-          description="Only needed when you split exposure across additional markets beyond the default Limited Risk Options book. Sleeves power the detailed holdings grid below; they are not required for the desk to work your orders."
+          description="Optional when you split exposure across additional markets beyond the default Limited Risk Options book. Sleeves power the holdings grids on this page."
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <select
@@ -325,161 +264,8 @@ function PortfolioPage() {
 
       {tab === "overview" && (
         <>
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
-              <strong className="text-foreground">Trade Order sync:</strong> orders and open positions below pull from
-              the same books the admin desk uses when they select your account and post fills. Sleeve grids further
-              down are optional for multi-asset allocation.
-            </p>
-            <Link
-              to="/portal/investor/trade"
-              className="text-sm shrink-0 rounded-md border border-border bg-surface px-3 py-1.5 font-medium text-foreground hover:bg-surface-elevated"
-            >
-              Go to Trade →
-            </Link>
-          </div>
-
-          <SectionCard
-            title="Trade orders & open positions"
-            description="Live from your brokerage accounts—mirrors the admin Trade Order queue and ticket context (Limited Risk Options / listed derivatives first)."
-          >
-            {snapshots.length > 0 ? (
-              <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {snapshots.map((s) => (
-                  <div
-                    key={s.account_id}
-                    className="rounded-md border border-border bg-muted/15 px-3 py-2 text-sm"
-                  >
-                    <div className="font-medium text-foreground">{s.account_number}</div>
-                    <div className="mt-1 text-xs text-muted-foreground space-y-0.5">
-                      <div>
-                        Cash:{" "}
-                        <span className="text-foreground">
-                          {fmtMoney(s.cash_balance, s.base_currency)}
-                        </span>
-                      </div>
-                      <div>
-                        Open positions (broker):{" "}
-                        <span className="text-foreground">{s.open_position_count}</span>
-                      </div>
-                      <div>
-                        Realized P&amp;L:{" "}
-                        <span className={s.realized_pnl >= 0 ? "text-success" : "text-destructive"}>
-                          {fmtMoney(s.realized_pnl, s.base_currency)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : accounts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No active brokerage accounts yet. When your account is active, orders and positions from the Trade
-                Order flow will show here automatically.
-              </p>
-            ) : null}
-
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-              Recent orders
-            </h3>
-            {orders.length === 0 ? (
-              <p className="text-sm text-muted-foreground mb-4">No orders yet.</p>
-            ) : (
-              <div className="overflow-x-auto mb-6 rounded-md border border-border">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
-                      <th className="py-2 px-3">Symbol</th>
-                      <th className="py-2 px-3">Account</th>
-                      <th className="py-2 px-3">Side</th>
-                      <th className="py-2 px-3">Type</th>
-                      <th className="py-2 px-3 text-right">Qty</th>
-                      <th className="py-2 px-3 text-right">Filled</th>
-                      <th className="py-2 px-3 text-right">Limit</th>
-                      <th className="py-2 px-3">Status</th>
-                      <th className="py-2 px-3">Placed</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.slice(0, 40).map((o) => (
-                      <tr key={o.id} className="border-b border-border/50 hover:bg-surface-elevated/40">
-                        <td className="py-2 px-3 font-medium">{o.symbol}</td>
-                        <td className="py-2 px-3 text-xs text-muted-foreground">{o.account_number ?? "—"}</td>
-                        <td
-                          className={`py-2 px-3 text-xs font-medium ${o.side === "buy" ? "text-success" : "text-destructive"}`}
-                        >
-                          {o.side}
-                        </td>
-                        <td className="py-2 px-3 text-xs text-muted-foreground">{o.order_type}</td>
-                        <td className="py-2 px-3 text-right tabular-nums">
-                          {o.quantity.toLocaleString(undefined, { maximumFractionDigits: 6 })}
-                        </td>
-                        <td className="py-2 px-3 text-right tabular-nums">
-                          {o.filled_quantity.toLocaleString(undefined, { maximumFractionDigits: 6 })}
-                        </td>
-                        <td className="py-2 px-3 text-right tabular-nums text-muted-foreground">
-                          {o.limit_price != null ? o.limit_price.toLocaleString() : "—"}
-                        </td>
-                        <td className={`py-2 px-3 text-xs capitalize ${orderStatusTone(o.status)}`}>
-                          {o.status}
-                        </td>
-                        <td className="py-2 px-3 text-xs text-muted-foreground whitespace-nowrap">
-                          {new Date(o.placed_at).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-              Open positions (broker book)
-            </h3>
-            {positions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No open positions.</p>
-            ) : (
-              <div className="overflow-x-auto rounded-md border border-border">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
-                      <th className="py-2 px-3">Symbol</th>
-                      <th className="py-2 px-3">Account</th>
-                      <th className="py-2 px-3 text-right">Qty</th>
-                      <th className="py-2 px-3 text-right">Avg cost</th>
-                      <th className="py-2 px-3 text-right">Realized P&amp;L</th>
-                      <th className="py-2 px-3">Ccy</th>
-                      <th className="py-2 px-3">Last trade</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {positions.map((p) => (
-                      <tr key={p.id} className="border-b border-border/50 hover:bg-surface-elevated/40">
-                        <td className="py-2 px-3 font-medium">{p.symbol}</td>
-                        <td className="py-2 px-3 text-xs text-muted-foreground">{p.account_number ?? "—"}</td>
-                        <td className="py-2 px-3 text-right tabular-nums">
-                          {p.quantity.toLocaleString(undefined, { maximumFractionDigits: 6 })}
-                        </td>
-                        <td className="py-2 px-3 text-right tabular-nums">{p.avg_cost.toLocaleString()}</td>
-                        <td
-                          className={`py-2 px-3 text-right tabular-nums ${p.realized_pnl >= 0 ? "text-success" : "text-destructive"}`}
-                        >
-                          {p.realized_pnl.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-2 px-3 text-xs">{p.currency}</td>
-                        <td className="py-2 px-3 text-xs text-muted-foreground whitespace-nowrap">
-                          {p.last_trade_at ? new Date(p.last_trade_at).toLocaleString() : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </SectionCard>
-
           {totals && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <MetricCard
                 title="Sleeve market value"
                 value={fmtMoney(totals.total)}
@@ -500,25 +286,18 @@ function PortfolioPage() {
                   )
                   .join(" · ")}
               />
-              <MetricCard
-                title="Open orders (non-final)"
-                value={String(openOrdersCount)}
-                helper="Same lifecycle as admin Trade Order queue"
-              />
             </div>
           )}
 
           {rows.length === 0 ? (
             <SectionCard
               title="No sub-portfolios yet"
-              description="Optional—your primary view is orders & positions above."
+              description="Optional sleeves for multi-asset allocation and holdings reporting."
             >
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Hudson Crest is oriented around <strong className="text-foreground">Limited Risk Options Contracts</strong>{" "}
-                and listed derivatives. The desk posts executions against your brokerage account; that activity appears
-                in <strong className="text-foreground">Trade orders & open positions</strong> without any sleeve here.
-                Your advisor may add sleeves when you expand into other asset classes (equities, crypto, commodities,
-                managed strategy) for allocation reporting.
+                Your advisor can add sleeves when you expand into other asset classes (equities, crypto, commodities,
+                managed strategy). Use the <strong className="text-foreground">Trade</strong> page for order entry and
+                execution history.
               </p>
             </SectionCard>
           ) : (
