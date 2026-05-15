@@ -61,12 +61,23 @@ export async function getMyProfile(userId: string) {
       .eq("user_id", userId)
       .order("created_at", { ascending: false }),
   ]);
+  const profile = profileQ.data as { metadata?: unknown } | null;
+  const meta =
+    profile?.metadata && typeof profile.metadata === "object" && !Array.isArray(profile.metadata)
+      ? (profile.metadata as Record<string, unknown>)
+      : {};
+  const mustChangePassword = meta.must_change_password === true;
+
   return {
     profile: profileQ.data,
     email: userResp.data.user?.email ?? "",
     created_at: userResp.data.user?.created_at ?? null,
     mfa: mfaQ.data ?? { enabled: false, enrolled_at: null },
     accounts: accountsQ.data ?? [],
+    security: {
+      /** True when the desk provisioned a temporary password and expects a first-time change. */
+      mustChangePassword,
+    },
   };
 }
 
@@ -142,6 +153,25 @@ export async function changeMyPassword(userId: string, raw: unknown) {
     password: data.newPassword,
   });
   if (error) throw new Error(error.message);
+
+  const { data: prof } = await supabaseAdmin
+    .from("profiles")
+    .select("metadata")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const prev =
+    prof?.metadata && typeof prof.metadata === "object" && !Array.isArray(prof.metadata)
+      ? { ...(prof.metadata as Record<string, unknown>) }
+      : {};
+  prev.must_change_password = false;
+  prev.password_changed_at = new Date().toISOString();
+  const { error: metaErr } = await (supabaseAdmin.from("profiles") as any)
+    .update({ metadata: prev })
+    .eq("user_id", userId);
+  if (metaErr) {
+    console.error("[changeMyPassword] profile metadata update", metaErr.message);
+  }
+
   await audit({ actorId: userId, action: "password.change", targetUserId: userId });
   return { ok: true };
 }

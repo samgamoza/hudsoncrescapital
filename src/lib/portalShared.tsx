@@ -177,7 +177,7 @@ export type NavItem = {
   openInNewWindow?: boolean;
   /**
    * Render at the bottom of the sidebar using regular nav styling. Used today
-   * for Support + Settings so they sit underneath the main navigation list
+   * for Help desk + Settings so they sit underneath the main navigation list
    * (with a divider) without changing visual treatment.
    */
   pinBelow?: boolean;
@@ -371,12 +371,14 @@ export function MetricCard({
 
 export function SectionCard({
   title,
+  titleClassName,
   description,
   right,
   children,
   className,
 }: {
   title: string;
+  titleClassName?: string;
   description?: ReactNode;
   right?: ReactNode;
   children: ReactNode;
@@ -386,7 +388,7 @@ export function SectionCard({
     <div className={cn("surface-card p-5 sm:p-6", className)}>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+          <h2 className={cn("text-lg font-semibold text-foreground", titleClassName)}>{title}</h2>
           {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
         </div>
         {right && <div className="flex-shrink-0">{right}</div>}
@@ -440,7 +442,7 @@ export const NAV_INVESTOR: NavItem[] = [
   { to: "/portal/investor/transactions", label: "Transactions", icon: ArrowLeftRight },
   { to: "/portal/investor/kyc", label: "KYC", icon: ShieldCheck },
   { to: "/portal/investor/profile", label: "Profile", icon: UserCircle },
-  { to: "/portal/investor/support", label: "Support", icon: LifeBuoy, pinBelow: true },
+  { to: "/portal/investor/support", label: "Help desk", icon: LifeBuoy, pinBelow: true },
   { to: "/portal/investor/settings", label: "Settings", icon: Settings, pinBelow: true },
 ];
 

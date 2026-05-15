@@ -18,11 +18,15 @@ import {
   ChevronsUpDown,
   ClipboardList,
   Clock3,
+  Coins,
   ExternalLink,
   Filter,
   History,
+  Landmark,
   LayoutDashboard,
+  LineChart,
   MoreHorizontal,
+  PieChart,
   SearchX,
   ShieldAlert,
   Search,
@@ -177,27 +181,39 @@ type AssetListingQuote = {
   up: boolean;
 };
 
-/** Primary rail — kept in direct view. */
+/** Primary rail — order matches desk taxonomy (Equities → … → Crypto). */
 const WORKSPACE_MARKET_MAIN_VISIBLE: {
   label: string;
   icon: ComponentType<{ className?: string }>;
   value: string;
 }[] = [
-  { label: "Commodities", icon: Wallet, value: "commodities" },
-  { label: "Shares", icon: ChartCandlestick, value: "shares" },
-  { label: "Crypto", icon: Wallet, value: "cryptocurrency" },
-  { label: "FX", icon: Clock3, value: "fx" },
-  { label: "Options", icon: ChartCandlestick, value: "options" },
+  { label: "Equities (Stocks)", icon: ChartCandlestick, value: "shares" },
+  { label: "Fixed Income (Bonds)", icon: Landmark, value: "bonds_rates" },
+  { label: "Funds (Mutual Funds / ETFs)", icon: PieChart, value: "etfs" },
+  { label: "Commodities", icon: LineChart, value: "commodities" },
+  { label: "Forex", icon: Clock3, value: "fx" },
+  { label: "Crypto", icon: Coins, value: "cryptocurrency" },
 ];
 
-/** Tucked under "More asset classes" (closed by default) so the rail stays focused. */
+/** Under "Derivatives" — only classes wired to the catalog are enabled. */
+const WORKSPACE_MARKET_DERIVATIVES: {
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  value?: string;
+}[] = [
+  { label: "Futures", icon: TrendingUp },
+  { label: "Options", icon: ChartCandlestick, value: "options" },
+  { label: "Limited Risk Options Contracts", icon: ShieldAlert },
+  { label: "Warrants", icon: Star },
+  { label: "Structured Products", icon: LayoutDashboard },
+];
+
+/** Tucked under "More asset classes" (closed by default). */
 const WORKSPACE_MARKET_MAIN_MORE: {
   label: string;
   icon: ComponentType<{ className?: string }>;
   value?: string;
 }[] = [
-  { label: "ETFs", icon: ChartCandlestick, value: "etfs" },
-  { label: "Bonds and Rates", icon: LayoutDashboard, value: "bonds_rates" },
   { label: "Indices", icon: SlidersHorizontal, value: "indices" },
   { label: "Knock-Outs", icon: LayoutDashboard },
 ];
@@ -430,9 +446,8 @@ function WorkspaceEmptyCanvas() {
         </p>
         <p className="text-xs leading-relaxed text-muted-foreground/90">
           <span className="font-medium text-foreground">To get started,</span> pick an asset class
-          under <span className="font-medium text-foreground">Market Main</span> on the left (for
-          example Commodities, Shares, FX, or Options). The catalog and tools load here after you
-          choose one.
+          under <span className="font-medium text-foreground">Markets</span> on the left (for example
+          Equities, Commodities, or Forex). The catalog and tools load here after you choose one.
         </p>
         <p className="text-[11px] text-muted-foreground/70">
           Optional filters stay under <span className="text-foreground/80">Search & filters</span>{" "}
@@ -606,6 +621,14 @@ function WorkspaceTradeSidebar({
             New
           </span>
         </button>
+        <button
+          type="button"
+          className={railRowClass(mainPanel === "funds")}
+          onClick={() => setMainPanel("funds")}
+        >
+          <Wallet className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+          <span className="truncate">Manage funds</span>
+        </button>
 
         <div className="my-2 h-px bg-border/80" />
 
@@ -626,6 +649,42 @@ function WorkspaceTradeSidebar({
             <span className="truncate">{item.label}</span>
           </button>
         ))}
+
+        <details className="group rounded-md [&_summary::-webkit-details-marker]:hidden">
+          <summary
+            className={cn(
+              "flex cursor-pointer list-none items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+              WORKSPACE_MARKET_DERIVATIVES.some(
+                (i) => i.value && i.value === marketClass && mainPanel === "catalog",
+              ) && "bg-muted/50 font-medium text-foreground",
+            )}
+          >
+            <BarChart3 className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+            <span className="min-w-0 flex-1 truncate">Derivatives</span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
+          </summary>
+          <div className="mt-0.5 space-y-0.5 border-l border-border/60 pl-2 ml-3 py-1">
+            {WORKSPACE_MARKET_DERIVATIVES.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                disabled={!item.value}
+                className={cn(
+                  railRowClass(!!item.value && catalogActive(item.value)),
+                  !item.value && "cursor-not-allowed opacity-40 hover:bg-transparent",
+                )}
+                onClick={() => {
+                  if (!item.value) return;
+                  setMarketClass(item.value);
+                  setMainPanel("catalog");
+                }}
+              >
+                <item.icon className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+                <span className="truncate">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </details>
 
         <details className="group rounded-md [&_summary::-webkit-details-marker]:hidden">
           <summary
@@ -662,15 +721,6 @@ function WorkspaceTradeSidebar({
             ))}
           </div>
         </details>
-
-        <button
-          type="button"
-          className={railRowClass(mainPanel === "funds")}
-          onClick={() => setMainPanel("funds")}
-        >
-          <Wallet className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
-          <span className="truncate">Manage funds</span>
-        </button>
 
         <div className="my-2 h-px bg-border/80" />
 

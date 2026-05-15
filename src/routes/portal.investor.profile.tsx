@@ -47,6 +47,7 @@ function ProfilePage() {
     username?: string;
     first?: string;
     last?: string;
+    pw0?: string;
     pw1?: string;
     pw2?: string;
   }>({});
@@ -91,6 +92,7 @@ function ProfilePage() {
       username: data?.profile?.username ?? "",
       first: data?.profile?.legal_first_name ?? "",
       last: data?.profile?.legal_last_name ?? "",
+      pw0: "",
       pw1: "",
       pw2: "",
     });
@@ -133,9 +135,22 @@ function ProfilePage() {
           if (!r.ok) throw new Error(`Failed (${r.status})`);
         });
       } else if (edit === "password") {
+        if (!draft.pw0?.trim()) throw new Error("Enter your current password.");
         if (!draft.pw1 || draft.pw1.length < 8)
           throw new Error("Password must be at least 8 characters");
         if (draft.pw1 !== draft.pw2) throw new Error("Passwords do not match");
+        const { data: userData } = await supabase.auth.getUser();
+        const email = userData.user?.email;
+        if (!email) throw new Error("No email on session.");
+        const { error: signErr } = await supabase.auth.signInWithPassword({
+          email,
+          password: draft.pw0,
+        });
+        if (signErr) {
+          throw new Error(
+            signErr.message.toLowerCase().includes("invalid") ? "Current password is incorrect." : signErr.message,
+          );
+        }
         await fetch("/api/portal/profile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -143,6 +158,7 @@ function ProfilePage() {
         }).then((r) => {
           if (!r.ok) throw new Error(`Failed (${r.status})`);
         });
+        await supabase.auth.refreshSession().catch(() => {});
       }
       toast.success("Updated");
       setEdit(null);
@@ -274,7 +290,7 @@ function ProfilePage() {
           <span>{today}</span>
           <Link to="/portal/investor/support" className={linkBtn}>
             <HelpCircle className="h-3.5 w-3.5" />
-            Help
+            Help desk
           </Link>
         </div>
       </div>
@@ -380,6 +396,13 @@ function ProfilePage() {
             <Row label="Password">
               {edit === "password" ? (
                 <div className="flex flex-col gap-2 w-full">
+                  <input
+                    className={field}
+                    type="password"
+                    placeholder="Current password"
+                    value={draft.pw0 ?? ""}
+                    onChange={(e) => setDraft((d) => ({ ...d, pw0: e.target.value }))}
+                  />
                   <input
                     className={field}
                     type="password"

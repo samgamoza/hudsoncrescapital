@@ -4,10 +4,12 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { PageHeader, SectionCard } from "@/lib/portalShared";
 import { Loader2, MessageSquarePlus, Send, ArrowLeft, CheckCircle2, Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/portal/investor/support")({
   head: () => ({
-    meta: [{ title: "Support | Hudson Crest Capital" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Help desk | Hudson Crest Capital" }, { name: "robots", content: "noindex" }],
   }),
   component: SupportPage,
 });
@@ -25,7 +27,7 @@ type TicketRow = {
 const STATUS_LABEL: Record<string, string> = {
   open: "Open",
   pending_user: "Awaiting your reply",
-  pending_staff: "Awaiting support",
+  pending_staff: "Awaiting desk",
   resolved: "Resolved",
   closed: "Closed",
 };
@@ -37,6 +39,14 @@ const STATUS_TONE: Record<string, string> = {
   resolved: "text-success",
   closed: "text-muted-foreground",
 };
+
+const label =
+  "block text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/90";
+const field = cn(
+  "w-full rounded-lg border border-border/70 bg-surface/90 px-3 py-2 text-sm text-foreground shadow-sm",
+  "transition-[border-color,box-shadow] placeholder:text-muted-foreground/65",
+  "focus:border-brand/45 focus:outline-none focus:ring-2 focus:ring-brand/15",
+);
 
 function SupportPage() {
   const [view, setView] = useState<"list" | "new" | "detail">("list");
@@ -50,8 +60,8 @@ function SupportPage() {
       const res = await fetch("/api/portal/tickets");
       if (!res.ok) throw new Error(`Failed (${res.status})`);
       setTickets(await res.json());
-    } catch (e: any) {
-      toast.error(e?.message ?? "Failed to load tickets");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to load tickets");
     } finally {
       setLoading(false);
     }
@@ -64,36 +74,41 @@ function SupportPage() {
   return (
     <>
       <PageHeader
-        title="Support"
-        subtitle="Get help from our team. Average response time: under 4 hours."
+        title="Help desk"
+        subtitle="Account support — open a request and our service desk will respond."
       />
 
       {view === "list" && (
         <SectionCard
-          title="My Tickets"
+          className="shadow-md ring-1 ring-border/40"
+          title="My tickets"
           description="Open requests, status updates, and history."
           right={
-            <button
+            <Button
+              type="button"
               onClick={() => setView("new")}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand text-brand-foreground text-sm font-medium hover:opacity-90"
+              className="gap-2 bg-gradient-brand text-brand-foreground shadow-md shadow-brand/15 hover:opacity-95"
             >
-              <MessageSquarePlus className="h-4 w-4" /> New Ticket
-            </button>
+              <MessageSquarePlus className="h-4 w-4" aria-hidden />
+              New request
+            </Button>
           }
         >
           {loading ? (
-            <div className="py-8 flex items-center justify-center text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading…
+            <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin text-brand" aria-hidden />
+              Loading…
             </div>
           ) : !tickets || tickets.length === 0 ? (
-            <div className="text-center py-10 text-sm text-muted-foreground">
-              You haven't opened any tickets yet.
+            <div className="py-10 text-center text-sm text-muted-foreground">
+              You haven&apos;t opened any tickets yet.
               <div className="mt-3">
                 <button
+                  type="button"
                   onClick={() => setView("new")}
-                  className="text-brand hover:underline text-sm"
+                  className="text-sm font-medium text-brand hover:underline"
                 >
-                  Open your first ticket →
+                  Open your first request →
                 </button>
               </div>
             </div>
@@ -102,27 +117,26 @@ function SupportPage() {
               {tickets.map((t) => (
                 <button
                   key={t.id}
+                  type="button"
                   onClick={() => {
                     setActiveId(t.id);
                     setView("detail");
                   }}
-                  className="w-full text-left p-3 rounded-lg bg-surface-elevated/40 border border-border hover:border-brand/40 transition-colors"
+                  className="w-full rounded-lg border border-border/60 bg-surface/40 p-3 text-left transition-colors hover:border-brand/35 hover:bg-muted/20"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-foreground truncate">
-                        {t.subject}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                      <div className="truncate text-sm font-medium text-foreground">{t.subject}</div>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         <span className="capitalize">{t.category}</span>
-                        <span>•</span>
+                        <span aria-hidden>•</span>
                         <span className="capitalize">{t.priority}</span>
-                        <span>•</span>
+                        <span aria-hidden>•</span>
                         <span>{new Date(t.last_activity_at).toLocaleString()}</span>
                       </div>
                     </div>
                     <div
-                      className={`text-xs font-medium ${STATUS_TONE[t.status] ?? "text-muted-foreground"}`}
+                      className={`shrink-0 text-xs font-medium ${STATUS_TONE[t.status] ?? "text-muted-foreground"}`}
                     >
                       {STATUS_LABEL[t.status] ?? t.status}
                     </div>
@@ -172,7 +186,7 @@ function NewTicketForm({
   const [body, setBody] = useState("");
   const [category, setCategory] = useState<
     "account" | "funding" | "trading" | "kyc" | "technical" | "other"
-  >("other");
+  >("account");
   const [priority, setPriority] = useState<"low" | "normal" | "high">("normal");
   const [submitting, setSubmitting] = useState(false);
 
@@ -191,10 +205,10 @@ function NewTicketForm({
       });
       if (!r.ok) throw new Error(`Failed (${r.status})`);
       const res = await r.json();
-      toast.success("Ticket created");
+      toast.success("Request sent");
       onCreated(res.id);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Failed to create ticket");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to create ticket");
     } finally {
       setSubmitting(false);
     }
@@ -202,89 +216,102 @@ function NewTicketForm({
 
   return (
     <SectionCard
-      title="New Ticket"
-      description="Describe your issue and our team will respond shortly."
+      className="shadow-md ring-1 ring-border/40"
+      title="Help desk account support"
+      titleClassName="text-sm font-bold uppercase tracking-[0.14em] text-foreground border-b border-border/80 pb-3"
       right={
         <button
+          type="button"
           onClick={onCancel}
-          className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" /> Back
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Back
         </button>
       }
     >
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label className="block">
-            <div className="text-xs font-medium text-muted-foreground mb-1.5">Category</div>
-            <select
-              className={inputCls}
-              value={category}
-              onChange={(e) => setCategory(e.target.value as any)}
-            >
-              <option value="account">Account</option>
-              <option value="funding">Deposit / Withdrawal</option>
-              <option value="trading">Trading</option>
-              <option value="kyc">KYC / Verification</option>
-              <option value="technical">Technical issue</option>
-              <option value="other">Other</option>
-            </select>
+      <div className="mx-auto mt-2 max-w-xl space-y-3">
+        <div className="grid gap-1.5 sm:grid-cols-[minmax(0,140px)_1fr] sm:items-center sm:gap-4">
+          <label className={cn(label, "sm:mb-0")} htmlFor="help-priority">
+            Priority
           </label>
-          <label className="block">
-            <div className="text-xs font-medium text-muted-foreground mb-1.5">Priority</div>
-            <select
-              className={inputCls}
-              value={priority}
-              onChange={(e) => setPriority(e.target.value as any)}
-            >
-              <option value="low">Low</option>
-              <option value="normal">Normal</option>
-              <option value="high">High</option>
-            </select>
-          </label>
+          <select
+            id="help-priority"
+            className={field}
+            value={priority}
+            onChange={(e) => setPriority(e.target.value as "low" | "normal" | "high")}
+          >
+            <option value="low">Low</option>
+            <option value="normal">Normal</option>
+            <option value="high">High</option>
+          </select>
         </div>
 
-        <label className="block">
-          <div className="text-xs font-medium text-muted-foreground mb-1.5">Subject</div>
+        <div className="grid gap-1.5 sm:grid-cols-[minmax(0,140px)_1fr] sm:items-center sm:gap-4">
+          <label className={cn(label, "sm:mb-0")} htmlFor="help-to">
+            To
+          </label>
+          <select
+            id="help-to"
+            className={field}
+            value={category}
+            onChange={(e) =>
+              setCategory(e.target.value as "account" | "funding" | "trading" | "kyc" | "technical" | "other")
+            }
+          >
+            <option value="account">Account services</option>
+            <option value="funding">Funding / treasury</option>
+            <option value="trading">Trading desk</option>
+            <option value="kyc">KYC / compliance</option>
+            <option value="technical">Technical</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div className="grid gap-1.5 sm:grid-cols-[minmax(0,140px)_1fr] sm:items-center sm:gap-4">
+          <label className={cn(label, "sm:mb-0")} htmlFor="help-subject">
+            Subject
+          </label>
           <input
-            className={inputCls}
-            placeholder="Briefly describe the issue"
+            id="help-subject"
+            className={field}
+            placeholder="Brief summary"
             value={subject}
             maxLength={200}
             onChange={(e) => setSubject(e.target.value)}
           />
-        </label>
+        </div>
 
-        <label className="block">
-          <div className="text-xs font-medium text-muted-foreground mb-1.5">Message</div>
+        <div className="grid gap-1.5 sm:grid-cols-[minmax(0,140px)_1fr] sm:items-start sm:gap-4">
+          <label className={cn(label, "pt-2 sm:mb-0 sm:pt-2.5")} htmlFor="help-message">
+            Message
+          </label>
           <textarea
-            className={`${inputCls} min-h-32`}
-            placeholder="Provide as much detail as possible…"
+            id="help-message"
+            className={cn("min-h-[160px] resize-y", field)}
+            placeholder="Describe your question or issue…"
             value={body}
             maxLength={5000}
             onChange={(e) => setBody(e.target.value)}
           />
-        </label>
+        </div>
 
-        <div className="flex items-center justify-end gap-2">
-          <button
-            onClick={onCancel}
-            className="text-sm text-muted-foreground hover:text-foreground px-3 py-2"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={submit}
+        <div className="pt-2">
+          <Button
+            type="button"
             disabled={submitting}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand text-brand-foreground text-sm font-medium hover:opacity-90 disabled:opacity-60"
+            onClick={() => void submit()}
+            className="gap-2 bg-gradient-brand px-8 text-brand-foreground shadow-md shadow-brand/15 hover:opacity-95"
           >
             {submitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                Sending…
+              </>
             ) : (
-              <Send className="h-4 w-4" />
+              "Send"
             )}
-            Submit
-          </button>
+          </Button>
         </div>
       </div>
     </SectionCard>
@@ -303,8 +330,8 @@ function TicketDetail({ id, onBack }: { id: string; onBack: () => void }) {
       const res = await fetch(`/api/portal/tickets?id=${encodeURIComponent(id)}`);
       if (!res.ok) throw new Error(`Failed (${res.status})`);
       setData(await res.json());
-    } catch (e: any) {
-      toast.error(e?.message ?? "Failed to load ticket");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to load ticket");
     } finally {
       setLoading(false);
     }
@@ -329,8 +356,8 @@ function TicketDetail({ id, onBack }: { id: string; onBack: () => void }) {
       if (!res.ok) throw new Error(`Failed (${res.status})`);
       setReply("");
       await load();
-    } catch (e: any) {
-      toast.error(e?.message ?? "Failed to send reply");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to send reply");
     } finally {
       setSending(false);
     }
@@ -338,9 +365,10 @@ function TicketDetail({ id, onBack }: { id: string; onBack: () => void }) {
 
   if (loading || !data) {
     return (
-      <SectionCard title="Loading…">
-        <div className="py-6 flex items-center justify-center text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading ticket…
+      <SectionCard className="shadow-md ring-1 ring-border/40" title="Loading…">
+        <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+          Loading ticket…
         </div>
       </SectionCard>
     );
@@ -351,6 +379,7 @@ function TicketDetail({ id, onBack }: { id: string; onBack: () => void }) {
 
   return (
     <SectionCard
+      className="shadow-md ring-1 ring-border/40"
       title={t.subject}
       description={
         <span className="capitalize">
@@ -359,23 +388,25 @@ function TicketDetail({ id, onBack }: { id: string; onBack: () => void }) {
       }
       right={
         <button
+          type="button"
           onClick={onBack}
-          className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" /> Back
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          Back
         </button>
       }
     >
       <div className="space-y-4">
         <div
-          className={`text-xs font-medium inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border bg-surface-elevated/50 ${
+          className={`inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/25 px-2.5 py-1 text-xs font-medium ${
             STATUS_TONE[t.status] ?? "text-muted-foreground"
           }`}
         >
           {t.status === "resolved" || t.status === "closed" ? (
-            <CheckCircle2 className="h-3.5 w-3.5" />
+            <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
           ) : (
-            <Clock className="h-3.5 w-3.5" />
+            <Clock className="h-3.5 w-3.5" aria-hidden />
           )}
           {STATUS_LABEL[t.status] ?? t.status}
         </div>
@@ -384,51 +415,51 @@ function TicketDetail({ id, onBack }: { id: string; onBack: () => void }) {
           {data.messages.map((m: any) => (
             <div
               key={m.id}
-              className={`p-3 rounded-lg border ${
+              className={cn(
+                "rounded-lg border p-3",
                 m.author_role === "investor"
-                  ? "bg-surface-elevated/30 border-border"
-                  : "bg-brand/5 border-brand/20"
-              }`}
+                  ? "border-border/60 bg-surface/50"
+                  : "border-brand/25 bg-brand/[0.06]",
+              )}
             >
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <div className="text-xs font-medium text-foreground capitalize">
-                  {m.author_role === "investor" ? "You" : "Support"}
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <div className="text-xs font-medium capitalize text-foreground">
+                  {m.author_role === "investor" ? "You" : "Help desk"}
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {new Date(m.created_at).toLocaleString()}
-                </div>
+                <div className="text-xs text-muted-foreground">{new Date(m.created_at).toLocaleString()}</div>
               </div>
-              <div className="text-sm text-foreground whitespace-pre-wrap">{m.body}</div>
+              <div className="whitespace-pre-wrap text-sm text-foreground">{m.body}</div>
             </div>
           ))}
         </div>
 
         {closed ? (
-          <div className="text-sm text-muted-foreground text-center py-3 border-t border-border">
-            This ticket is closed. Open a new one if you need further help.
+          <div className="border-t border-border/60 py-3 text-center text-sm text-muted-foreground">
+            This ticket is closed. Open a new request if you need further help.
           </div>
         ) : (
-          <div className="border-t border-border pt-4 space-y-3">
+          <div className="space-y-3 border-t border-border/60 pt-4">
             <textarea
-              className={`${inputCls} min-h-24`}
+              className={cn("min-h-24 resize-y", field)}
               placeholder="Type your reply…"
               value={reply}
               maxLength={5000}
               onChange={(e) => setReply(e.target.value)}
             />
             <div className="flex justify-end">
-              <button
-                onClick={send}
+              <Button
+                type="button"
                 disabled={sending || reply.trim().length === 0}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand text-brand-foreground text-sm font-medium hover:opacity-90 disabled:opacity-60"
+                onClick={() => void send()}
+                className="gap-2 bg-gradient-brand text-brand-foreground shadow-md shadow-brand/15 hover:opacity-95 disabled:opacity-50"
               >
                 {sending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                 ) : (
-                  <Send className="h-4 w-4" />
+                  <Send className="h-4 w-4" aria-hidden />
                 )}
-                Send Reply
-              </button>
+                Send reply
+              </Button>
             </div>
           </div>
         )}
@@ -436,6 +467,3 @@ function TicketDetail({ id, onBack }: { id: string; onBack: () => void }) {
     </SectionCard>
   );
 }
-
-const inputCls =
-  "w-full px-3 py-2 rounded-lg bg-surface-elevated border border-border text-sm text-foreground focus:outline-none focus:border-brand/60 focus:ring-1 focus:ring-brand/40";

@@ -15,8 +15,14 @@ function TradingPage() {
   const [selectedOrderId, setSelectedOrderId] = useState("");
   const [fillQty, setFillQty] = useState("");
   const [fillPrice, setFillPrice] = useState("");
-  const [fillFees, setFillFees] = useState("0");
+  const [fillFees, setFillFees] = useState("35");
   const [fillCommission, setFillCommission] = useState("0");
+  /** Desk ticket fields (CrossOcean-style trade order form — only qty/price/fees feed execution). */
+  const [optionType, setOptionType] = useState<"call" | "put">("call");
+  const [commodity, setCommodity] = useState("");
+  const [contractSpec, setContractSpec] = useState("");
+  const [strikePrice, setStrikePrice] = useState("");
+  const [contractSize, setContractSize] = useState("1000");
   const [execBusy, setExecBusy] = useState(false);
   const [health, setHealth] = useState<any | null>(null);
   const [schema, setSchema] = useState<any | null>(null);
@@ -25,6 +31,10 @@ function TradingPage() {
   const [diagBusy, setDiagBusy] = useState(false);
   const field =
     "bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground w-full";
+  const roField =
+    "bg-muted/40 border border-border rounded-md px-3 py-2 text-sm text-muted-foreground w-full cursor-not-allowed";
+  const labelSm =
+    "block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1";
 
   const apiJson = async <T,>(input: RequestInfo | URL, init?: RequestInit): Promise<T> => {
     const res = await fetch(input, init);
@@ -176,16 +186,51 @@ function TradingPage() {
     [rows, selectedOrderId],
   );
 
+  const premiumNum = Number(fillPrice);
+  const positionsNum = Number(fillQty);
+  const contractSizeNum = Number(contractSize);
+  const feesNum = Number(fillFees);
+
+  const pricePerContract = useMemo(() => {
+    if (!Number.isFinite(premiumNum) || !Number.isFinite(contractSizeNum)) return null;
+    return premiumNum * contractSizeNum;
+  }, [premiumNum, contractSizeNum]);
+
+  const tradeValue = useMemo(() => {
+    if (!Number.isFinite(positionsNum) || pricePerContract == null || !Number.isFinite(pricePerContract))
+      return null;
+    return positionsNum * pricePerContract;
+  }, [positionsNum, pricePerContract]);
+
+  const totalInvoiced = useMemo(() => {
+    if (tradeValue == null || !Number.isFinite(feesNum)) return null;
+    return tradeValue + feesNum;
+  }, [tradeValue, feesNum]);
+
+  const tradeDetailsSummary = useMemo(() => {
+    if (!selectedOrder) return "";
+    const side = (selectedOrder.side ?? "buy").toString().toUpperCase();
+    const opt = optionType === "call" ? "CALL" : "PUT";
+    const pr = strikePrice.trim() || (Number.isFinite(premiumNum) ? premiumNum.toFixed(2) : "—");
+    const pos = Number.isFinite(positionsNum) && positionsNum > 0 ? String(positionsNum) : "—";
+    return `${side} ${pos}x ${opt} PR:${pr}`;
+  }, [selectedOrder, optionType, strikePrice, premiumNum, positionsNum]);
+
   useEffect(() => {
     if (!selectedOrder) return;
-    if (!fillQty) {
-      const rem = Number(selectedOrder.remaining_quantity ?? 0);
-      if (rem > 0) setFillQty(String(rem));
-    }
-    if (!fillPrice && selectedOrder.limit_price != null) {
-      setFillPrice(String(selectedOrder.limit_price));
-    }
-  }, [selectedOrder, fillQty, fillPrice]);
+    setOptionType("call");
+    setCommodity("");
+    setContractSpec("");
+    setStrikePrice("");
+    setContractSize("1000");
+    setFillFees("35");
+    setFillCommission("0");
+    const rem = Number(selectedOrder.remaining_quantity ?? 0);
+    if (rem > 0) setFillQty(String(rem));
+    else setFillQty("");
+    if (selectedOrder.limit_price != null) setFillPrice(String(selectedOrder.limit_price));
+    else setFillPrice("");
+  }, [selectedOrder?.id]);
 
   const runLookup = async (sendReset: boolean) => {
     setDiagBusy(true);
@@ -228,8 +273,8 @@ function TradingPage() {
         />
       </div>
       <SectionCard
-        title="Manual Order Fill"
-        description="Select an order and post a real execution fill. This writes orders, trades, positions, and cash ledger."
+        title="Trade Order"
+        description="Select a queued order, complete the ticket as you would for broker verification, then request execution. Quantity, premium, and fees are posted as the desk fill."
       >
         <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
           <div className="overflow-x-auto rounded-md border border-border">
@@ -338,47 +383,229 @@ function TradingPage() {
                     Remaining {Number(selectedOrder.remaining_quantity ?? 0).toLocaleString()}
                   </div>
                 </div>
-                <input
-                  className={field}
-                  inputMode="decimal"
-                  placeholder="Fill quantity"
-                  value={fillQty}
-                  onChange={(e) => setFillQty(e.target.value)}
-                />
-                <input
-                  className={field}
-                  inputMode="decimal"
-                  placeholder="Fill price"
-                  value={fillPrice}
-                  onChange={(e) => setFillPrice(e.target.value)}
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    className={field}
-                    inputMode="decimal"
-                    placeholder="Fees"
-                    value={fillFees}
-                    onChange={(e) => setFillFees(e.target.value)}
-                  />
-                  <input
-                    className={field}
-                    inputMode="decimal"
-                    placeholder="Commission"
-                    value={fillCommission}
-                    onChange={(e) => setFillCommission(e.target.value)}
-                  />
+
+                <h3 className="text-base font-semibold text-foreground pt-1">Trade Order</h3>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-3">
+                    <div>
+                      <label className={labelSm} htmlFor="desk-trade-order">
+                        Trade Order
+                      </label>
+                      <select
+                        id="desk-trade-order"
+                        className={field}
+                        value={selectedOrder.side === "sell" ? "sell" : "buy"}
+                        disabled
+                        aria-readonly
+                      >
+                        <option value="buy">Buy</option>
+                        <option value="sell">Sell</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelSm} htmlFor="desk-positions">
+                        Position(s)
+                      </label>
+                      <input
+                        id="desk-positions"
+                        className={field}
+                        inputMode="decimal"
+                        placeholder="Contracts / size"
+                        value={fillQty}
+                        onChange={(e) => setFillQty(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelSm} htmlFor="desk-option">
+                        Option
+                      </label>
+                      <select
+                        id="desk-option"
+                        className={field}
+                        value={optionType}
+                        onChange={(e) => setOptionType(e.target.value as "call" | "put")}
+                      >
+                        <option value="call">Call</option>
+                        <option value="put">Put</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelSm} htmlFor="desk-commodity">
+                        Select a Commodity
+                      </label>
+                      <select
+                        id="desk-commodity"
+                        className={field}
+                        value={commodity}
+                        onChange={(e) => setCommodity(e.target.value)}
+                      >
+                        <option value="">— Select —</option>
+                        <optgroup label="Currencies">
+                          <option value="currencies">Currencies</option>
+                          <option value="majors">Major pairs</option>
+                        </optgroup>
+                        <optgroup label="Commodities">
+                          <option value="metals">Metals</option>
+                          <option value="energy">Energy</option>
+                          <option value="ag">Agricultural</option>
+                        </optgroup>
+                        <optgroup label="Other">
+                          <option value="indices">Indices</option>
+                        </optgroup>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelSm} htmlFor="desk-contract">
+                        Contract
+                      </label>
+                      <select
+                        id="desk-contract"
+                        className={field}
+                        value={contractSpec}
+                        onChange={(e) => setContractSpec(e.target.value)}
+                      >
+                        <option value="">— Select —</option>
+                        <option value="g14">G14 (28 Jan 14)</option>
+                        <option value="h15">H15 (15 Mar 15)</option>
+                        <option value="m16">M16 (20 Jun 16)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelSm} htmlFor="desk-strike">
+                        Strike Price
+                      </label>
+                      <input
+                        id="desk-strike"
+                        className={field}
+                        inputMode="decimal"
+                        placeholder="Strike"
+                        value={strikePrice}
+                        onChange={(e) => setStrikePrice(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className={labelSm} htmlFor="desk-premium">
+                        Premium
+                      </label>
+                      <input
+                        id="desk-premium"
+                        className={field}
+                        inputMode="decimal"
+                        placeholder="1.00"
+                        value={fillPrice}
+                        onChange={(e) => setFillPrice(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelSm} htmlFor="desk-contract-size">
+                        Contract Size
+                      </label>
+                      <input
+                        id="desk-contract-size"
+                        className={roField}
+                        readOnly
+                        tabIndex={-1}
+                        value={Number(contractSize).toLocaleString()}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelSm} htmlFor="desk-px-per">
+                        Price per Contract
+                      </label>
+                      <input
+                        id="desk-px-per"
+                        className={roField}
+                        readOnly
+                        tabIndex={-1}
+                        value={
+                          pricePerContract != null && Number.isFinite(pricePerContract)
+                            ? pricePerContract.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })
+                            : "—"
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className={labelSm} htmlFor="desk-trade-val">
+                        Trade Value
+                      </label>
+                      <input
+                        id="desk-trade-val"
+                        className={roField}
+                        readOnly
+                        tabIndex={-1}
+                        value={
+                          tradeValue != null && Number.isFinite(tradeValue)
+                            ? tradeValue.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })
+                            : "0.00"
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className={labelSm} htmlFor="desk-fees">
+                        Trade Fees
+                      </label>
+                      <input
+                        id="desk-fees"
+                        className={field}
+                        inputMode="decimal"
+                        value={fillFees}
+                        onChange={(e) => setFillFees(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelSm} htmlFor="desk-total">
+                        Total Invoiced
+                      </label>
+                      <input
+                        id="desk-total"
+                        className={roField}
+                        readOnly
+                        tabIndex={-1}
+                        value={
+                          totalInvoiced != null && Number.isFinite(totalInvoiced)
+                            ? totalInvoiced.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })
+                            : "0.00"
+                        }
+                      />
+                    </div>
+                  </div>
                 </div>
+
+                <div className="mt-5 grid grid-cols-1 gap-4 border-t border-border pt-4 md:grid-cols-2">
+                  <div>
+                    <div className={labelSm}>Trade Details</div>
+                    <p className="text-sm font-medium text-foreground">{tradeDetailsSummary}</p>
+                  </div>
+                  <p className="text-xs leading-relaxed text-muted-foreground md:text-left">
+                    Trade requests are submitted to your broker for verification. Upon receiving a
+                    request, your broker will contact you to verify your trade details.
+                  </p>
+                </div>
+
                 <button
-                  className="bg-gradient-brand text-brand-foreground rounded-md px-4 py-2 text-sm font-medium w-full disabled:opacity-50"
+                  className="mt-4 bg-gradient-brand text-brand-foreground rounded-md px-4 py-2.5 text-sm font-semibold w-full disabled:opacity-50"
                   disabled={execBusy}
                   onClick={() => {
                     const q = Number(fillQty);
                     const p = Number(fillPrice);
                     const fees = Number(fillFees || "0");
                     const comm = Number(fillCommission || "0");
-                    if (!Number.isFinite(q) || q <= 0) return toast.error("Invalid fill quantity");
-                    if (!Number.isFinite(p) || p <= 0) return toast.error("Invalid fill price");
-                    if (!Number.isFinite(fees) || fees < 0) return toast.error("Invalid fees");
+                    if (!Number.isFinite(q) || q <= 0) return toast.error("Invalid position(s)");
+                    if (!Number.isFinite(p) || p <= 0) return toast.error("Invalid premium");
+                    if (!Number.isFinite(fees) || fees < 0) return toast.error("Invalid trade fees");
                     if (!Number.isFinite(comm) || comm < 0)
                       return toast.error("Invalid commission");
                     void runOrderAction(
@@ -390,11 +617,11 @@ function TradingPage() {
                         fees,
                         commission: comm,
                       },
-                      "Manual fill recorded",
+                      "Trade request executed. Fill recorded.",
                     );
                   }}
                 >
-                  Apply fill
+                  Request Trade
                 </button>
                 <div className="grid grid-cols-2 gap-2">
                   <button

@@ -15,6 +15,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { MetricCard, PageHeader, SectionCard, DataTable } from "@/lib/portalShared";
 import { usePortalProfileStatus } from "@/lib/portal-profile-status";
 import { ProfileCompletionBanner } from "@/components/portal/ProfileCompletionBanner";
+import { PasswordSecurityBanner } from "@/components/investor/PasswordSecurityBanner";
 
 export const Route = createFileRoute("/portal/investor/")({
   component: InvestorDashboard,
@@ -189,6 +190,7 @@ function InvestorDashboard() {
         <OpenPlatformButton locked={isIncomplete} />
       </div>
 
+      <PasswordSecurityBanner />
       <ProfileCompletionBanner />
 
       {/* Quick actions */}

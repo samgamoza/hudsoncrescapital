@@ -201,22 +201,26 @@ export async function onboardClientForApi(actorUserId: string, raw: unknown) {
   }
 
   // 2. Upsert profile (synced with investor Profile page)
-  const { error: profErr } = await supabaseAdmin.from("profiles").upsert(
-    {
-      user_id: uid,
-      username: data.username ?? null,
-      legal_first_name: data.legal_first_name,
-      legal_last_name: data.legal_last_name,
-      display_name: data.display_name ?? `${data.legal_first_name} ${data.legal_last_name}`,
-      date_of_birth: data.date_of_birth ?? null,
-      phone: data.phone ?? null,
-      country_of_residence: data.country_of_residence?.toUpperCase() ?? null,
-      nationality: data.nationality?.toUpperCase() ?? null,
-      tax_id_last4: data.tax_id_last4 ?? null,
-      status: data.initial_status === "active" ? "approved" : "submitted",
-    },
-    { onConflict: "user_id" },
-  );
+  const profilePayload: Record<string, unknown> = {
+    user_id: uid,
+    username: data.username ?? null,
+    legal_first_name: data.legal_first_name,
+    legal_last_name: data.legal_last_name,
+    display_name: data.display_name ?? `${data.legal_first_name} ${data.legal_last_name}`,
+    date_of_birth: data.date_of_birth ?? null,
+    phone: data.phone ?? null,
+    country_of_residence: data.country_of_residence?.toUpperCase() ?? null,
+    nationality: data.nationality?.toUpperCase() ?? null,
+    tax_id_last4: data.tax_id_last4 ?? null,
+    status: data.initial_status === "active" ? "approved" : "submitted",
+  };
+  /** Desk-issued initial password: prompt investor to change it on first login. */
+  if (!data.send_invite) {
+    profilePayload.metadata = { must_change_password: true };
+  }
+  const { error: profErr } = await supabaseAdmin.from("profiles").upsert(profilePayload as any, {
+    onConflict: "user_id",
+  });
   if (profErr) throw new Error(`Profile save failed: ${profErr.message}`);
 
   // 3. Create account with comprehensive metadata

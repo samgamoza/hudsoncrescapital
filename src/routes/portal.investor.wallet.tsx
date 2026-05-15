@@ -10,6 +10,7 @@ import {
 } from "@/components/portal/FundingEligibilityCallout";
 import { assignLocationHref } from "@/lib/assign-location-href";
 import { ProfileGate } from "@/components/portal/ProfileGateLock";
+import { ClassicWalletFundingPanels } from "@/components/investor/ClassicWalletFundingPanels";
 
 export const Route = createFileRoute("/portal/investor/wallet")({
   component: GuardedWalletPage,
@@ -96,6 +97,8 @@ function WalletPage() {
           }
         />
       </div>
+
+      <ClassicWalletFundingPanels onWireSubmitted={refresh} />
 
       <SectionCard
         title="Request Funds"
