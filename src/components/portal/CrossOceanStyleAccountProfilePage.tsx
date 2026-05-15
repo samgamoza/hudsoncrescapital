@@ -1,5 +1,18 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { crossOceanLegacyFieldClass as fieldClass, crossOceanLegacyLabelClass as labelClass } from "@/lib/crossOceanLegacyUi";
+import {
+  ACCOUNT_TYPES,
+  EXP_YEARS,
+  GBP_INCOME,
+  GBP_NET,
+  ID_TYPES,
+  KNOWLEDGE,
+  MARGINAL,
+  SALES_REPS,
+  SOURCE_ASSETS,
+  SOURCE_INCOME,
+  TRADES_MONTH,
+} from "@/lib/accountOpeningConstants";
 
 const req = (text: string) => (
   <span>
@@ -8,73 +21,12 @@ const req = (text: string) => (
   </span>
 );
 
-const EXP_YEARS = ["None", "Under 1", "1 - 3", "3 - 5", "Over 5"] as const;
-const TRADES_MONTH = ["None", "1 - 5", "6 - 25", "26 - 100", "Over 100"] as const;
-const KNOWLEDGE = ["None", "Limited", "Moderate", "Good", "Extensive"] as const;
-const GBP_INCOME = [
-  "-- Choose One --",
-  "Under GBP 25,000",
-  "GBP 25,000 - GBP 49,999",
-  "GBP 50,000 - GBP 99,999",
-  "GBP 100,000 - GBP 249,999",
-  "GBP 250,000 - GBP 499,999",
-  "Over GBP 500,000",
-] as const;
-const GBP_NET = [
-  "-- Choose One --",
-  "Under GBP 50,000",
-  "GBP 50,000 - GBP 199,999",
-  "GBP 200,000 - GBP 499,999",
-  "GBP 500,000 - GBP 999,999",
-  "GBP 1,000,000 - GBP 4,999,999",
-  "Over GBP 5,000,000",
-] as const;
-const MARGINAL = ["-- Choose One --", "20%", "40%", "45%", "Additional rate"] as const;
-const SOURCE_INCOME = [
-  "-- Choose One --",
-  "Employment",
-  "Savings",
-  "Investments",
-  "Inheritance",
-  "Business",
-  "Other",
-] as const;
-const SOURCE_ASSETS = [
-  "-- Choose One --",
-  "Savings",
-  "Sale of property",
-  "Sale of securities",
-  "Gift",
-  "Loan",
-  "Other",
-] as const;
-const ID_TYPES = ["Driver's License", "Passport", "National ID", "Other"] as const;
-const ACCOUNT_TYPES = ["Individual", "Joint", "Corporate", "Trust", "IRA"] as const;
-const SALES_REPS = [
-  "Adam Christian Drake",
-  "Sarah Mitchell",
-  "James Porter",
-  "Elena Vasquez",
-  "Unassigned",
-] as const;
-
 function DashedRule() {
   return <div className="my-3 border-t border-dashed border-neutral-300" aria-hidden />;
 }
 
-/** Legacy Cross Ocean–style account profile layout (reference / data entry). */
+/** Legacy reference layout for account-profile field groups (internal QA). */
 export function CrossOceanStyleAccountProfilePage() {
-  const now = useMemo(() => new Date(), []);
-  const stamp = now.toLocaleString(undefined, {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-
   const [accountType, setAccountType] = useState("Individual");
   const [salesRep, setSalesRep] = useState("Adam Christian Drake");
   const [ukCitizen, setUkCitizen] = useState<"uk" | "non">("uk");
@@ -82,45 +34,10 @@ export function CrossOceanStyleAccountProfilePage() {
 
   return (
     <div className="min-h-screen bg-neutral-200 text-neutral-900">
-      <header className="border-b border-neutral-400 bg-white px-4 py-2 text-xs text-neutral-700 sm:px-8">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 font-semibold text-blue-900">
-            <span className="inline-block h-8 w-8 rounded-full bg-gradient-to-br from-amber-400 to-blue-900" aria-hidden />
-            <span className="text-sm tracking-tight">Cross Ocean Adviser</span>
-          </div>
-          <div className="text-right text-[11px] leading-tight">
-            <div>{stamp}</div>
-            <div className="mt-0.5 font-medium text-neutral-900">Welcome, Felton Storm Panda</div>
-          </div>
-        </div>
-      </header>
-
-      <nav className="bg-[#1a2b4a] px-2 py-0 text-[11px] font-medium text-white sm:px-4">
-        <div className="mx-auto flex max-w-6xl flex-wrap gap-0">
-          {[
-            "Account Profile",
-            "Trading Record-Buy",
-            "Trading Record-Sell",
-            "Trade Order",
-            "Funding Record",
-            "Funding Transfer",
-            "Change Password",
-            "Help Desk",
-            "Sign Out",
-          ].map((label, i) => (
-            <span
-              key={label}
-              className={`cursor-default border-b-2 px-2 py-2 sm:px-3 ${
-                i === 0 ? "border-sky-300 bg-[#243a5c]" : "border-transparent opacity-80"
-              }`}
-            >
-              {label}
-            </span>
-          ))}
-        </div>
-      </nav>
-
       <main className="mx-auto max-w-6xl bg-white px-3 py-4 shadow sm:px-6 sm:py-6">
+        <p className="mb-3 text-xs text-neutral-600">
+          Reference field layout only (not production chrome). Investor signup uses the themed multi-step flow.
+        </p>
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <h1 className="text-lg font-bold text-neutral-900">Account Profile</h1>
           <button

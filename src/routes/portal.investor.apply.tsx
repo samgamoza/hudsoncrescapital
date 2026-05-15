@@ -1,10 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-/**
- * Legacy "Open account" route. Lands on the public Cross Ocean–style account profile.
- */
+/** Deep link: "Open account" sends applicants to the public multi-step signup flow. */
 export const Route = createFileRoute("/portal/investor/apply")({
   beforeLoad: () => {
-    throw redirect({ to: "/portal/account-profile", replace: true });
+    throw redirect({ to: "/portal/signup/investor", replace: true });
   },
 });

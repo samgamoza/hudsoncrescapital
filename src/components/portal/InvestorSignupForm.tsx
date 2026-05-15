@@ -2,18 +2,15 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ArrowRight, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { isValidE164 } from "@/lib/countries";
 import { CountrySelect, IntlPhoneInput } from "@/components/portal/IntlPhoneInput";
-import { formatPortalAuthError } from "@/lib/portal-auth";
-import { getPublicAppOrigin } from "@/lib/site-origin";
-import {
-  getEmailDomain,
-  getReservedStaffDomains,
-  isStrictAccountSeparationEnabled,
-} from "@/lib/portal-signup-email-guard";
 import { cn } from "@/lib/utils";
 import { crossOceanLegacyFieldClass, crossOceanLegacyLabelClass } from "@/lib/crossOceanLegacyUi";
+import {
+  PENDING_SIGNUP_BOOTSTRAP_KEY,
+  submitInvestorPortalSignup,
+  toastSignupSubmitError,
+  validateInvestorSignupCredentials,
+} from "@/lib/investor-signup-submit";
 
 const field = crossOceanLegacyFieldClass;
 const label = crossOceanLegacyLabelClass;
@@ -42,8 +39,7 @@ const initialForm = (): FormState => ({
   agreedRisk: false,
 });
 
-/** sessionStorage key used by the post-confirmation bootstrap to finish signup. */
-export const PENDING_SIGNUP_BOOTSTRAP_KEY = "hcc_pending_signup_bootstrap_v1";
+export { PENDING_SIGNUP_BOOTSTRAP_KEY };
 
 /**
  * Single-screen investor signup form. Collects only what auth needs (email,
@@ -60,110 +56,36 @@ export function InvestorSignupForm() {
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setF((prev) => ({ ...prev, [key]: value }));
 
-  const validate = (): string | null => {
-    if (!f.firstName.trim() || !f.lastName.trim()) return "First and last name are required.";
-    if (!f.email.includes("@")) return "A valid email is required.";
-    if (!f.country) return "Country of residence is required.";
-    if (!f.phone.trim() || !isValidE164(f.phone))
-      return "A valid international phone number is required.";
-    if (f.password.length < 8) return "Password must be at least 8 characters.";
-    if (f.password !== f.passwordConfirm) return "Passwords do not match.";
-    if (!f.agreedTerms) return "You must agree to the Terms of Service to continue.";
-    if (!f.agreedRisk) return "You must acknowledge the trading-risk disclosure to continue.";
-    if (isStrictAccountSeparationEnabled()) {
-      const reserved = getReservedStaffDomains();
-      const domain = getEmailDomain(f.email.trim());
-      if (domain && reserved.includes(domain)) {
-        return "This email domain is reserved for staff accounts. Please use a personal investor email.";
-      }
-    }
-    return null;
-  };
-
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const err = validate();
+    const err = validateInvestorSignupCredentials({
+      firstName: f.firstName,
+      lastName: f.lastName,
+      email: f.email,
+      country: f.country,
+      phone: f.phone,
+      password: f.password,
+      passwordConfirm: f.passwordConfirm,
+      agreedTerms: f.agreedTerms,
+      agreedRisk: f.agreedRisk,
+    });
     if (err) {
       toast.error(err);
       return;
     }
     setBusy(true);
     try {
-      const loginEmail = f.email.trim();
-      const country = f.country.toUpperCase().slice(0, 2);
-      const phone = f.phone.trim();
-      const firstName = f.firstName.trim();
-      const lastName = f.lastName.trim();
-      const appOrigin = getPublicAppOrigin();
-
-      const { data: signUpData, error: signErr } = await supabase.auth.signUp({
-        email: loginEmail,
+      await submitInvestorPortalSignup({
+        firstName: f.firstName.trim(),
+        lastName: f.lastName.trim(),
+        email: f.email.trim(),
+        country: f.country,
+        phone: f.phone.trim(),
         password: f.password,
-        options: {
-          emailRedirectTo: `${appOrigin}/auth/confirm?next=${encodeURIComponent(
-            "/portal/login/investor",
-          )}`,
-          data: {
-            legal_first_name: firstName,
-            legal_last_name: lastName,
-            display_name: `${firstName} ${lastName}`,
-            phone,
-            country_of_residence: country,
-          },
-        },
+        navigate,
       });
-      if (signErr) throw signErr;
-
-      const bootstrapPayload = {
-        legal_first_name: firstName,
-        legal_last_name: lastName,
-        country_of_residence: country,
-        phone,
-        agreed_terms: true as const,
-        agreed_risk: true as const,
-      };
-
-      // No active session => email confirmation required. Stash the bootstrap
-      // payload so we can POST it the first time the user signs in.
-      if (!signUpData.session) {
-        try {
-          sessionStorage.setItem(
-            PENDING_SIGNUP_BOOTSTRAP_KEY,
-            JSON.stringify({ email: loginEmail.toLowerCase(), payload: bootstrapPayload }),
-          );
-        } catch {
-          /* ignore storage quota */
-        }
-        toast.success(
-          "Account created. Check your email to confirm, then sign in to finish setting up your portal.",
-        );
-        window.setTimeout(() => {
-          const verifyPath = `/portal/login/investor?verify=required&email=${encodeURIComponent(
-            loginEmail,
-          )}`;
-          window.location.replace(`${appOrigin}${verifyPath}`);
-        }, 600);
-        return;
-      }
-
-      // Confirmed signups (auto-verified emails / preview envs): commit
-      // bootstrap immediately so the dashboard knows the user exists.
-      const res = await fetch("/api/portal/signup-bootstrap", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bootstrapPayload),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(body?.error ?? body?.details ?? `Signup bootstrap failed (${res.status})`);
-      }
-
-      toast.success("Welcome to Hudson Crest. Let's complete your profile next.");
-      window.setTimeout(() => {
-        navigate({ to: "/portal/investor" });
-      }, 400);
     } catch (e: unknown) {
-      toast.error(formatPortalAuthError(e instanceof Error ? e.message : String(e)));
+      toastSignupSubmitError(e);
     } finally {
       setBusy(false);
     }

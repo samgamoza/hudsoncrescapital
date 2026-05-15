@@ -716,10 +716,7 @@ function KV({ label, value }: { label: string; value: any }) {
   );
 }
 
-/**
- * Nested card on Profile: opens the legacy Cross Ocean–style account profile in a new tab.
- * The in-portal questionnaire remains available via profile gates and dashboard prompts.
- */
+/** Nested card on Profile: routes investors to the in-portal completion wizard (or status copy). */
 function OnlineApplicationCard() {
   const { loading, summary, isComplete, isIncomplete } = usePortalProfileStatus();
   const status = summary?.status ?? null;
@@ -785,9 +782,9 @@ function OnlineApplicationCard() {
       ? "Our compliance desk is reviewing your submission. We'll email you when your account is approved."
       : isComplete
         ? "Your application is on file. You can revisit it if compliance asks you to update anything."
-        : "Open the legacy account profile (Cross Ocean layout) in a new tab to review or print fields.";
+        : "You can review or update your questionnaire answers in the profile completion flow.";
 
-  const ctaLabel = "Open investor account";
+  const ctaLabel = isIncomplete ? "Continue application" : "Open questionnaire";
 
   return (
     <SectionCard
@@ -822,10 +819,8 @@ function OnlineApplicationCard() {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-end sm:gap-1">
-          <a
-            href="/portal/account-profile"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to="/portal/investor/profile/complete"
             className={cn(
               "inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold shadow-glow",
               isIncomplete
@@ -835,7 +830,7 @@ function OnlineApplicationCard() {
           >
             {ctaLabel}
             <ArrowRight className="h-4 w-4" />
-          </a>
+          </Link>
         </div>
       </div>
     </SectionCard>

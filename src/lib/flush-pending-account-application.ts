@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { PENDING_SIGNUP_BOOTSTRAP_KEY } from "@/lib/investor-signup-submit";
 
 /**
  * Legacy key used by the pre-split signup wizard, kept solely so old
@@ -7,11 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export const PENDING_ACCOUNT_APPLICATION_STORAGE_KEY = "hcc_pending_account_application_v1";
 
-/**
- * Same purpose as the legacy key but for the new minimal signup flow: holds
- * the bootstrap payload while the user confirms their email.
- */
-export const PENDING_SIGNUP_BOOTSTRAP_KEY = "hcc_pending_signup_bootstrap_v1";
+export { PENDING_SIGNUP_BOOTSTRAP_KEY };
 
 export type FlushPendingSignupBootstrapResult =
   | "none"

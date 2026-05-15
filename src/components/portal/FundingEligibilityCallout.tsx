@@ -28,15 +28,10 @@ export function FundingEligibilityCallout({ accounts }: { accounts: FundingAccou
         <p className="mt-2">
           Deposits are attached to an <strong className="text-foreground">active</strong> account
           row in the database. Use{" "}
-          <Link
-            to="/portal/account-profile"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-brand underline-offset-2 hover:underline"
-          >
-            Open Investor Account
+          <Link to="/portal/signup/investor" className="text-brand underline-offset-2 hover:underline">
+            Open investor account
           </Link>{" "}
-          for the full legacy account profile (new tab). A <strong className="text-foreground">pending</strong>{" "}
+          to submit the multi-step application. A <strong className="text-foreground">pending</strong>{" "}
           brokerage row is still created by signup bootstrap or your advisor in{" "}
           <strong className="text-foreground">Admin → Clients</strong>; staff set it to{" "}
           <strong className="text-foreground">active</strong> when ready.

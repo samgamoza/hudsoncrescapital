@@ -19,6 +19,8 @@ export const signupBootstrapSchema = z.object({
   phone: z.string().trim().min(5).max(40),
   agreed_terms: z.literal(true),
   agreed_risk: z.literal(true),
+  /** Full multi-step open-account wizard answers (JSON-serializable). */
+  open_account_application: z.record(z.unknown()).optional(),
 });
 export type SignupBootstrapPayload = z.infer<typeof signupBootstrapSchema>;
 
@@ -95,15 +97,20 @@ export async function bootstrapInvestorProfile(userId: string, rawData: unknown)
           : "incomplete",
     };
 
+    const mergedMeta: Record<string, unknown> = {
+      ...prevMeta,
+      agreed_terms_at: prevMeta.agreed_terms_at ?? now,
+      agreed_risk_at: prevMeta.agreed_risk_at ?? now,
+      signup_bootstrapped_at: prevMeta.signup_bootstrapped_at ?? now,
+    };
+    if (data.open_account_application != null) {
+      mergedMeta.open_account_application = data.open_account_application;
+    }
+
     let { error: profErr } = await (supabaseAdmin.from("profiles") as any).upsert(
       {
         ...baseProfileRow,
-        metadata: {
-          ...prevMeta,
-          agreed_terms_at: prevMeta.agreed_terms_at ?? now,
-          agreed_risk_at: prevMeta.agreed_risk_at ?? now,
-          signup_bootstrapped_at: prevMeta.signup_bootstrapped_at ?? now,
-        },
+        metadata: mergedMeta,
       },
       { onConflict: "user_id" },
     );
