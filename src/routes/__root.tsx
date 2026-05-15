@@ -36,6 +36,10 @@ if (typeof window !== "undefined" && !(window as any).__hcChunkReloadInstalled) 
 
   const maybeReload = (msg: string | undefined): boolean => {
     if (!looksLikeStaleChunk(msg)) return false;
+    // Never reload from Chrome’s network error UI / non-http(s) documents — it cannot recover
+    // the real origin and reload() can contribute to confusing cross-frame security warnings.
+    const p = window.location.protocol;
+    if (p !== "http:" && p !== "https:") return false;
     try {
       const last = Number(window.sessionStorage.getItem(RELOAD_KEY) ?? "0");
       if (Number.isFinite(last) && Date.now() - last < RELOAD_COOLDOWN_MS) {
