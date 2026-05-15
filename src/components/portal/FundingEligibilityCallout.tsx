@@ -35,8 +35,16 @@ export function FundingEligibilityCallout({ accounts }: { accounts: FundingAccou
             Open an account
           </Link>{" "}
           (that creates a <strong className="text-foreground">pending</strong> account for staff
-          review). If you were invited by the firm, staff can create the account from{" "}
-          <strong className="text-foreground">Admin → Open Account</strong>.
+          review). If you were invited by the firm, complete the{" "}
+          <Link
+            to="/portal/signup/investor"
+            className="text-brand underline-offset-2 hover:underline"
+          >
+            online account application
+          </Link>{" "}
+          (Investor Portal). Staff approve your brokerage account under{" "}
+          <strong className="text-foreground">Admin → Clients</strong> when it appears as{" "}
+          <strong className="text-foreground">pending</strong>.
         </p>
         <p className="mt-2 text-xs">
           <strong className="text-foreground">Admin note:</strong> pending account approval is not

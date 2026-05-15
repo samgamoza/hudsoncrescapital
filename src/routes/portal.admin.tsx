@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 export const Route = createFileRoute("/portal/admin")({
   head: () => ({
     meta: [
-      { title: "Admin Portal | Hudson Crest Capital" },
+      { title: "Admin Console | Hudson Crest Capital" },
       { name: "robots", content: "noindex" },
     ],
   }),

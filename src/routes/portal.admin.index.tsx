@@ -1,10 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ClientSubPortfolios } from "@/components/portal/ClientSubPortfolios";
 import { MetricCard, PageHeader, SectionCard } from "@/lib/portalShared";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/portal/admin/")({
+  head: () => ({
+    meta: [
+      { title: "Trade Order | Admin | Hudson Crest Capital" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: TradingPage,
 });
 
@@ -29,6 +36,15 @@ function TradingPage() {
   const [diagId, setDiagId] = useState("");
   const [diagResult, setDiagResult] = useState<string | null>(null);
   const [diagBusy, setDiagBusy] = useState(false);
+  const [deskClients, setDeskClients] = useState<
+    {
+      id: string;
+      email: string;
+      roles: string[];
+      accounts: Array<{ id: string; account_number: string; base_currency: string; status: string }>;
+    }[]
+  | null>(null);
+  const [deskClientId, setDeskClientId] = useState("");
   const field =
     "bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground w-full";
   const roField =
@@ -105,6 +121,42 @@ function TradingPage() {
       setExecBusy(false);
     }
   };
+
+  const deskSelected = useMemo(
+    () => (deskClients ?? []).find((c) => c.id === deskClientId) ?? null,
+    [deskClients, deskClientId],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const data = await apiJson<
+          {
+            id: string;
+            email: string;
+            roles: string[];
+            accounts: Array<{
+              id: string;
+              account_number: string;
+              base_currency: string;
+              status: string;
+            }>;
+          }[]
+        >("/api/portal/clients-admin?action=list");
+        if (cancelled) return;
+        const inv = (Array.isArray(data) ? data : []).filter(
+          (r) => Array.isArray(r.roles) && r.roles.includes("investor"),
+        );
+        setDeskClients(inv);
+      } catch {
+        if (!cancelled) setDeskClients([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -260,8 +312,8 @@ function TradingPage() {
   return (
     <>
       <PageHeader
-        title="Trading Interface"
-        subtitle="Manual execution workspace for staff: queue orders, apply partial/full fills, reject or expire."
+        title="Trade Order"
+        subtitle="Desk queue, CrossOcean-style execution ticket, and investor sleeves/positions. Sub-portfolios and line positions are added here; Clients shows them read-only."
       />
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <MetricCard title="Open queue" value={String(statusCounts.pending ?? 0)} helper="Pending" />
@@ -273,7 +325,51 @@ function TradingPage() {
         />
       </div>
       <SectionCard
-        title="Trade Order"
+        title="Client sleeves & positions"
+        description="Pick an investor, then add sub-portfolios (one sleeve per asset class) and positions. This is the only place staff add sleeves/lines; the Clients drawer is read-only for this data."
+      >
+        <div className="mb-4 max-w-xl">
+          <label className={labelSm} htmlFor="desk-client-pick">
+            Investor
+          </label>
+          <select
+            id="desk-client-pick"
+            className={field}
+            value={deskClientId}
+            onChange={(e) => setDeskClientId(e.target.value)}
+          >
+            <option value="">— Select an investor —</option>
+            {(deskClients ?? []).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.email}
+              </option>
+            ))}
+          </select>
+        </div>
+        {deskClientId && deskSelected && deskSelected.accounts.length > 0 ? (
+          <ClientSubPortfolios
+            userId={deskClientId}
+            accounts={deskSelected.accounts.map((a) => ({
+              id: a.id,
+              account_number: a.account_number,
+              base_currency: a.base_currency,
+              status: a.status,
+            }))}
+            onChanged={() => void refreshOrders()}
+          />
+        ) : deskClientId && deskSelected && deskSelected.accounts.length === 0 ? (
+          <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-muted-foreground">
+            This investor has no brokerage accounts yet. Open{" "}
+            <strong className="text-foreground">Clients</strong>, approve an account, then return here.
+          </p>
+        ) : deskClientId && !deskSelected ? (
+          <p className="text-sm text-muted-foreground">
+            Could not resolve that investor in the current list. Refresh the page or pick another email.
+          </p>
+        ) : null}
+      </SectionCard>
+      <SectionCard
+        title="Execution queue & ticket"
         description="Select a queued order, complete the ticket as you would for broker verification, then request execution. Quantity, premium, and fees are posted as the desk fill."
       >
         <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">

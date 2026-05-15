@@ -6,6 +6,7 @@ import {
   ArrowLeftRight,
   Banknote,
   ChevronDown,
+  ClipboardList,
   Globe2,
   History,
   LayoutDashboard,
@@ -447,11 +448,12 @@ export const NAV_INVESTOR: NavItem[] = [
 ];
 
 export const NAV_ADMIN: NavItem[] = [
-  { to: "/portal/admin", label: "Trading", icon: LayoutDashboard },
+  { to: "/portal/admin", label: "Trade Order", icon: LayoutDashboard },
   { to: "/portal/admin/settings", label: "Settings", icon: Settings },
   { to: "/portal/admin/clients", label: "Clients", icon: Users },
   { to: "/portal/admin/trade-history", label: "Trade history", icon: History },
-  { to: "/portal/admin/onboarding", label: "Open Account", icon: UserPlus },
+  { to: "/portal/signup/investor", label: "Investor signup", icon: UserPlus },
+  { to: "/portal/admin/onboarding", label: "Staff onboarding", icon: ClipboardList },
   { to: "/portal/admin/funding", label: "Funding Review", icon: Banknote },
   { to: "/portal/admin/strategies", label: "Strategies", icon: Target },
   { to: "/portal/admin/risk", label: "Risk", icon: AlertTriangle },

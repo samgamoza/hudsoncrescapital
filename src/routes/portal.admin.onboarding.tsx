@@ -519,9 +519,10 @@ function OnboardingWizard() {
                   </select>
                 </Field>
                 <div className="sm:col-span-2 text-xs text-muted-foreground p-3 rounded-lg bg-surface-elevated/40 border border-border">
-                  Holdings (positions) for this sub-portfolio are added later from the client page →
-                  Sub-Portfolios. This keeps onboarding fast and lets the trading desk fill
-                  positions as funds arrive.
+                  Holdings (positions) for this sub-portfolio are added later from{" "}
+                  <strong className="text-foreground">Admin → Trade Order</strong> (client sleeves &amp;
+                  positions panel). This keeps onboarding fast; the desk adds lines in one place after
+                  onboarding.
                 </div>
               </div>
             )}

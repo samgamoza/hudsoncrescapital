@@ -181,10 +181,13 @@ export function ClientSubPortfolios({
   userId,
   accounts,
   onChanged,
+  /** When true (e.g. Clients drawer): show sleeves/positions read-only; desk adds them on Trade Order. */
+  readonly = false,
 }: {
   userId: string;
   accounts: Account[];
   onChanged?: () => void;
+  readonly?: boolean;
 }) {
   const [rows, setRows] = useState<SP[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -199,6 +202,11 @@ export function ClientSubPortfolios({
     target_allocation_pct: 0,
     risk_band: "moderate" as "conservative" | "moderate" | "aggressive",
   });
+
+  useEffect(() => {
+    if (!readonly) return;
+    clearCreating();
+  }, [readonly, clearCreating]);
 
   const load = useCallback(async () => {
     try {
@@ -262,21 +270,33 @@ export function ClientSubPortfolios({
 
   return (
     <div className="surface-card p-5">
-      <div className="flex items-start justify-between mb-4">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
+        <div className="min-w-0">
           <h2 className="text-lg font-semibold text-foreground">Sub-Portfolios</h2>
           <p className="text-xs text-muted-foreground mt-1">
-            Create one sleeve per asset class. Each sleeve has its own holdings and metrics.
+            {readonly
+              ? "One sleeve per asset class. Sleeves and positions are maintained on Admin → Trade Order."
+              : "Create one sleeve per asset class. Each sleeve has its own holdings and metrics."}
           </p>
         </div>
-        {!creating && accounts.length > 0 && (
-          <button className={btnPrimary} onClick={() => setCreating(true)}>
-            <Plus className="h-3 w-3" /> Add sub-portfolio
+        {!readonly && !creating && accounts.length > 0 ? (
+          <button
+            type="button"
+            className={`${btnPrimary} shrink-0 self-start sm:self-auto`}
+            onClick={() => setCreating(true)}
+          >
+            <Plus className="h-3 w-3" aria-hidden /> Add sub-portfolio
           </button>
-        )}
+        ) : !readonly && !creating && accounts.length === 0 ? (
+          <p className="text-xs leading-relaxed text-amber-700 dark:text-amber-300 border border-amber-500/35 rounded-md px-3 py-2 bg-amber-500/10 shrink-0 max-w-md">
+            <span className="font-semibold text-foreground">No brokerage account yet.</span> Approve or create an
+            account in the <strong className="text-foreground">Accounts</strong> section on the client record first —
+            then add sleeves on <strong className="text-foreground">Admin → Trade Order</strong>.
+          </p>
+        ) : null}
       </div>
 
-      {creating && (
+      {creating && !readonly && (
         <div className="border border-brand/40 rounded-md p-3 mb-4 bg-surface-elevated/40">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <select
@@ -343,11 +363,33 @@ export function ClientSubPortfolios({
       {rows === null ? (
         <div className="text-sm text-muted-foreground">Loading…</div>
       ) : rows.length === 0 ? (
-        <div className="text-sm text-muted-foreground">No sub-portfolios yet.</div>
+        <div className="rounded-md border border-dashed border-border/80 bg-muted/10 px-4 py-6 text-center">
+          <p className="text-sm text-muted-foreground">No sub-portfolios yet.</p>
+          {readonly ? (
+            <p className="mt-3 text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+              Add sleeves and positions from{" "}
+              <strong className="text-foreground">Admin → Trade Order</strong> (select this investor in the desk
+              panel).
+            </p>
+          ) : accounts.length > 0 && !creating ? (
+            <button
+              type="button"
+              className={`${btnPrimary} mt-4`}
+              onClick={() => setCreating(true)}
+            >
+              <Plus className="h-3 w-3" aria-hidden /> Add your first sub-portfolio
+            </button>
+          ) : accounts.length === 0 ? (
+            <p className="mt-3 text-xs text-muted-foreground max-w-md mx-auto">
+              Sub-portfolios attach to an account. Add or approve an account on this client record, then use{" "}
+              <strong className="text-foreground">Trade Order</strong> to add sleeves.
+            </p>
+          ) : null}
+        </div>
       ) : (
         <div className="space-y-4">
           {rows.map((sp) => (
-            <SubPortfolioCard key={sp.id} sp={sp} busy={busy} wrap={wrap} />
+            <SubPortfolioCard key={sp.id} sp={sp} busy={busy} wrap={wrap} readonly={readonly} />
           ))}
         </div>
       )}
@@ -359,10 +401,12 @@ function SubPortfolioCard({
   sp,
   busy,
   wrap,
+  readonly = false,
 }: {
   sp: SP;
   busy: boolean;
   wrap: (label: string, fn: () => Promise<unknown>) => Promise<void>;
+  readonly?: boolean;
 }) {
   const meta = ASSET_CLASSES[sp.asset_class];
   const [adding, setAdding, clearAdding] = usePersistedState<boolean>(`sp:adding:${sp.id}`, false);
@@ -379,30 +423,35 @@ function SubPortfolioCard({
           </div>
         </div>
         <div className="flex gap-1.5">
-          <button className={btnGhost} onClick={() => setAdding((v) => !v)}>
-            <Plus className="h-3 w-3" /> Position
-          </button>
-          <button
-            className={btnDanger}
-            disabled={busy}
-            onClick={() => {
-              if (!window.confirm(`Delete sub-portfolio "${sp.name}" and all its holdings?`))
-                return;
-              void wrap("Sub-portfolio deleted", () =>
-                apiJson("/api/portal/sub-portfolios", {
-                  method: "DELETE",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ id: sp.id }),
-                }),
-              );
-            }}
-          >
-            <Trash2 className="h-3 w-3" />
-          </button>
+          {!readonly && (
+            <>
+              <button type="button" className={btnGhost} onClick={() => setAdding((v) => !v)}>
+                <Plus className="h-3 w-3" /> Position
+              </button>
+              <button
+                type="button"
+                className={btnDanger}
+                disabled={busy}
+                onClick={() => {
+                  if (!window.confirm(`Delete sub-portfolio "${sp.name}" and all its holdings?`))
+                    return;
+                  void wrap("Sub-portfolio deleted", () =>
+                    apiJson("/api/portal/sub-portfolios", {
+                      method: "DELETE",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ id: sp.id }),
+                    }),
+                  );
+                }}
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {adding && (
+      {adding && !readonly && (
         <NewHoldingRow
           subId={sp.id}
           assetClass={sp.asset_class}
@@ -430,17 +479,19 @@ function SubPortfolioCard({
                   {c.label}
                 </th>
               ))}
-              <th className="py-2 w-16" />
+              {!readonly ? <th className="py-2 w-16" /> : null}
             </tr>
           </thead>
           <tbody>
             {sp.sub_portfolio_holdings.length === 0 && (
               <tr>
                 <td
-                  colSpan={meta.columns.length + 1}
+                  colSpan={meta.columns.length + (readonly ? 0 : 1)}
                   className="py-3 text-xs text-muted-foreground"
                 >
-                  No positions. Add one to populate the client's portfolio view.
+                  {readonly
+                    ? "No positions in this sleeve (read-only view)."
+                    : "No positions. Add one to populate the client's portfolio view."}
                 </td>
               </tr>
             )}
@@ -469,29 +520,32 @@ function SubPortfolioCard({
                       {c.render(h)}
                     </td>
                   ))}
-                  <td className="py-2 text-right">
-                    <div className="flex gap-1 justify-end">
-                      <button className={btnGhost} onClick={() => setEditingId(h.id)}>
-                        <Pencil className="h-3 w-3" />
-                      </button>
-                      <button
-                        className={btnDanger}
-                        disabled={busy}
-                        onClick={() => {
-                          if (!window.confirm(`Delete position ${h.symbol}?`)) return;
-                          void wrap("Position deleted", () =>
-                            apiJson("/api/portal/sub-portfolio-holdings", {
-                              method: "DELETE",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ id: h.id }),
-                            }),
-                          );
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  </td>
+                  {!readonly ? (
+                    <td className="py-2 text-right">
+                      <div className="flex gap-1 justify-end">
+                        <button type="button" className={btnGhost} onClick={() => setEditingId(h.id)}>
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                        <button
+                          type="button"
+                          className={btnDanger}
+                          disabled={busy}
+                          onClick={() => {
+                            if (!window.confirm(`Delete position ${h.symbol}?`)) return;
+                            void wrap("Position deleted", () =>
+                              apiJson("/api/portal/sub-portfolio-holdings", {
+                                method: "DELETE",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ id: h.id }),
+                              }),
+                            );
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </td>
+                  ) : null}
                 </tr>
               ),
             )}

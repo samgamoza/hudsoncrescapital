@@ -164,8 +164,14 @@ function ClientsPage() {
           <button className={btn} onClick={() => void refresh()}>
             Refresh
           </button>
-          <Link to="/portal/admin/onboarding" className={btnPrimary}>
-            + Open New Account
+          <Link
+            to="/portal/signup/investor"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={btnPrimary}
+            title="Opens the same investor online account application used on the public Investor Portal (new browser tab)."
+          >
+            + Online account application
           </Link>
           {isSuper && (
             <button disabled={resetting} className={btnDanger} onClick={() => void doReset()}>
@@ -538,14 +544,17 @@ function ClientDrawer({
                       <>
                         {" "}
                         This client has <span className="text-foreground font-medium">no accounts</span>
-                        . Create one from{" "}
+                        . Have them complete the{" "}
                         <Link
-                          to="/portal/admin/onboarding"
+                          to="/portal/signup/investor"
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="text-brand underline-offset-2 hover:underline font-medium"
                         >
-                          Admin → Open New Account
-                        </Link>
-                        , then return here to approve it.
+                          online account application
+                        </Link>{" "}
+                        (Investor Portal signup), then return here to approve the brokerage account when
+                        it appears as <span className="text-foreground font-medium">pending</span>.
                       </>
                     )}
                     {hasPendingAccount && !hasActiveAccount && (
@@ -659,6 +668,7 @@ function ClientDrawer({
               userId={userId}
               accounts={data.accounts as any[]}
               onChanged={() => void load()}
+              readonly
             />
 
             <SectionCard
