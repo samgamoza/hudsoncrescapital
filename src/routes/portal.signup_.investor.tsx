@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { getMarketingWebsiteHomeUrl } from "@/lib/site-origin";
 import logo from "@/assets/logo.png";
+import cityNewYork from "@/assets/city-newyork.jpg";
 
 export const Route = createFileRoute("/portal/signup_/investor")({
   head: () => ({
@@ -34,7 +35,14 @@ function InvestorSignupPage() {
         <div className="absolute inset-0 grid-bg opacity-30" />
         <div className="absolute -right-40 -top-40 h-[28rem] w-[28rem] rounded-full bg-brand/15 blur-3xl" />
         <div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-20">
-          <div className="flex min-h-full flex-col">
+          <div className="surface-card relative overflow-hidden border border-border/80 p-6 shadow-elevated sm:p-8">
+            <div
+              aria-hidden
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url(${cityNewYork})` }}
+            />
+            <div aria-hidden className="absolute inset-0 bg-gradient-to-br from-background/70 via-background/40 to-background/70" />
+            <div className="relative flex min-h-full flex-col">
             <Link
               to="/portal/login/investor"
               className="mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
@@ -46,7 +54,7 @@ function InvestorSignupPage() {
               <img src={logo} alt="Hudson Crest Capital" className="h-11 w-auto" />
             </a>
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand">INVESTOR SIGNUP</p>
-            <h1 className="mt-4 text-4xl font-bold leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-[3.25rem]">
+            <h1 className="mt-4 text-3xl font-bold leading-[1.08] tracking-tight text-foreground sm:text-4xl lg:text-[2.5rem]">
               Open your account in <span className="text-gradient-brand">minutes</span>
             </h1>
             <ul className="mt-8 max-w-xl flex-1 space-y-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
@@ -60,6 +68,7 @@ function InvestorSignupPage() {
               ))}
             </ul>
             <p className="mt-10 text-xs text-muted-foreground">Hudson Crest Capital</p>
+            </div>
           </div>
 
           <div className="surface-card border border-border/80 p-6 shadow-elevated sm:p-8">
