@@ -195,17 +195,21 @@ const WORKSPACE_MARKET_MAIN_VISIBLE: {
   { label: "Crypto", icon: Coins, value: "cryptocurrency" },
 ];
 
-/** Under "Derivatives" — only classes wired to the catalog are enabled. */
+/**
+ * Under "Derivatives" — each item maps to a catalog preset (live listings + quotes where available).
+ * Futures: commodity futures rows; Options: options class; LRC: same options catalog with LRC context;
+ * Warrants: liquid futures underlyings (typical warrant references); Structured: bonds & rates (notes, FRNs).
+ */
 const WORKSPACE_MARKET_DERIVATIVES: {
   label: string;
   icon: ComponentType<{ className?: string }>;
-  value?: string;
+  value: string;
 }[] = [
-  { label: "Futures", icon: TrendingUp },
+  { label: "Futures", icon: TrendingUp, value: "derivatives_futures" },
   { label: "Options", icon: ChartCandlestick, value: "options" },
-  { label: "Limited Risk Options Contracts", icon: ShieldAlert },
-  { label: "Warrants", icon: Star },
-  { label: "Structured Products", icon: LayoutDashboard },
+  { label: "Limited Risk Options Contracts", icon: ShieldAlert, value: "derivatives_lrc" },
+  { label: "Warrants", icon: Star, value: "derivatives_warrants" },
+  { label: "Structured Products", icon: LayoutDashboard, value: "derivatives_structured" },
 ];
 
 /** Tucked under "More asset classes" (closed by default). */
@@ -513,6 +517,126 @@ function TradeRailTabBar({
   );
 }
 
+function DerivativesContextBanner({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="mb-4 rounded-xl border border-border/80 bg-muted/20 px-4 py-3 text-sm">
+      <h2 className="font-semibold text-foreground">{title}</h2>
+      <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{body}</p>
+    </div>
+  );
+}
+
+function WorkspaceDeskOrdersPeek({ workspace }: { workspace: InvestorTradingWorkspace | null }) {
+  if (!workspace?.orders?.length) return null;
+  const recent = [...workspace.orders]
+    .sort((a, b) => new Date(b.placed_at).getTime() - new Date(a.placed_at).getTime())
+    .slice(0, 6);
+  return (
+    <div className="mb-4 rounded-xl border border-border bg-background/60 px-4 py-3">
+      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Recent desk orders
+      </div>
+      <ul className="mt-2 space-y-1.5 text-xs">
+        {recent.map((o) => (
+          <li
+            key={o.id}
+            className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-1.5 last:border-0"
+          >
+            <span className="font-mono font-medium text-foreground">{o.symbol}</span>
+            <span className={o.side === "buy" ? "text-success font-medium" : "text-danger font-medium"}>
+              {o.side}
+            </span>
+            <span className="text-muted-foreground">{o.status}</span>
+            <span className="ml-auto text-[10px] text-muted-foreground">
+              {new Date(o.placed_at).toLocaleString()}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function WorkspaceMarketCatalog({
+  marketClass,
+  workspace,
+}: {
+  marketClass: string;
+  workspace: InvestorTradingWorkspace | null;
+}) {
+  if (marketClass === "derivatives_futures") {
+    return (
+      <>
+        <DerivativesContextBanner
+          title="Futures"
+          body="Exchange-traded and cash-settled futures from the reference catalog. Prices refresh on a short interval where live quotes are available. Use Search & filters to narrow by exchange or category."
+        />
+        <WorkspaceDeskOrdersPeek workspace={workspace} />
+        <AssetBrowser
+          key="mc-df"
+          forcedAssetClass="commodities"
+          forcedAssetType="futures"
+          lockFiltersToForced
+        />
+      </>
+    );
+  }
+  if (marketClass === "options") {
+    return (
+      <>
+        <DerivativesContextBanner
+          title="Options"
+          body="Listed option underlyings in the catalog. Where the catalog is still sparse, use Find (⌘K) or the Classic ticket for approved instruments. Prices refresh when live quotes are available."
+        />
+        <WorkspaceDeskOrdersPeek workspace={workspace} />
+        <AssetBrowser key="mc-opt" forcedAssetClass="options" lockFiltersToForced />
+      </>
+    );
+  }
+  if (marketClass === "derivatives_lrc") {
+    return (
+      <>
+        <DerivativesContextBanner
+          title="Limited risk options contracts"
+          body="Defined-risk and capped-loss structures (including many listed retail options formats) align with the options catalog. Review each line in Asset Details before dealing; use Classic ticket if your venue is not yet in the catalog."
+        />
+        <WorkspaceDeskOrdersPeek workspace={workspace} />
+        <AssetBrowser key="mc-lrc" forcedAssetClass="options" lockFiltersToForced />
+      </>
+    );
+  }
+  if (marketClass === "derivatives_warrants") {
+    return (
+      <>
+        <DerivativesContextBanner
+          title="Warrants & certificates"
+          body="Listed warrants and certificates are often built on indices and commodity benchmarks. Below are liquid commodity futures from the reference catalog with live bid/offer where available — typical underlyings warrant desks track."
+        />
+        <WorkspaceDeskOrdersPeek workspace={workspace} />
+        <AssetBrowser
+          key="mc-war"
+          forcedAssetClass="commodities"
+          forcedAssetType="futures"
+          lockFiltersToForced
+        />
+      </>
+    );
+  }
+  if (marketClass === "derivatives_structured") {
+    return (
+      <>
+        <DerivativesContextBanner
+          title="Structured products"
+          body="Structured notes, reverse converts, and rate-linked products are grouped with bonds & rates in the reference catalog. Many rows are view-only; use Classic ticket for tradable lines once your account is enabled."
+        />
+        <WorkspaceDeskOrdersPeek workspace={workspace} />
+        <AssetBrowser key="mc-struct" forcedAssetClass="bonds_rates" lockFiltersToForced />
+      </>
+    );
+  }
+  return <AssetBrowser key={`mc-${marketClass}`} forcedAssetClass={marketClass} />;
+}
+
 function MiniQuoteStrip({ asset }: { asset: AssetListing | null }) {
   return (
     <div className="mt-3 h-36 rounded-md border border-border bg-surface/50 p-2">
@@ -655,7 +779,7 @@ function WorkspaceTradeSidebar({
             className={cn(
               "flex cursor-pointer list-none items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted/60 hover:text-foreground",
               WORKSPACE_MARKET_DERIVATIVES.some(
-                (i) => i.value && i.value === marketClass && mainPanel === "catalog",
+                (i) => i.value === marketClass && mainPanel === "catalog",
               ) && "bg-muted/50 font-medium text-foreground",
             )}
           >
@@ -666,15 +790,10 @@ function WorkspaceTradeSidebar({
           <div className="mt-0.5 space-y-0.5 border-l border-border/60 pl-2 ml-3 py-1">
             {WORKSPACE_MARKET_DERIVATIVES.map((item) => (
               <button
-                key={item.label}
+                key={item.value}
                 type="button"
-                disabled={!item.value}
-                className={cn(
-                  railRowClass(!!item.value && catalogActive(item.value)),
-                  !item.value && "cursor-not-allowed opacity-40 hover:bg-transparent",
-                )}
+                className={railRowClass(catalogActive(item.value))}
                 onClick={() => {
-                  if (!item.value) return;
                   setMarketClass(item.value);
                   setMainPanel("catalog");
                 }}
@@ -1023,7 +1142,7 @@ function TradeWorkspacePage() {
           {mainPanel === "catalog" && !marketClass ? <WorkspaceEmptyCanvas /> : null}
           {mainPanel === "catalog" && marketClass ? (
             <div className="h-full p-4 md:p-6">
-              <AssetBrowser forcedAssetClass={marketClass} />
+              <WorkspaceMarketCatalog marketClass={marketClass} workspace={hdrWs} />
             </div>
           ) : null}
           {mainPanel === "search" ? (
@@ -1402,17 +1521,25 @@ function WorkspaceBlotter() {
 
 function AssetBrowser({
   forcedAssetClass,
+  forcedAssetType,
+  forcedQuery,
+  lockFiltersToForced,
   expandSearchFilters,
   searchFiltersPulse = 0,
 }: {
   forcedAssetClass?: string;
+  /** When set with commodities, narrows to futures vs spot rows. */
+  forcedAssetType?: string;
+  forcedQuery?: string;
+  /** Keep asset class / type (and optional query) pinned to forced values after Reset. */
+  lockFiltersToForced?: boolean;
   /** When true (Search tab), open the Search & filters panel; pulse bumps reopen it if already on Search. */
   expandSearchFilters?: boolean;
   searchFiltersPulse?: number;
 }) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => forcedQuery ?? "");
   const [activeClass, setActiveClass] = useState<string>(forcedAssetClass ?? "all");
-  const [assetType, setAssetType] = useState("");
+  const [assetType, setAssetType] = useState(() => forcedAssetType ?? "");
   const [exchange, setExchange] = useState("");
   const [category, setCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
@@ -1509,6 +1636,16 @@ function AssetBrowser({
     if (!forcedAssetClass) return;
     setActiveClass((prev) => (prev === forcedAssetClass ? prev : forcedAssetClass));
   }, [forcedAssetClass]);
+
+  useEffect(() => {
+    if (forcedAssetType === undefined) return;
+    setAssetType((prev) => (prev === forcedAssetType ? prev : forcedAssetType));
+  }, [forcedAssetType]);
+
+  useEffect(() => {
+    if (forcedQuery === undefined) return;
+    setQuery((prev) => (prev === forcedQuery ? prev : forcedQuery));
+  }, [forcedQuery]);
 
   // Auto-search and filter refresh (debounced), including sidebar market selection.
   useEffect(() => {
@@ -1752,7 +1889,6 @@ function AssetBrowser({
             <button
               type="button"
               onClick={() => {
-                setAssetType("");
                 setExchange("");
                 setCategory("");
                 setSubCategory("");
@@ -1760,9 +1896,15 @@ function AssetBrowser({
                 setSettlementType("");
                 setEtfOnly(false);
                 setActiveOnly(true);
-                setQuery("");
-                setActiveClass("all");
-                void load();
+                if (lockFiltersToForced) {
+                  setActiveClass(forcedAssetClass ?? "all");
+                  setAssetType(forcedAssetType ?? "");
+                  setQuery(forcedQuery ?? "");
+                } else {
+                  setActiveClass("all");
+                  setAssetType("");
+                  setQuery("");
+                }
               }}
               className="border border-border rounded-md px-3 py-2 text-sm hover:bg-surface-elevated"
             >

@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { DeskTradeHistoryTables } from "@/components/investor/DeskTradeHistoryTables";
 import { PageHeader, SectionCard, MetricCard } from "@/lib/portalShared";
 import { ASSET_CLASSES, type AssetClass, type HoldingRow } from "@/lib/assetClasses";
 import { supabase } from "@/integrations/supabase/client";
@@ -339,15 +338,6 @@ function PortfolioPage() {
           )}
         </>
       )}
-
-      <div className="mt-10">
-        <SectionCard
-          title="Trade history"
-          description="Trading record — Buy and Trading record — Sell use the same columns as the investor desk (dashboard v2) and the Trade order form: subscription, class, CUSIP/symbol, quantities, fees, and totals."
-        >
-          <DeskTradeHistoryTables showSectionCards={false} />
-        </SectionCard>
-      </div>
 
       <Toaster />
     </>

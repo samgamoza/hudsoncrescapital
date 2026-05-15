@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, FileSpreadsheet, Loader2 } from "lucide-react";
+import { FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import type { TradeHistoryRow } from "@/lib/trade-history.types";
 import {
   DESK_BUY_COLUMN_HEADERS,
@@ -41,28 +42,78 @@ const thBuy = cn(
 );
 const td = "border-b border-border/40 px-2 py-2 text-xs sm:px-2.5 sm:text-sm";
 
+const exportBtn =
+  "gap-1.5 bg-gradient-brand px-3 text-brand-foreground shadow-md shadow-brand/15 hover:opacity-95 sm:px-4";
+
+function rangeFooter(n: number, loading: boolean) {
+  const t = loading ? 0 : n;
+  return t === 0 ? "Showing 0 to 0 of 0 entries." : `Showing 1 to ${t} of ${t} entries.`;
+}
+
 export function DeskTradeHistoryTables({
   className,
   showSectionCards = true,
+  /** Poll + subscribe to `trades` updates (classic Trade history route). */
+  liveSync = false,
 }: {
   className?: string;
   /** When false, render tables only (e.g. embedded in Portfolio page). */
   showSectionCards?: boolean;
+  liveSync?: boolean;
 }) {
   const [rows, setRows] = useState<TradeHistoryRow[] | null>(null);
   const load = useCallback(async () => {
     try {
       const res = await fetch("/api/portal/trade-history");
-      const data = await res.json().catch(() => []);
-      if (!res.ok) throw new Error("Failed to load");
-      setRows(Array.isArray(data) ? data : []);
-    } catch {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg =
+          typeof (data as { error?: string })?.error === "string"
+            ? (data as { error: string }).error
+            : `Failed (${res.status})`;
+        throw new Error(msg);
+      }
+      setRows(Array.isArray(data) ? (data as TradeHistoryRow[]) : []);
+    } catch (e: unknown) {
+      if (liveSync) {
+        toast.error(e instanceof Error ? e.message : "Could not load trade history");
+      }
       setRows([]);
     }
-  }, []);
+  }, [liveSync]);
+
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!liveSync) return;
+    const id = window.setInterval(() => void load(), 12_000);
+    return () => window.clearInterval(id);
+  }, [liveSync, load]);
+
+  useEffect(() => {
+    if (!liveSync) return;
+    let disposed = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        const uid = data.session?.user?.id;
+        if (!uid || disposed) return;
+        channel = supabase
+          .channel(`desk-trade-history-${uid}`)
+          .on("postgres_changes", { event: "*", schema: "public", table: "trades" }, () => {
+            if (!disposed) void load();
+          })
+          .subscribe();
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+      if (channel) void supabase.removeChannel(channel);
+    };
+  }, [liveSync, load]);
 
   const buys = useMemo(
     () => (rows ?? []).filter((x) => String(x.side).toLowerCase().includes("buy")),
@@ -121,24 +172,19 @@ export function DeskTradeHistoryTables({
   };
 
   const exportButtons = (which: "buy" | "sell") => (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="gap-1.5 border-border/70 shadow-sm"
-        onClick={which === "buy" ? exportBuyCsv : exportSellCsv}
-      >
-        <FileSpreadsheet className="h-4 w-4" /> Export EXCEL
+    <div className="flex flex-wrap justify-end gap-2">
+      <Button type="button" size="sm" className={exportBtn} onClick={() => window.print()}>
+        <FileText className="h-4 w-4" aria-hidden />
+        Export PDF
       </Button>
       <Button
         type="button"
-        variant="outline"
         size="sm"
-        className="gap-1.5 border-border/70 shadow-sm"
-        onClick={() => window.print()}
+        className={exportBtn}
+        onClick={which === "buy" ? exportBuyCsv : exportSellCsv}
       >
-        <Download className="h-4 w-4" /> Export PDF
+        <FileSpreadsheet className="h-4 w-4" aria-hidden />
+        Export EXCEL
       </Button>
     </div>
   );
@@ -192,15 +238,12 @@ export function DeskTradeHistoryTables({
           </table>
         )}
       </div>
-      <p className="border-t border-border/50 px-3 py-2 text-xs text-muted-foreground">
-        Showing{" "}
-        <span className="tabular-nums text-foreground">{rows === null ? 0 : buys.length}</span> to{" "}
-        <span className="tabular-nums text-foreground">{rows === null ? 0 : buys.length}</span> of{" "}
-        <span className="tabular-nums text-foreground">{rows === null ? 0 : buys.length}</span> entries
+      <p className="border-t border-border/50 px-3 py-2 text-xs font-medium text-muted-foreground">
+        {rangeFooter(buys.length, rows === null)}
       </p>
       <p className="border-t border-border/50 px-3 py-2 text-xs font-medium text-destructive/90">
-        Legend: Cross-listed and ADR line items follow the same fee and settlement rules as the live
-        ticket. H-shares and RMB counters may carry additional currency and disclosure requirements.
+        <span className="font-bold">Legend:</span> H-shares are regulated by Chinese law but are denominated in Hong
+        Kong Dollars.
       </p>
     </div>
   );
@@ -247,11 +290,8 @@ export function DeskTradeHistoryTables({
           </table>
         )}
       </div>
-      <p className="border-t border-border/50 px-3 py-2 text-xs text-muted-foreground">
-        Showing{" "}
-        <span className="tabular-nums text-foreground">{rows === null ? 0 : sells.length}</span> to{" "}
-        <span className="tabular-nums text-foreground">{rows === null ? 0 : sells.length}</span> of{" "}
-        <span className="tabular-nums text-foreground">{rows === null ? 0 : sells.length}</span> entries
+      <p className="border-t border-border/50 px-3 py-2 text-xs font-medium text-muted-foreground">
+        {rangeFooter(sells.length, rows === null)}
       </p>
     </div>
   );
@@ -260,14 +300,14 @@ export function DeskTradeHistoryTables({
     <div className={cn("space-y-10", className)}>
       <div>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
-          <h3 className="text-base font-semibold text-foreground">Trading record — Buy</h3>
+          <h3 className="text-base font-semibold text-foreground">Trade Buy</h3>
           {exportButtons("buy")}
         </div>
         {buyTable}
       </div>
       <div>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
-          <h3 className="text-base font-semibold text-foreground">Trading record — Sell</h3>
+          <h3 className="text-base font-semibold text-foreground">Trade Sell</h3>
           {exportButtons("sell")}
         </div>
         {sellTable}
@@ -280,7 +320,7 @@ export function DeskTradeHistoryTables({
       <SectionCard
         className="shadow-md ring-1 ring-border/40"
         title="Trade history"
-        description="Trading record — Buy and Trading record — Sell. Columns match Trade order (subscription, class, CUSIP/symbol, quantities, fees, totals) and portfolio line items."
+        description="Use Trade Buy and Trade Sell below for execution detail, exports, and desk legends."
       >
         {inner}
       </SectionCard>
