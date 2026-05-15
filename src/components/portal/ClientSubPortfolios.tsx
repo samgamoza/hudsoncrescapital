@@ -289,9 +289,11 @@ export function ClientSubPortfolios({
           </button>
         ) : !readonly && !creating && accounts.length === 0 ? (
           <p className="text-xs leading-relaxed text-amber-700 dark:text-amber-300 border border-amber-500/35 rounded-md px-3 py-2 bg-amber-500/10 shrink-0 max-w-md">
-            <span className="font-semibold text-foreground">No brokerage account yet.</span> Approve or create an
-            account in the <strong className="text-foreground">Accounts</strong> section on the client record first —
-            then add sleeves on <strong className="text-foreground">Admin → Trade Order</strong>.
+            <span className="font-semibold text-foreground">No brokerage account yet.</span> Under{" "}
+            <strong className="text-foreground">Clients → Accounts</strong>, use{" "}
+            <strong className="text-foreground">Create pending brokerage account</strong> (or finish Investor signup)
+            so a <strong className="text-foreground">pending</strong> row exists, then <strong className="text-foreground">Approve</strong>{" "}
+            — then add sleeves here on <strong className="text-foreground">Admin → Trade Order</strong>.
           </p>
         ) : null}
       </div>

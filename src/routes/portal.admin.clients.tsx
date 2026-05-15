@@ -368,6 +368,7 @@ function ClientDrawer({
   const hasActiveAccount = !!(data?.accounts ?? []).some((a: any) => a.status === "active");
   const hasPendingAccount = !!(data?.accounts ?? []).some((a: any) => a.status === "pending");
   const noAccounts = (data?.accounts ?? []).length === 0;
+  const isInvestor = !!(data?.roles ?? []).includes("investor");
   const depositReady = hasActiveAccount;
   const verificationApproved = verificationState === "approved";
 
@@ -543,8 +544,10 @@ function ClientDrawer({
                     {noAccounts && (
                       <>
                         {" "}
-                        This client has <span className="text-foreground font-medium">no accounts</span>
-                        . Have them complete the{" "}
+                        This client has <span className="text-foreground font-medium">no brokerage account
+                        row yet</span>, so there is nothing to Approve until a{" "}
+                        <span className="text-foreground font-medium">pending</span> account appears under
+                        Accounts. Typical paths: they complete the{" "}
                         <Link
                           to="/portal/signup/investor"
                           target="_blank"
@@ -553,8 +556,9 @@ function ClientDrawer({
                         >
                           online account application
                         </Link>{" "}
-                        (Investor Portal signup), then return here to approve the brokerage account when
-                        it appears as <span className="text-foreground font-medium">pending</span>.
+                        (Investor Portal signup), or desk uses{" "}
+                        <span className="text-foreground font-medium">Create pending brokerage account</span>{" "}
+                        in Accounts below, then clicks <span className="text-foreground font-medium">Approve</span>.
                       </>
                     )}
                     {hasPendingAccount && !hasActiveAccount && (
@@ -676,7 +680,55 @@ function ClientDrawer({
               description="Approve onboarding so the account becomes active. Deposits require at least one active account (separate from profile verification above)."
             >
               {data.accounts.length === 0 && (
-                <div className="text-sm text-muted-foreground">No accounts.</div>
+                <div className="rounded-md border border-amber-500/35 bg-amber-500/10 px-3 py-3 text-sm space-y-3 mb-3">
+                  <p className="text-muted-foreground leading-relaxed">
+                    <span className="font-medium text-foreground">No account on file.</span> The Approve
+                    button only appears for a row in <span className="text-foreground font-medium">pending</span>{" "}
+                    status. If the investor never finished signup bootstrap, create a pending row here (or have
+                    them finish{" "}
+                    <Link
+                      to="/portal/signup/investor"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-brand underline-offset-2 hover:underline font-medium"
+                    >
+                      Investor signup
+                    </Link>
+                    ).
+                  </p>
+                  {isInvestor ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      className={btnPrimary}
+                      onClick={() => {
+                        if (
+                          !window.confirm(
+                            "Create a pending cash brokerage account (USD) for this client? You can then Approve it when due diligence is complete.",
+                          )
+                        )
+                          return;
+                        void wrap("Pending brokerage account created", () =>
+                          apiJson("/api/portal/clients-admin", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              action: "provisionPendingBrokerageAccount",
+                              payload: { userId },
+                            }),
+                          }),
+                        );
+                      }}
+                    >
+                      Create pending brokerage account
+                    </button>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      This user is not flagged as an investor. Use Staff onboarding or assign the investor role
+                      before creating an account.
+                    </p>
+                  )}
+                </div>
               )}
               <div className="flex flex-col gap-3">
                 {data.accounts.map((a: any) => (

@@ -39,6 +39,10 @@ export const Route = createFileRoute("/api/portal/clients-admin")({
             return Response.json(await clients.updateClientProfileForApi(actorId, payload));
           if (action === "updateAccountStatus")
             return Response.json(await clients.updateAccountStatusForApi(actorId, payload));
+          if (action === "provisionPendingBrokerageAccount")
+            return Response.json(
+              await clients.provisionPendingBrokerageAccountForApi(actorId, payload),
+            );
           if (action === "setClientLoginEnabled")
             return Response.json(await clients.setClientLoginEnabledForApi(actorId, payload));
           if (action === "sendPasswordReset")

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ClientSubPortfolios } from "@/components/portal/ClientSubPortfolios";
@@ -358,9 +358,14 @@ function TradingPage() {
             onChanged={() => void refreshOrders()}
           />
         ) : deskClientId && deskSelected && deskSelected.accounts.length === 0 ? (
-          <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-muted-foreground">
-            This investor has no brokerage accounts yet. Open{" "}
-            <strong className="text-foreground">Clients</strong>, approve an account, then return here.
+          <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-muted-foreground leading-relaxed">
+            This investor has no brokerage account row yet, so there is nothing to approve. Open{" "}
+            <Link to="/portal/admin/clients" className="text-brand font-medium underline-offset-2 hover:underline">
+              Clients
+            </Link>
+            , use <strong className="text-foreground">Create pending brokerage account</strong> under Accounts (or
+            have them finish Investor signup), then <strong className="text-foreground">Approve</strong> when ready,
+            and return here.
           </p>
         ) : deskClientId && !deskSelected ? (
           <p className="text-sm text-muted-foreground">

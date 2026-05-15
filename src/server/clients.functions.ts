@@ -426,6 +426,77 @@ export async function updateAccountStatusForApi(actorUserId: string, raw: unknow
   return { ok: true };
 }
 
+const provisionPendingBrokerageAccountInput = z.object({
+  userId: z.string().uuid(),
+});
+
+/**
+ * Creates a single `pending` brokerage account row when none exist (e.g. investor
+ * never hit signup bootstrap). Mirrors bootstrap account insert; desk then uses
+ * Approve under Clients → Accounts.
+ */
+export async function provisionPendingBrokerageAccountForApi(actorUserId: string, raw: unknown) {
+  const data = provisionPendingBrokerageAccountInput.parse(raw);
+  await requireMinRole(actorUserId, "admin");
+
+  const { data: roleRows, error: rolesErr } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", data.userId);
+  if (rolesErr) throw new Error(rolesErr.message);
+  const roles = (roleRows ?? []).map((r: { role: string }) => r.role);
+  if (!roles.includes("investor")) {
+    throw new Error(
+      "This user does not have the investor role. Use Staff onboarding to create a full client record, or assign the investor role first.",
+    );
+  }
+
+  const { data: existing, error: listErr } = await supabaseAdmin
+    .from("accounts")
+    .select("id")
+    .eq("user_id", data.userId)
+    .limit(1);
+  if (listErr) throw new Error(listErr.message);
+  if ((existing ?? []).length > 0) {
+    throw new Error(
+      "This client already has at least one brokerage account. Refresh the drawer and use Approve under Accounts if a row is pending.",
+    );
+  }
+
+  const now = new Date().toISOString();
+  const acctNumber = `HCC-${Date.now().toString(36).toUpperCase()}-${Math.random()
+    .toString(36)
+    .slice(2, 6)
+    .toUpperCase()}`;
+  const { data: acct, error: acctErr } = await (supabaseAdmin.from("accounts") as any)
+    .insert({
+      user_id: data.userId,
+      account_number: acctNumber,
+      account_type: "cash",
+      base_currency: "USD",
+      status: "pending",
+      metadata: {
+        admin_provisioned_at: now,
+        admin_provisioned_by: actorUserId,
+      },
+    })
+    .select("id, account_number")
+    .single();
+  if (acctErr) throw new Error(`Could not create pending account: ${acctErr.message}`);
+
+  const { audit } = await import("./_shared.server");
+  await audit({
+    actorId: actorUserId,
+    action: "account.admin_provision_pending",
+    targetType: "account",
+    targetId: acct.id,
+    targetUserId: data.userId,
+    payload: { account_number: acctNumber },
+  });
+
+  return { ok: true as const, accountId: acct.id as string, accountNumber: acct.account_number as string };
+}
+
 export const updateAccountStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => updateAccountStatusInput.parse(d))
