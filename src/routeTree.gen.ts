@@ -29,6 +29,7 @@ import { Route as PortalResetPasswordRouteImport } from './routes/portal.reset-p
 import { Route as PortalLoginRouteImport } from './routes/portal.login'
 import { Route as PortalInvestorRouteImport } from './routes/portal.investor'
 import { Route as PortalAdminRouteImport } from './routes/portal.admin'
+import { Route as PortalAccountProfileRouteImport } from './routes/portal.account-profile'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as PortalInvestorIndexRouteImport } from './routes/portal.investor.index'
 import { Route as PortalAdminIndexRouteImport } from './routes/portal.admin.index'
@@ -194,6 +195,11 @@ const PortalInvestorRoute = PortalInvestorRouteImport.update({
 const PortalAdminRoute = PortalAdminRouteImport.update({
   id: '/portal/admin',
   path: '/portal/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalAccountProfileRoute = PortalAccountProfileRouteImport.update({
+  id: '/portal/account-profile',
+  path: '/portal/account-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthConfirmRoute = AuthConfirmRouteImport.update({
@@ -562,6 +568,7 @@ export interface FileRoutesByFullPath {
   '/technology': typeof TechnologyRoute
   '/terms': typeof TermsRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/portal/account-profile': typeof PortalAccountProfileRoute
   '/portal/admin': typeof PortalAdminRouteWithChildren
   '/portal/investor': typeof PortalInvestorRouteWithChildren
   '/portal/login': typeof PortalLoginRouteWithChildren
@@ -650,6 +657,7 @@ export interface FileRoutesByTo {
   '/technology': typeof TechnologyRoute
   '/terms': typeof TermsRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/portal/account-profile': typeof PortalAccountProfileRoute
   '/portal/login': typeof PortalLoginRouteWithChildren
   '/portal/reset-password': typeof PortalResetPasswordRoute
   '/portal/trade-workspace': typeof PortalTradeWorkspaceRoute
@@ -737,6 +745,7 @@ export interface FileRoutesById {
   '/technology': typeof TechnologyRoute
   '/terms': typeof TermsRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/portal/account-profile': typeof PortalAccountProfileRoute
   '/portal/admin': typeof PortalAdminRouteWithChildren
   '/portal/investor': typeof PortalInvestorRouteWithChildren
   '/portal/login': typeof PortalLoginRouteWithChildren
@@ -827,6 +836,7 @@ export interface FileRouteTypes {
     | '/technology'
     | '/terms'
     | '/auth/confirm'
+    | '/portal/account-profile'
     | '/portal/admin'
     | '/portal/investor'
     | '/portal/login'
@@ -915,6 +925,7 @@ export interface FileRouteTypes {
     | '/technology'
     | '/terms'
     | '/auth/confirm'
+    | '/portal/account-profile'
     | '/portal/login'
     | '/portal/reset-password'
     | '/portal/trade-workspace'
@@ -1001,6 +1012,7 @@ export interface FileRouteTypes {
     | '/technology'
     | '/terms'
     | '/auth/confirm'
+    | '/portal/account-profile'
     | '/portal/admin'
     | '/portal/investor'
     | '/portal/login'
@@ -1090,6 +1102,7 @@ export interface RootRouteChildren {
   TechnologyRoute: typeof TechnologyRoute
   TermsRoute: typeof TermsRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
+  PortalAccountProfileRoute: typeof PortalAccountProfileRoute
   PortalAdminRoute: typeof PortalAdminRouteWithChildren
   PortalInvestorRoute: typeof PortalInvestorRouteWithChildren
   PortalLoginRoute: typeof PortalLoginRouteWithChildren
@@ -1276,6 +1289,13 @@ declare module '@tanstack/react-router' {
       path: '/portal/admin'
       fullPath: '/portal/admin'
       preLoaderRoute: typeof PortalAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/account-profile': {
+      id: '/portal/account-profile'
+      path: '/portal/account-profile'
+      fullPath: '/portal/account-profile'
+      preLoaderRoute: typeof PortalAccountProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/confirm': {
@@ -1843,6 +1863,7 @@ const rootRouteChildren: RootRouteChildren = {
   TechnologyRoute: TechnologyRoute,
   TermsRoute: TermsRoute,
   AuthConfirmRoute: AuthConfirmRoute,
+  PortalAccountProfileRoute: PortalAccountProfileRoute,
   PortalAdminRoute: PortalAdminRouteWithChildren,
   PortalInvestorRoute: PortalInvestorRouteWithChildren,
   PortalLoginRoute: PortalLoginRouteWithChildren,

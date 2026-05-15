@@ -165,13 +165,13 @@ function ClientsPage() {
             Refresh
           </button>
           <Link
-            to="/portal/signup/investor"
+            to="/portal/account-profile"
             target="_blank"
             rel="noopener noreferrer"
             className={btnPrimary}
-            title="Opens the same investor online account application used on the public Investor Portal (new browser tab)."
+            title="Opens the legacy Cross Ocean–style account profile in a new browser tab."
           >
-            + Online account application
+            Open Investor Account
           </Link>
           {isSuper && (
             <button disabled={resetting} className={btnDanger} onClick={() => void doReset()}>
@@ -547,16 +547,16 @@ function ClientDrawer({
                         This client has <span className="text-foreground font-medium">no brokerage account
                         row yet</span>, so there is nothing to Approve until a{" "}
                         <span className="text-foreground font-medium">pending</span> account appears under
-                        Accounts. Typical paths: they complete the{" "}
+                        Accounts. Typical paths: they open{" "}
                         <Link
-                          to="/portal/signup/investor"
+                          to="/portal/account-profile"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-brand underline-offset-2 hover:underline font-medium"
                         >
-                          online account application
+                          Open Investor Account
                         </Link>{" "}
-                        (Investor Portal signup), or desk uses{" "}
+                        (legacy profile template, new tab), or desk uses{" "}
                         <span className="text-foreground font-medium">Create pending brokerage account</span>{" "}
                         in Accounts below, then clicks <span className="text-foreground font-medium">Approve</span>.
                       </>
@@ -687,12 +687,12 @@ function ClientDrawer({
                     status. If the investor never finished signup bootstrap, create a pending row here (or have
                     them finish{" "}
                     <Link
-                      to="/portal/signup/investor"
+                      to="/portal/account-profile"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-brand underline-offset-2 hover:underline font-medium"
                     >
-                      Investor signup
+                      Open Investor Account
                     </Link>
                     ).
                   </p>

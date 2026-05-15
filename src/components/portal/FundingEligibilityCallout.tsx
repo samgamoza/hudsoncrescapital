@@ -27,24 +27,19 @@ export function FundingEligibilityCallout({ accounts }: { accounts: FundingAccou
         <p className="font-medium text-foreground">No brokerage account on file yet</p>
         <p className="mt-2">
           Deposits are attached to an <strong className="text-foreground">active</strong> account
-          row in the database. If you have not finished onboarding, complete{" "}
+          row in the database. Use{" "}
           <Link
-            to="/portal/investor/apply"
+            to="/portal/account-profile"
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-brand underline-offset-2 hover:underline"
           >
-            Open an account
+            Open Investor Account
           </Link>{" "}
-          (that creates a <strong className="text-foreground">pending</strong> account for staff
-          review). If you were invited by the firm, complete the{" "}
-          <Link
-            to="/portal/signup/investor"
-            className="text-brand underline-offset-2 hover:underline"
-          >
-            online account application
-          </Link>{" "}
-          (Investor Portal). Staff approve your brokerage account under{" "}
-          <strong className="text-foreground">Admin → Clients</strong> when it appears as{" "}
-          <strong className="text-foreground">pending</strong>.
+          for the full legacy account profile (new tab). A <strong className="text-foreground">pending</strong>{" "}
+          brokerage row is still created by signup bootstrap or your advisor in{" "}
+          <strong className="text-foreground">Admin → Clients</strong>; staff set it to{" "}
+          <strong className="text-foreground">active</strong> when ready.
         </p>
         <p className="mt-2 text-xs">
           <strong className="text-foreground">Admin note:</strong> pending account approval is not

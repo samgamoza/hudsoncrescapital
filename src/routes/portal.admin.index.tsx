@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ClientSubPortfolios } from "@/components/portal/ClientSubPortfolios";
 import { MetricCard, PageHeader, SectionCard } from "@/lib/portalShared";
 import { supabase } from "@/integrations/supabase/client";
+import { usePersistedState } from "@/hooks/usePersistedState";
 
 export const Route = createFileRoute("/portal/admin/")({
   head: () => ({
@@ -45,6 +46,9 @@ function TradingPage() {
     }[]
   | null>(null);
   const [deskClientId, setDeskClientId] = useState("");
+  const [sleevesPanelOpen, setSleevesPanelOpen] = usePersistedState("admin:trade-order:sleeves-open", false);
+  const [subPortfolioReloadNonce, setSubPortfolioReloadNonce] = useState(0);
+  const [defaultSleeveBusy, setDefaultSleeveBusy] = useState(false);
   const field =
     "bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground w-full";
   const roField =
@@ -284,6 +288,41 @@ function TradingPage() {
     else setFillPrice("");
   }, [selectedOrder?.id]);
 
+  const createDefaultDerivativesSleeve = async () => {
+    if (!deskClientId || !deskSelected) {
+      toast.error("Select an investor first.");
+      return;
+    }
+    const active = deskSelected.accounts.find((a) => a.status === "active");
+    if (!active) {
+      toast.error("This client needs at least one active brokerage account.");
+      return;
+    }
+    const ccy = String(active.base_currency ?? "USD").trim().toUpperCase().slice(0, 3) || "USD";
+    setDefaultSleeveBusy(true);
+    try {
+      await apiJson("/api/portal/sub-portfolios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          account_id: active.id,
+          user_id: deskClientId,
+          name: "Limited Risk Options (Derivatives)",
+          asset_class: "commodities",
+          base_currency: ccy,
+          target_allocation_pct: 100,
+        }),
+      });
+      toast.success("Default derivatives sleeve created.");
+      setSubPortfolioReloadNonce((n) => n + 1);
+      await refreshOrders();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not create sleeve");
+    } finally {
+      setDefaultSleeveBusy(false);
+    }
+  };
+
   const runLookup = async (sendReset: boolean) => {
     setDiagBusy(true);
     setDiagResult(null);
@@ -313,7 +352,7 @@ function TradingPage() {
     <>
       <PageHeader
         title="Trade Order"
-        subtitle="Desk queue, CrossOcean-style execution ticket, and investor sleeves/positions. Sub-portfolios and line positions are added here; Clients shows them read-only."
+        subtitle="Primary desk flow is Limited Risk Options Contracts (listed derivatives): use the execution queue and Cross Ocean–style ticket below. Sub-portfolios are optional—only when you split a client across additional market sleeves beyond the default options book."
       />
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <MetricCard title="Open queue" value={String(statusCounts.pending ?? 0)} helper="Pending" />
@@ -325,57 +364,8 @@ function TradingPage() {
         />
       </div>
       <SectionCard
-        title="Client sleeves & positions"
-        description="Pick an investor, then add sub-portfolios (one sleeve per asset class) and positions. This is the only place staff add sleeves/lines; the Clients drawer is read-only for this data."
-      >
-        <div className="mb-4 max-w-xl">
-          <label className={labelSm} htmlFor="desk-client-pick">
-            Investor
-          </label>
-          <select
-            id="desk-client-pick"
-            className={field}
-            value={deskClientId}
-            onChange={(e) => setDeskClientId(e.target.value)}
-          >
-            <option value="">— Select an investor —</option>
-            {(deskClients ?? []).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.email}
-              </option>
-            ))}
-          </select>
-        </div>
-        {deskClientId && deskSelected && deskSelected.accounts.length > 0 ? (
-          <ClientSubPortfolios
-            userId={deskClientId}
-            accounts={deskSelected.accounts.map((a) => ({
-              id: a.id,
-              account_number: a.account_number,
-              base_currency: a.base_currency,
-              status: a.status,
-            }))}
-            onChanged={() => void refreshOrders()}
-          />
-        ) : deskClientId && deskSelected && deskSelected.accounts.length === 0 ? (
-          <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-muted-foreground leading-relaxed">
-            This investor has no brokerage account row yet, so there is nothing to approve. Open{" "}
-            <Link to="/portal/admin/clients" className="text-brand font-medium underline-offset-2 hover:underline">
-              Clients
-            </Link>
-            , use <strong className="text-foreground">Create pending brokerage account</strong> under Accounts (or
-            have them finish Investor signup), then <strong className="text-foreground">Approve</strong> when ready,
-            and return here.
-          </p>
-        ) : deskClientId && !deskSelected ? (
-          <p className="text-sm text-muted-foreground">
-            Could not resolve that investor in the current list. Refresh the page or pick another email.
-          </p>
-        ) : null}
-      </SectionCard>
-      <SectionCard
         title="Execution queue & ticket"
-        description="Select a queued order, complete the ticket as you would for broker verification, then request execution. Quantity, premium, and fees are posted as the desk fill."
+        description="Limited Risk Options Contracts (listed derivatives): select a queued order, complete the Cross Ocean–style ticket, then request execution. Quantity, premium, and fees are posted as the desk fill."
       >
         <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
           <div className="overflow-x-auto rounded-md border border-border">
@@ -542,6 +532,10 @@ function TradingPage() {
                         onChange={(e) => setCommodity(e.target.value)}
                       >
                         <option value="">— Select —</option>
+                        <optgroup label="Derivatives / listed options">
+                          <option value="listed_options">Listed options (limited risk)</option>
+                          <option value="index_options">Index options</option>
+                        </optgroup>
                         <optgroup label="Currencies">
                           <option value="currencies">Currencies</option>
                           <option value="majors">Major pairs</option>
@@ -758,6 +752,92 @@ function TradingPage() {
             )}
           </div>
         </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Multi-asset sleeves & positions (optional)"
+        description="Add sleeves only when a client expands beyond the default Limited Risk Options (derivatives) book—for example separate pools for other listed markets. Holdings support portfolio views and trade-history context; they are not required to post a desk fill from the ticket above."
+      >
+        <div className="mb-4 max-w-xl">
+          <label className={labelSm} htmlFor="desk-client-pick">
+            Investor
+          </label>
+          <select
+            id="desk-client-pick"
+            className={field}
+            value={deskClientId}
+            onChange={(e) => setDeskClientId(e.target.value)}
+          >
+            <option value="">— Select an investor —</option>
+            {(deskClients ?? []).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.email}
+              </option>
+            ))}
+          </select>
+        </div>
+        <p className="mb-4 rounded-md border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground leading-relaxed">
+          Default desk flow is <strong className="text-foreground">options / listed derivatives</strong> via the
+          execution ticket. Open the sleeve manager when you need additional asset-class segmentation (equities,
+          crypto, commodities, managed strategy sleeves).
+        </p>
+        <details
+          className="rounded-lg border border-border bg-surface/40"
+          open={sleevesPanelOpen}
+          onToggle={(e) => setSleevesPanelOpen((e.target as HTMLDetailsElement).open)}
+        >
+          <summary className="cursor-pointer select-none px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-elevated/50">
+            Sleeve &amp; position manager
+          </summary>
+          <div className="space-y-3 border-t border-border px-3 pb-4 pt-3">
+            {deskClientId && deskSelected && deskSelected.accounts.length > 0 ? (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-surface-elevated disabled:opacity-50"
+                    disabled={
+                      defaultSleeveBusy || !deskSelected.accounts.some((a) => a.status === "active")
+                    }
+                    onClick={() => void createDefaultDerivativesSleeve()}
+                  >
+                    {defaultSleeveBusy ? "Creating…" : "Create default Limited Risk Options sleeve"}
+                  </button>
+                </div>
+                <ClientSubPortfolios
+                  userId={deskClientId}
+                  reloadNonce={subPortfolioReloadNonce}
+                  accounts={deskSelected.accounts.map((a) => ({
+                    id: a.id,
+                    account_number: a.account_number,
+                    base_currency: a.base_currency,
+                    status: a.status,
+                  }))}
+                  onChanged={() => {
+                    void refreshOrders();
+                    setSubPortfolioReloadNonce((n) => n + 1);
+                  }}
+                />
+              </>
+            ) : deskClientId && deskSelected && deskSelected.accounts.length === 0 ? (
+              <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-muted-foreground leading-relaxed">
+                This investor has no brokerage account row yet, so there is nothing to approve. Open{" "}
+                <Link to="/portal/admin/clients" className="text-brand font-medium underline-offset-2 hover:underline">
+                  Clients
+                </Link>
+                , use <strong className="text-foreground">Create pending brokerage account</strong> under Accounts (or
+                have them use <strong className="text-foreground">Open Investor Account</strong> on Clients for the legacy
+                profile template), then <strong className="text-foreground">Approve</strong> when ready, and return here.
+              </p>
+            ) : deskClientId && !deskSelected ? (
+              <p className="text-sm text-muted-foreground">
+                Could not resolve that investor in the current list. Refresh the page or pick another email.
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">Pick an investor to open the sleeve manager.</p>
+            )}
+          </div>
+        </details>
       </SectionCard>
 
       <SectionCard

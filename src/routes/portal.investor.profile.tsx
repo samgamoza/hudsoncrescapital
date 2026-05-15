@@ -717,9 +717,8 @@ function KV({ label, value }: { label: string; value: any }) {
 }
 
 /**
- * Nested "Online application" card shown at the top of the Profile page.
- * Surfaces the in-portal completion wizard as a sub-section of Profile so
- * we don't need a separate sidebar entry.
+ * Nested card on Profile: opens the legacy Cross Ocean–style account profile in a new tab.
+ * The in-portal questionnaire remains available via profile gates and dashboard prompts.
  */
 function OnlineApplicationCard() {
   const { loading, summary, isComplete, isIncomplete } = usePortalProfileStatus();
@@ -786,13 +785,9 @@ function OnlineApplicationCard() {
       ? "Our compliance desk is reviewing your submission. We'll email you when your account is approved."
       : isComplete
         ? "Your application is on file. You can revisit it if compliance asks you to update anything."
-        : "Open the online account application to review or update your submission.";
+        : "Open the legacy account profile (Cross Ocean layout) in a new tab to review or print fields.";
 
-  const ctaLabel = isIncomplete
-    ? "Start application"
-    : status === "submitted"
-      ? "Review submission"
-      : "Review application";
+  const ctaLabel = "Open investor account";
 
   return (
     <SectionCard
@@ -827,8 +822,10 @@ function OnlineApplicationCard() {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-end sm:gap-1">
-          <Link
-            to="/portal/investor/profile/complete"
+          <a
+            href="/portal/account-profile"
+            target="_blank"
+            rel="noopener noreferrer"
             className={cn(
               "inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold shadow-glow",
               isIncomplete
@@ -838,7 +835,7 @@ function OnlineApplicationCard() {
           >
             {ctaLabel}
             <ArrowRight className="h-4 w-4" />
-          </Link>
+          </a>
         </div>
       </div>
     </SectionCard>

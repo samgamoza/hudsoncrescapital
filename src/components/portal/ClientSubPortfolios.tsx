@@ -181,12 +181,15 @@ export function ClientSubPortfolios({
   userId,
   accounts,
   onChanged,
+  /** Increment to force a reload from the parent (e.g. after creating a sleeve outside this component). */
+  reloadNonce = 0,
   /** When true (e.g. Clients drawer): show sleeves/positions read-only; desk adds them on Trade Order. */
   readonly = false,
 }: {
   userId: string;
   accounts: Account[];
   onChanged?: () => void;
+  reloadNonce?: number;
   readonly?: boolean;
 }) {
   const [rows, setRows] = useState<SP[] | null>(null);
@@ -221,7 +224,7 @@ export function ClientSubPortfolios({
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, reloadNonce]);
 
   const wrap = async (label: string, fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -291,9 +294,11 @@ export function ClientSubPortfolios({
           <p className="text-xs leading-relaxed text-amber-700 dark:text-amber-300 border border-amber-500/35 rounded-md px-3 py-2 bg-amber-500/10 shrink-0 max-w-md">
             <span className="font-semibold text-foreground">No brokerage account yet.</span> Under{" "}
             <strong className="text-foreground">Clients → Accounts</strong>, use{" "}
-            <strong className="text-foreground">Create pending brokerage account</strong> (or finish Investor signup)
-            so a <strong className="text-foreground">pending</strong> row exists, then <strong className="text-foreground">Approve</strong>{" "}
-            — then add sleeves here on <strong className="text-foreground">Admin → Trade Order</strong>.
+            <strong className="text-foreground">Create pending brokerage account</strong> (or open{" "}
+            <strong className="text-foreground">Open Investor Account</strong> from Admin → Clients for the legacy
+            profile template) so a <strong className="text-foreground">pending</strong> row exists, then{" "}
+            <strong className="text-foreground">Approve</strong> — then add sleeves here on{" "}
+            <strong className="text-foreground">Admin → Trade Order</strong>.
           </p>
         ) : null}
       </div>
@@ -374,13 +379,19 @@ export function ClientSubPortfolios({
               panel).
             </p>
           ) : accounts.length > 0 && !creating ? (
-            <button
-              type="button"
-              className={`${btnPrimary} mt-4`}
-              onClick={() => setCreating(true)}
-            >
-              <Plus className="h-3 w-3" aria-hidden /> Add your first sub-portfolio
-            </button>
+            <>
+              <p className="mt-3 text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+                Limited Risk Options and other listed derivatives do not require a sleeve before you use the Trade
+                Order execution ticket. Add a sub-portfolio when you need separate sleeves for additional markets.
+              </p>
+              <button
+                type="button"
+                className={`${btnPrimary} mt-4`}
+                onClick={() => setCreating(true)}
+              >
+                <Plus className="h-3 w-3" aria-hidden /> Add your first sub-portfolio
+              </button>
+            </>
           ) : accounts.length === 0 ? (
             <p className="mt-3 text-xs text-muted-foreground max-w-md mx-auto">
               Sub-portfolios attach to an account. Add or approve an account on this client record, then use{" "}
