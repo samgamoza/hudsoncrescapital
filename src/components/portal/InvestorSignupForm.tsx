@@ -57,7 +57,7 @@ export function InvestorSignupForm({ compact = false }: InvestorSignupFormProps)
     ? `${fieldBase} px-2.5 py-1.5 text-sm`
     : `${fieldBase} px-3 py-2 text-sm`;
   const label = compact
-    ? `${labelBase} text-[11px] uppercase tracking-wide`
+    ? `${labelBase} text-xs`
     : `${labelBase} text-xs uppercase tracking-wider`;
   const navigate = useNavigate();
   const [f, setF] = useState<FormState>(initialForm);
@@ -102,8 +102,8 @@ export function InvestorSignupForm({ compact = false }: InvestorSignupFormProps)
   };
 
   return (
-    <form onSubmit={onSubmit} className={compact ? "flex flex-col gap-3.5" : "flex flex-col gap-5"}>
-      <div className={compact ? "grid grid-cols-2 gap-3" : "grid gap-4 sm:grid-cols-2"}>
+    <form onSubmit={onSubmit} className={compact ? "flex flex-col gap-4" : "flex flex-col gap-5"}>
+      <div className={compact ? "grid grid-cols-2 gap-3.5" : "grid gap-4 sm:grid-cols-2"}>
         <div>
           <label className={label}>First name</label>
           <input
@@ -150,10 +150,17 @@ export function InvestorSignupForm({ compact = false }: InvestorSignupFormProps)
 
       <div>
         <label className={label}>Mobile number</label>
-        <IntlPhoneInput className="mt-1" value={f.phone} onChange={(v) => update("phone", v)} country={f.country} disabled={busy} />
+        <IntlPhoneInput
+          className="mt-1"
+          dense={compact}
+          value={f.phone}
+          onChange={(v) => update("phone", v)}
+          country={f.country}
+          disabled={busy}
+        />
       </div>
 
-      <div className={compact ? "flex flex-col gap-3.5" : "grid gap-4 sm:grid-cols-2"}>
+      <div className={compact ? "grid grid-cols-2 gap-3.5" : "grid gap-4 sm:grid-cols-2"}>
         <div>
           <label className={label}>Password</label>
           <input

@@ -12,6 +12,8 @@ type Props = {
   className?: string;
   disabled?: boolean;
   placeholder?: string;
+  /** Narrower country selector for compact signup layouts. */
+  dense?: boolean;
 };
 
 /**
@@ -28,6 +30,7 @@ export function IntlPhoneInput({
   className = "",
   disabled,
   placeholder = "Phone number",
+  dense = false,
 }: Props) {
   const inferred = useMemo(() => {
     const v = (value ?? "").trim();
@@ -64,7 +67,7 @@ export function IntlPhoneInput({
 
   return (
     <div className={`flex gap-2 ${className}`}>
-      <div className="w-[180px]">
+      <div className={dense ? "w-[7.25rem] shrink-0" : "w-[180px]"}>
         <CountryCombobox
           value={iso}
           onChange={(c) => {
@@ -87,7 +90,7 @@ export function IntlPhoneInput({
           setNational(digits);
           onChange(digits ? `+${cur.dial}${digits}` : "");
         }}
-        className={`flex-1 bg-surface border ${valid ? "border-border" : "border-destructive/60"} rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:border-brand/60`}
+        className={`min-w-0 flex-1 bg-surface border ${valid ? "border-border" : "border-destructive/60"} rounded-md ${dense ? "px-2.5 py-1.5" : "px-3 py-2"} text-sm text-foreground focus:outline-none focus:border-brand/60`}
         aria-invalid={!valid}
       />
     </div>
