@@ -30,13 +30,13 @@ const bullets = [
 function InvestorSignupPage() {
   return (
     <SiteLayout>
-      <div className="relative min-h-[calc(100vh-12rem)] overflow-hidden border-b border-border bg-muted/25 py-10 sm:py-14">
+      <div className="relative min-h-[calc(100vh-12rem)] overflow-hidden border-b border-border bg-muted/25 py-10 sm:py-12">
         <div className="absolute inset-0 grid-bg opacity-20" />
-        <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-6">
-          <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative mx-auto w-full max-w-4xl px-4 sm:px-6">
+          <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <span className="h-9 w-1 shrink-0 rounded-full bg-brand" aria-hidden />
-              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Open Account</h1>
+              <span className="h-8 w-1 shrink-0 rounded-full bg-brand" aria-hidden />
+              <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Open Account</h1>
             </div>
             <Link
               to="/portal/login/investor"
@@ -48,8 +48,8 @@ function InvestorSignupPage() {
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-elevated">
-            <div className="flex flex-col lg:min-h-[34rem] lg:flex-row">
-              <aside className="relative flex flex-col justify-between overflow-hidden bg-[oklch(0.22_0.04_255)] px-7 py-8 sm:px-9 sm:py-10 lg:w-[min(42%,22rem)] lg:shrink-0 lg:py-12">
+            <div className="flex flex-col lg:flex-row">
+              <aside className="relative flex flex-col justify-between overflow-hidden bg-[oklch(0.22_0.04_255)] px-6 py-7 sm:px-7 lg:w-64 lg:shrink-0">
                 <div
                   aria-hidden
                   className="absolute inset-0 bg-cover bg-bottom opacity-35"
@@ -61,59 +61,58 @@ function InvestorSignupPage() {
                 />
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute -bottom-8 -right-8 h-40 w-40 rounded-full bg-brand/25 blur-3xl"
+                  className="pointer-events-none absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-brand/25 blur-3xl"
                 />
                 <div className="relative flex flex-1 flex-col">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-foreground/70">
                     Investor signup
                   </p>
-                  <h2 className="mt-4 text-2xl font-bold leading-tight text-white sm:text-[1.75rem]">
-                    Open your account in minutes
-                  </h2>
-                  <ul className="mt-8 space-y-4">
+                  <h2 className="mt-3 text-xl font-bold leading-tight text-white">Open your account in minutes</h2>
+                  <ul className="mt-6 space-y-3">
                     {bullets.map((text) => (
-                      <li key={text} className="flex gap-3 text-sm leading-relaxed text-white/85">
-                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-brand-foreground shadow-glow">
-                          <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
+                      <li key={text} className="flex gap-2.5 text-xs leading-relaxed text-white/85">
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand text-brand-foreground">
+                          <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
                         </span>
                         <span>{text}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
-                <p className="relative mt-10 text-xs text-white/50">Hudson Crest Capital</p>
+                <p className="relative mt-8 text-[10px] text-white/50">Hudson Crest Capital</p>
               </aside>
 
-              <div className="flex flex-1 flex-col bg-background px-7 py-8 sm:px-9 sm:py-10">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Investment account application
-                </p>
-                <h2 className="mt-1 text-lg font-semibold text-foreground sm:text-xl">Fill in your personal details</h2>
-                <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">
-                  Create your login in under a minute. Suitability, disclosures, and identity verification are completed
-                  securely in your portal after sign-in.
-                </p>
+              <div className="flex flex-1 flex-col bg-background px-6 py-7 sm:px-8">
+                <div className="w-full max-w-sm">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Investment account application
+                  </p>
+                  <h2 className="mt-1 text-base font-semibold text-foreground">Fill in your personal details</h2>
+                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                    Create your login in under a minute. Suitability and KYC are completed in your portal after sign-in.
+                  </p>
 
-                <div className="mt-6 flex-1">
-                  <InvestorSignupForm />
-                </div>
-
-                <div className="mt-6 flex flex-col gap-3 border-t border-border pt-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-3.5 w-3.5 shrink-0 text-brand" aria-hidden />
-                    <span>Data encrypted &amp; secured</span>
+                  <div className="mt-5">
+                    <InvestorSignupForm compact />
                   </div>
-                  <Link to="/portal/login/investor" className="font-medium text-brand hover:underline">
-                    Already have an account? Sign in
-                  </Link>
+
+                  <div className="mt-5 flex flex-col gap-2 border-t border-border pt-4 text-[11px] text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-3.5 w-3.5 shrink-0 text-brand" aria-hidden />
+                      <span>Data encrypted &amp; secured</span>
+                    </div>
+                    <Link to="/portal/login/investor" className="font-medium text-brand hover:underline">
+                      Already have an account? Sign in
+                    </Link>
+                    <a
+                      href={getMarketingWebsiteHomeUrl()}
+                      className="text-muted-foreground hover:text-foreground"
+                      rel="noreferrer"
+                    >
+                      Back to website
+                    </a>
+                  </div>
                 </div>
-                <a
-                  href={getMarketingWebsiteHomeUrl()}
-                  className="mt-3 inline-block text-xs text-muted-foreground hover:text-foreground"
-                  rel="noreferrer"
-                >
-                  Back to website
-                </a>
               </div>
             </div>
           </div>

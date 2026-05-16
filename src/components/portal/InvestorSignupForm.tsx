@@ -10,9 +10,9 @@ import {
   validateInvestorSignupCredentials,
 } from "@/lib/investor-signup-submit";
 
-const field =
-  "mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
-const label = "text-xs font-medium uppercase tracking-wider text-muted-foreground";
+const fieldBase =
+  "mt-1 w-full rounded-md border border-border bg-surface text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const labelBase = "font-medium text-muted-foreground";
 
 type FormState = {
   firstName: string;
@@ -47,7 +47,18 @@ export { PENDING_SIGNUP_BOOTSTRAP_KEY };
  * suitability, declarations — is captured later by the in-portal completion
  * wizard.
  */
-export function InvestorSignupForm() {
+type InvestorSignupFormProps = {
+  /** Tighter layout for public signup (max ~384px field width). */
+  compact?: boolean;
+};
+
+export function InvestorSignupForm({ compact = false }: InvestorSignupFormProps) {
+  const field = compact
+    ? `${fieldBase} px-2.5 py-1.5 text-sm`
+    : `${fieldBase} px-3 py-2 text-sm`;
+  const label = compact
+    ? `${labelBase} text-[11px] uppercase tracking-wide`
+    : `${labelBase} text-xs uppercase tracking-wider`;
   const navigate = useNavigate();
   const [f, setF] = useState<FormState>(initialForm);
   const [busy, setBusy] = useState(false);
@@ -91,8 +102,8 @@ export function InvestorSignupForm() {
   };
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5">
-      <div className="grid gap-4 sm:grid-cols-2">
+    <form onSubmit={onSubmit} className={compact ? "flex flex-col gap-3.5" : "flex flex-col gap-5"}>
+      <div className={compact ? "grid grid-cols-2 gap-3" : "grid gap-4 sm:grid-cols-2"}>
         <div>
           <label className={label}>First name</label>
           <input
@@ -142,7 +153,7 @@ export function InvestorSignupForm() {
         <IntlPhoneInput className="mt-1" value={f.phone} onChange={(v) => update("phone", v)} country={f.country} disabled={busy} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={compact ? "flex flex-col gap-3.5" : "grid gap-4 sm:grid-cols-2"}>
         <div>
           <label className={label}>Password</label>
           <input
@@ -172,7 +183,13 @@ export function InvestorSignupForm() {
         </div>
       </div>
 
-      <div className="space-y-3 rounded-md border border-border bg-muted/20 p-3 text-xs text-muted-foreground">
+      <div
+        className={
+          compact
+            ? "space-y-2.5 rounded-md border border-border bg-muted/20 p-2.5 text-[11px] leading-snug text-muted-foreground"
+            : "space-y-3 rounded-md border border-border bg-muted/20 p-3 text-xs text-muted-foreground"
+        }
+      >
         <label className="flex items-start gap-2">
           <input
             type="checkbox"
@@ -211,7 +228,11 @@ export function InvestorSignupForm() {
       <button
         type="submit"
         disabled={busy}
-        className="inline-flex items-center justify-center gap-2 rounded-md bg-gradient-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground shadow-glow hover:opacity-90 disabled:opacity-50"
+        className={
+          compact
+            ? "inline-flex w-full items-center justify-center gap-2 rounded-md bg-gradient-brand px-4 py-2 text-sm font-semibold text-brand-foreground shadow-glow hover:opacity-90 disabled:opacity-50"
+            : "inline-flex items-center justify-center gap-2 rounded-md bg-gradient-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground shadow-glow hover:opacity-90 disabled:opacity-50"
+        }
       >
         {busy ? (
           <>
