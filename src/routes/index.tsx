@@ -13,26 +13,33 @@ import deskSingapore from "@/assets/desk-singapore.jpg";
 type HeroSlide = {
   src: string;
   alt: string;
-  /** Globe art has office labels at edges — cover crops them on common laptop widths; contain keeps them visible. */
-  objectFit?: "cover" | "contain";
-  /**
-   * Cityscape imagery is cropped heavily with object-cover + center on tablet aspect ratios,
-   * hiding the skyline. Tune focal point per breakpoint (and portrait vs landscape).
-   */
+  /** Lighter left fade when office labels sit left-of-center (globe / cityscape slides). */
+  softLeftGradient?: boolean;
+  /** object-cover focal point — tuned per slide so desk labels stay in frame. */
   objectPositionClasses?: string;
 };
 
-/** Focal bias: towers slightly right-of-center; skyline band a bit below center — keeps offices in frame across aspect ratios. */
+/** Cityscape composite: globe callouts sit center-right; slight left bias keeps New York in frame. */
 const CITYSCAPE_OBJECT_POSITION =
-  "object-[58%_46%] sm:object-[56%_44%] md:object-[57%_42%] max-lg:portrait:object-[64%_48%] lg:object-[55%_38%] xl:object-[53%_36%] 2xl:object-[52%_34%] min-[1536px]:object-center";
+  "object-[48%_42%] sm:object-[46%_40%] md:object-[45%_38%] max-lg:portrait:object-[50%_44%] lg:object-[44%_36%] xl:object-[42%_34%] 2xl:object-[40%_32%]";
+
+/** Full-bleed globe: slight left bias keeps New York label in frame on laptop widths. */
+const GLOBE_OBJECT_POSITION =
+  "object-[42%_50%] sm:object-[44%_48%] md:object-[46%_46%] lg:object-[48%_45%]";
 
 const HERO_SLIDES: HeroSlide[] = [
   {
     src: heroCityscape,
-    alt: "Global financial city skyline at night with connected trading desks",
+    alt: "Global trading network across New York, London, and Singapore",
+    softLeftGradient: true,
     objectPositionClasses: CITYSCAPE_OBJECT_POSITION,
   },
-  { src: heroGlobe, alt: "Interactive global trading network", objectFit: "contain" },
+  {
+    src: heroGlobe,
+    alt: "Interactive global trading network across New York, London, and Singapore",
+    softLeftGradient: true,
+    objectPositionClasses: GLOBE_OBJECT_POSITION,
+  },
   { src: heroTradingFloor, alt: "Institutional trading floor with live market data" },
   { src: heroCommodities, alt: "Commodities investment: gold, silver, copper and energy markets" },
 ];
@@ -73,16 +80,16 @@ function HomePage() {
         <div className="absolute inset-0 bg-background pointer-events-none">
           {/* Carousel background — cross-fade */}
           {HERO_SLIDES.map((s, i) => {
-            const fit = s.objectFit === "contain" ? "object-contain" : "object-cover";
+            const visible = i === slide;
             const position = s.objectPositionClasses ?? "object-center";
             return (
               <img
                 key={s.src}
                 src={s.src}
-                alt={i === slide ? s.alt : ""}
+                alt={visible ? s.alt : ""}
                 sizes="100vw"
-                className={`absolute inset-0 m-auto min-h-full min-w-full ${fit} ${position} transition-opacity duration-[1500ms] ease-in-out ${
-                  i === slide ? "opacity-60" : "opacity-0"
+                className={`absolute inset-0 m-auto min-h-full min-w-full object-cover ${position} transition-opacity duration-[1500ms] ease-in-out ${
+                  visible ? "opacity-60" : "opacity-0"
                 }`}
                 loading={i === 0 ? "eager" : "lazy"}
                 decoding="async"
@@ -90,7 +97,13 @@ function HomePage() {
             );
           })}
           {/* Left edge fade so text stays legible */}
-          <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/60 to-background/10" />
+          <div
+            className={`absolute inset-0 bg-gradient-to-r transition-[opacity] duration-[1500ms] ease-in-out ${
+              HERO_SLIDES[slide]?.softLeftGradient
+                ? "from-background/35 via-background/30 to-background/10"
+                : "from-background/95 via-background/60 to-background/10"
+            }`}
+          />
           {/* Top + bottom vignette into background */}
           <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background to-transparent" />
           <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background to-transparent" />
@@ -290,3 +303,5 @@ function HomePage() {
     </SiteLayout>
   );
 }
+
+
